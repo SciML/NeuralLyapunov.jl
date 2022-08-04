@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimJL, Plots
+using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimJL, Plots, Zygote
 
 # Define parameters and differentials
 @parameters x y
@@ -62,10 +62,32 @@ u_real = [[analytic_sol_func(x,y)[i] for x in xs for y in ys] for i in 1:length(
 u_predict = [[predicted_sol_func(x,y)[i] for x in xs for y in ys] for i in 1:length(us)]
 diff_u = [abs.(u_real[i] .- u_predict[i]) for i in 1:length(us)]
 
+function div_fun(x,y)
+    J = jacobian(x -> predicted_sol_func(x[1], x[2]), [x, y])[1]
+    sum(diag(J))
+end
+
+function curl_fun(x,y)
+    J = jacobian(x -> predicted_sol_func(x[1], x[2]), [x, y])[1]
+    J[1,2] - J[2,1]
+end
+
+div_predict  = [div_fun(x,y)  for x in xs for y in ys]
+curl_predict = [curl_fun(x,y) for x in xs for y in ys]
+
 for i in 1:length(us)
     p1 = plot(xs, ys, u_real[i], linetype=:contourf,title = "u$i, analytic");
     p2 = plot(xs, ys, u_predict[i], linetype=:contourf,title = "u$i, predict");
     p3 = plot(xs, ys, diff_u[i], linetype=:contourf,title = "u$i, error");
+    
     plot(p1,p2,p3)
     savefig("harmonic_sol_u$i")
 end
+
+p1 = plot(xs, ys, div_predict, linetype=:contourf, title="divergence");
+p2 = plot(xs, ys, curl_predict, linetype=:contourf, title="curl");
+plot(p1, p2)
+savefig("harmonic_err")
+
+#V_fun(x,v) = norm(φ_fun(x,v) - φ_fun(0.,0.))^2 + δ * log(1.0 + x^2 + v^2) 
+#dVdt_fun(x0,v0) = Symbolics.value.(substitute(f, Dict([x=>x0, v=>v0]))) ⋅ gradient(V_fun, x0, v0)
