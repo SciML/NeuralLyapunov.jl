@@ -5,9 +5,11 @@ using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimJL, Plots,
 @variables u1(..) u2(..)
 Dx = Differential(x)
 Dy = Differential(y)
-divergence(F) = Dx(F[1]) + Dy(F[2])
+#divergence(F) = Dx(F[1]) + Dy(F[2])
+divergence(F) = sum(diag(Symbolics.jacobian(F, [x, y])))
 curl(F) = Dy(F[1]) - Dx(F[2])
-grad(f) = [Dx(f), Dy(f)]
+#grad(f) = [Dx(f), Dy(f)]
+grad(f) = Symbolics.gradient(f, [x, y])
 
 # Define PDE system
 us = [u1(x,y), u2(x,y)]
