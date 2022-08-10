@@ -18,7 +18,7 @@ eq = divergence(grad(u(x,y))) ~ 0
 domains = [ x ∈ (0.0, pi),
             y ∈ (0.0, 1.0) 
             ]
-bcs = [ 0. ~ 0. ]
+bcs = [ u(0.5, 0.5) ~ 1. ]
 
 @named pde_system = PDESystem(eq, bcs, domains, [x, y], us)
 
