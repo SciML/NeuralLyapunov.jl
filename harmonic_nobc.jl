@@ -13,7 +13,7 @@ grad(f) = Symbolics.gradient(f, [x, y])
 
 # Define PDE system
 us = [u1(x,y), u2(x,y)]
-u(x0,y0) = sin(u1(x0,y0))*exp(u2(x0,y0))
+u(x0,y0) = (u1(x0,y0))^2 + (u2(x0,y0))^2
 eq = divergence(grad(u(x,y))) ~ 0
 domains = [ x ∈ (0.0, pi),
             y ∈ (0.0, 1.0) 
@@ -54,7 +54,7 @@ us_predict_func(x0,y0) = [ phi[i]([x0,y0],minimizers_[i])[1] for i in 1:length(u
     u_vec = u_predict_func(x0,y0)
     sin(u_vec[1]) * exp(u_vec[2])
 end=#
-predicted_sol_func = ( (s) -> sin(s[1])*exp(s[2]) ) ∘ us_predict_func
+predicted_sol_func = ( (s) -> s[1]^2 + s[2]^2 ) ∘ us_predict_func
 
 # Plot results
 xs,ys = [ModelingToolkit.infimum(d.domain):0.01:ModelingToolkit.supremum(d.domain) for d in domains]
@@ -75,15 +75,15 @@ function curl_fun(x0,y0)
     H[1,2] - H[2,1]
 end
 
-grad_predict = [norm(grad_fun(x0,y0)) for y0 in ys for x0 in xs]
+#grad_predict = [norm(grad_fun(x0,y0)) for y0 in ys for x0 in xs]
 lap_predict  = [lap_fun(x0,y0) for y0 in ys for x0 in xs]
-curl_predict = [curl_fun(x0,y0) for y0 in ys for x0 in xs]
+#curl_predict = [curl_fun(x0,y0) for y0 in ys for x0 in xs]
 
 
 p2 = plot(xs, ys, lap_predict, linetype=:contourf, title="laplacian");
-p3 = plot(xs, ys, grad_predict, linetype=:contourf, title="grad magnitude");
-p4 = plot(xs, ys, curl_predict, linetype=:contourf, title="curl of grad");
-plot(p1, p2, p3, p4)
+#p3 = plot(xs, ys, grad_predict, linetype=:contourf, title="grad magnitude");
+#p4 = plot(xs, ys, curl_predict, linetype=:contourf, title="curl of grad");
+plot(p1, p2)#, p3, p4)
 savefig("harmonic_sol_nobc")
 
 #V_fun(x,v) = norm(φ_fun(x,v) - φ_fun(0.,0.))^2 + δ * log(1.0 + x^2 + v^2) 
