@@ -13,7 +13,8 @@ V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^
 
 # Define dynamics and Lyapunov conditions
 dynamics(x0,y0) = [y0; -y0-x0]
-eq = max(0., dynamics(x,y) ⋅ grad(V_sym(x,y))) ~ 0.
+#eq = max(0., dynamics(x,y) ⋅ grad(V_sym(x,y))) ~ 0.
+eq = log(1. + exp(10.0*dynamics(x,y) ⋅ grad(V_sym(x,y)))) ~ 0.
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
@@ -33,10 +34,10 @@ chain = [Lux.Chain(
             for _ in 1:dim_output
             ]
 
-#TODO: Only QuasiRandomTraining works
 #strategy = QuadratureTraining()
-strategy = GridTraining(0.05)
+#strategy = GridTraining(0.05)
 #strategy = QuasiRandomTraining(1000, bcs_points=0)
+strategy = StochasticTraining(1000, bcs_points=0)
 discretization = PhysicsInformedNN(chain, strategy)
 prob = discretize(pde_system, discretization)
 
@@ -50,15 +51,15 @@ res = Optimization.solve(prob, BFGS(); callback=callback, maxiters=5000)
 phi = discretization.phi
 minimizers_ = [res.u.depvar[Symbol(:u,i)] for i in 1:dim_output]
 
-u_predict_func(x0,y0) = [ phi[i]([x0,y0],minimizers_[i])[1] for i in 1:dim_output ]
+u_func(x0,y0) = [ phi[i]([x0,y0],minimizers_[i])[1] for i in 1:dim_output ]
 
 function V_func(x0,y0) 
-    u_vec = u_predict_func(x0,y0) - u_predict_func(0.,0.)
+    u_vec = u_func(x0,y0) - u_func(0.,0.)
     norm(u_vec)^2 + δ*log(1 + x0^2 + y0^2)
 end
 
-∇V_fun(x0,y0) = ForwardDiff.gradient(p -> V_func(p[1], p[2]), [x0, y0])
-V̇_func(x0,y0) = dynamics(x0,y0) ⋅ ∇V_fun(x0,y0)
+∇V_func(x0,y0) = ForwardDiff.gradient(p -> V_func(p[1], p[2]), [x0, y0])
+V̇_func(x0,y0) = dynamics(x0,y0) ⋅ ∇V_func(x0,y0)
 
 # Plot results
 xs,ys = [ModelingToolkit.infimum(d.domain):0.01:ModelingToolkit.supremum(d.domain) for d in domains]
