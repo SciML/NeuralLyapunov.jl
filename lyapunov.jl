@@ -9,7 +9,7 @@ grad(f) = Symbolics.gradient(f, [x, y])
 dim_output = 2
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
-V_sym(x0,y0) = u(x0,y0) ⋅ u(x0,y0) + δ*log(1. + x0^2 + y0^2)
+V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
 
 # Define dynamics and Lyapunov conditions
 dynamics(x0,y0) = [y0; -y0-x0]
@@ -17,7 +17,7 @@ eq = max(0., dynamics(x,y) ⋅ grad(V_sym(x,y))) ~ 0.
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
-bcs = [ V_sym(0.,0.) ~ 0. ]
+bcs = [ 0. ~ 0. ] #TODO: Can anything be done other than setting this stupid boundary condition?
 
 # Construct PDESystem
 @named pde_system = PDESystem(eq, bcs, domains, [x, y], u(x,y))
@@ -35,8 +35,8 @@ chain = [Lux.Chain(
 
 #TODO: Only QuasiRandomTraining works
 #strategy = QuadratureTraining()
-#strategy = GridTraining(0.1)
-strategy = QuasiRandomTraining(100, bcs_points=10)
+strategy = GridTraining(0.05)
+#strategy = QuasiRandomTraining(1000, bcs_points=0)
 discretization = PhysicsInformedNN(chain, strategy)
 prob = discretize(pde_system, discretization)
 
@@ -53,7 +53,7 @@ minimizers_ = [res.u.depvar[Symbol(:u,i)] for i in 1:dim_output]
 u_predict_func(x0,y0) = [ phi[i]([x0,y0],minimizers_[i])[1] for i in 1:dim_output ]
 
 function V_func(x0,y0) 
-    u_vec = u_predict_func(x0,y0)# - us_predict_func(0.,0.)
+    u_vec = u_predict_func(x0,y0) - u_predict_func(0.,0.)
     norm(u_vec)^2 + δ*log(1 + x0^2 + y0^2)
 end
 
@@ -70,14 +70,5 @@ plot(p1, p2)#, p3, p4)
 savefig("Lyapunov_sol")
 
 println("V(0.,0.) = ", V_func(0.,0.))
-println("V ∈ [", minimum(V_predict), ", ", maximum(V_predict), "]")
+println("V ∈ [", min(V_func(0.,0.), minimum(V_predict)), ", ", maximum(V_predict), "]")
 println("V̇ ∈ [", minimum(dVdt_predict), ", ", maximum(dVdt_predict), "]")
-
-#grad_predict = [norm(grad_fun(x0,y0)) for y0 in ys for x0 in xs]
-#lap_predict  = [lap_fun(x0,y0) for y0 in ys for x0 in xs]
-
-#curl_predict = [curl_fun(x0,y0) for y0 in ys for x0 in xs]
-
-
-#p3 = plot(xs, ys, grad_predict, linetype=:contourf, title="grad magnitude");
-#p4 = plot(xs, ys, curl_predict, linetype=:contourf, title="curl of grad");
