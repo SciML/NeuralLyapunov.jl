@@ -9,16 +9,17 @@ grad(f) = Symbolics.gradient(f, [x, y])
 dim_output = 2
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
-V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
+#V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
+V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
 
 # Define dynamics and Lyapunov conditions
 dynamics(x0,y0) = [y0; -y0-x0]
-#eq = max(0., dynamics(x,y) ⋅ grad(V_sym(x,y))) ~ 0.
-eq = log(1. + exp(10.0*dynamics(x,y) ⋅ grad(V_sym(x,y)))) ~ 0.
+eq = max(0., dynamics(x,y) ⋅ grad(V_sym(x,y))) ~ 0.
+#eq = log(1. + exp(10.0*dynamics(x,y) ⋅ grad(V_sym(x,y)))) ~ 0.
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
-bcs = [ 0. ~ 0. ] #TODO: Can anything be done other than setting this stupid boundary condition?
+bcs = [ V_sym(0.,0.) ~ 0. ] 
 
 # Construct PDESystem
 @named pde_system = PDESystem(eq, bcs, domains, [x, y], u(x,y))
@@ -36,8 +37,8 @@ chain = [Lux.Chain(
 
 #strategy = QuadratureTraining()
 #strategy = GridTraining(0.05)
-#strategy = QuasiRandomTraining(1000, bcs_points=0)
-strategy = StochasticTraining(1000, bcs_points=0)
+strategy = QuasiRandomTraining(1000, bcs_points=1)
+#strategy = StochasticTraining(1000, bcs_points=1)
 discretization = PhysicsInformedNN(chain, strategy)
 prob = discretize(pde_system, discretization)
 
@@ -54,7 +55,8 @@ minimizers_ = [res.u.depvar[Symbol(:u,i)] for i in 1:dim_output]
 u_func(x0,y0) = [ phi[i]([x0,y0],minimizers_[i])[1] for i in 1:dim_output ]
 
 function V_func(x0,y0) 
-    u_vec = u_func(x0,y0) - u_func(0.,0.)
+#    u_vec = u_func(x0,y0) - u_func(0.,0.)
+    u_vec = u_func(x0,y0)
     norm(u_vec)^2 + δ*log(1 + x0^2 + y0^2)
 end
 
