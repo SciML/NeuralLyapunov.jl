@@ -9,13 +9,14 @@ grad(f) = Symbolics.gradient(f, [x, y])
 dim_output = 2
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
-#V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
-V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
+V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
+#V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
 
 # Define dynamics and Lyapunov conditions
 dynamics(x0,y0) = [y0; -y0-x0]
-eq = max(0., dynamics(x,y) ⋅ grad(V_sym(x,y))) ~ 0.
-#eq = log(1. + exp(10.0*dynamics(x,y) ⋅ grad(V_sym(x,y)))) ~ 0.
+V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
+#eq = max(0., V̇_sym(x, y)) ~ 0.
+eq = log(1. + exp(10.0 * V̇_sym(x,y))) ~ 0.
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
@@ -30,7 +31,7 @@ dim_hidden = 15
 chain = [Lux.Chain(
                 Dense(dim_input, dim_hidden, Lux.σ), 
                 Dense(dim_hidden, dim_hidden, Lux.σ),
-                Dense(dim_hidden, 1)
+                Dense(dim_hidden, 1, use_bias=false)
                 )
             for _ in 1:dim_output
             ]
@@ -50,13 +51,12 @@ end
 # Solve 
 res = Optimization.solve(prob, BFGS(); callback=callback, maxiters=5000)
 phi = discretization.phi
-minimizers_ = [res.u.depvar[Symbol(:u,i)] for i in 1:dim_output]
 
-u_func(x0,y0) = [ phi[i]([x0,y0],minimizers_[i])[1] for i in 1:dim_output ]
+u_func(x0,y0) = [ phi[i]([x0,y0], res.u.depvar[Symbol(:u,i)])[1] for i in 1:dim_output ]
 
 function V_func(x0,y0) 
-#    u_vec = u_func(x0,y0) - u_func(0.,0.)
-    u_vec = u_func(x0,y0)
+    u_vec = u_func(x0,y0) - u_func(0.,0.)
+#    u_vec = u_func(x0,y0)
     norm(u_vec)^2 + δ*log(1 + x0^2 + y0^2)
 end
 
