@@ -10,13 +10,14 @@ dim_output = 2
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
 #V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
-V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
+V_sym(x0,y0) = (u1(x0,y0) - u1(0.,0.))^2 + (u2(x0,y0) - u2(0.,0.))^2 + δ*log(1. + x0^2 + y0^2)
+#V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
 
 # Define dynamics and Lyapunov conditions
-dynamics(x0,y0) = [y0; -y0-sin(x0)]
+dynamics(x0,y0) = [y0; -y0-x0]
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
-eq = max(0., V̇_sym(x, y)) ~ 0.
-#eq = log(1. + exp(10.0 * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
+#eq = max(0., V̇_sym(x, y)) ~ 0.
+eq = log(1. + exp(10.0 * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
@@ -29,9 +30,9 @@ bcs = [ V_sym(0.,0.) ~ 0. ]
 dim_input = length(domains)
 dim_hidden = 15
 chain = [Lux.Chain(
-                Dense(dim_input, dim_hidden, Lux.σ), 
-                Dense(dim_hidden, dim_hidden, Lux.σ),
-                Dense(dim_hidden, 1, use_bias=true)
+                Dense(dim_input, dim_hidden, tanh), 
+                Dense(dim_hidden, dim_hidden, tanh),
+                Dense(dim_hidden, 1, use_bias=false)
                 )
             for _ in 1:dim_output
             ]
@@ -49,14 +50,14 @@ callback = function (p, l)
 end
 
 # Solve 
-res = Optimization.solve(prob, BFGS(); callback=callback, maxiters=5000)
+res = Optimization.solve(prob, BFGS(); callback=callback, maxiters=1000)
 phi = discretization.phi
 
 u_func(x0,y0) = [ phi[i]([x0,y0], res.u.depvar[Symbol(:u,i)])[1] for i in 1:dim_output ]
 
 function V_func(x0,y0) 
-#    u_vec = u_func(x0,y0) - u_func(0.,0.)
-    u_vec = u_func(x0,y0)
+    u_vec = u_func(x0,y0) - u_func(0.,0.)
+#    u_vec = u_func(x0,y0)
     norm(u_vec)^2 + δ*log(1 + x0^2 + y0^2)
 end
 
@@ -69,11 +70,11 @@ V_predict = [V_func(x0,y0) for y0 in ys for x0 in xs]
 dVdt_predict  = [V̇_func(x0,y0) for y0 in ys for x0 in xs]
 p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
-p2 = scatter!([-pi, pi], [0., 0.], label="Unstable equilibria");
-p2 = scatter!([-2*pi, 0., 2*pi], [0., 0., 0.], label="Stable equilibria");
+#p2 = scatter!([-pi, pi], [0., 0.], label="Unstable equilibria");
+#p2 = scatter!([-2*pi, 0., 2*pi], [0., 0., 0.], label="Stable equilibria");
 plot(p1, p2)
 savefig("Lyapunov_sol")
 
 println("V(0.,0.) = ", V_func(0.,0.))
 println("V ∈ [", min(V_func(0.,0.), minimum(V_predict)), ", ", maximum(V_predict), "]")
-println("V̇ ∈ [", minimum(dVdt_predict), ", ", maximum(dVdt_predict), "]")
+println("V̇ ∈ [", minimum(dVdt_predict), ", ", max(V̇_func(0.,0.), maximum(dVdt_predict)), "]")
