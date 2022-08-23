@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimJL, Plots, ForwardDiff, LinearAlgebra
+using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimisers, OptimizationOptimJL, Plots, ForwardDiff, LinearAlgebra, NLopt
 
 # Define parameters and differentials
 @parameters x y
@@ -9,15 +9,15 @@ grad(f) = Symbolics.gradient(f, [x, y])
 dim_output = 2
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
-#V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
-V_sym(x0,y0) = (u1(x0,y0) - u1(0.,0.))^2 + (u2(x0,y0) - u2(0.,0.))^2 + δ*log(1. + x0^2 + y0^2)
+V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
 #V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
 
 # Define dynamics and Lyapunov conditions
 dynamics(x0,y0) = [y0; -y0-x0]
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
-#eq = max(0., V̇_sym(x, y)) ~ 0.
-eq = log(1. + exp(10.0 * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
+eq = max(0., V̇_sym(x, y)) ~ 0.
+κ = 20.
+#eq = log(1. + exp( κ * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
@@ -38,8 +38,8 @@ chain = [Lux.Chain(
             ]
 
 #strategy = QuadratureTraining()
-#strategy = GridTraining(0.05)
-strategy = QuasiRandomTraining(1000, bcs_points=1)
+strategy = GridTraining(0.05)
+#strategy = QuasiRandomTraining(1000, bcs_points=1)
 #strategy = StochasticTraining(1000, bcs_points=1)
 discretization = PhysicsInformedNN(chain, strategy)
 prob = discretize(pde_system, discretization)
@@ -50,7 +50,12 @@ callback = function (p, l)
 end
 
 # Solve 
-res = Optimization.solve(prob, BFGS(); callback=callback, maxiters=1000)
+#opt = BFGS()
+opt = Adam()
+opt = AdaGrad()
+opt = AdaMax()
+opt = Optim.SimulatedAnnealing()
+res = Optimization.solve(prob, opt; callback=callback, maxiters=1000)
 phi = discretization.phi
 
 u_func(x0,y0) = [ phi[i]([x0,y0], res.u.depvar[Symbol(:u,i)])[1] for i in 1:dim_output ]
