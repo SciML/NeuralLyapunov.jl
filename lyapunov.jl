@@ -15,9 +15,9 @@ V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^
 # Define dynamics and Lyapunov conditions
 dynamics(x0,y0) = [y0; -y0-x0]
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
-eq = max(0., V̇_sym(x, y)) ~ 0.
+#eq = max(0., V̇_sym(x, y)) ~ 0.
 κ = 20.
-#eq = log(1. + exp( κ * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
+eq = log(1. + exp( κ * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
@@ -43,6 +43,9 @@ strategy = GridTraining(0.05)
 #strategy = StochasticTraining(1000, bcs_points=1)
 discretization = PhysicsInformedNN(chain, strategy)
 prob = discretize(pde_system, discretization)
+symprob = symbolic_discretize(pde_system, discretization)
+
+symprob.loss_functions
 
 callback = function (p, l)
     println("loss: ", l)
@@ -52,10 +55,10 @@ end
 # Solve 
 #opt = BFGS()
 opt = Adam()
-opt = AdaGrad()
-opt = AdaMax()
-opt = Optim.SimulatedAnnealing()
-res = Optimization.solve(prob, opt; callback=callback, maxiters=1000)
+#opt = AdaGrad()
+#opt = AdaMax()
+#opt = Optim.SimulatedAnnealing()
+res = Optimization.solve(prob, opt; callback=callback, maxiters=20)
 phi = discretization.phi
 
 u_func(x0,y0) = [ phi[i]([x0,y0], res.u.depvar[Symbol(:u,i)])[1] for i in 1:dim_output ]
@@ -70,7 +73,7 @@ end
 V̇_func(x0,y0) = dynamics(x0,y0) ⋅ ∇V_func(x0,y0)
 
 # Plot results
-xs,ys = [ModelingToolkit.infimum(d.domain):0.01:ModelingToolkit.supremum(d.domain) for d in domains]
+xs,ys = [ModelingToolkit.infimum(d.domain):0.1:ModelingToolkit.supremum(d.domain) for d in domains]
 V_predict = [V_func(x0,y0) for y0 in ys for x0 in xs]
 dVdt_predict  = [V̇_func(x0,y0) for y0 in ys for x0 in xs]
 p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
