@@ -3,17 +3,22 @@ using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimisers, Opt
 # Define parameters and differentials
 @parameters x y
 @variables u1(..) u2(..)
+"Symbolic gradient with respect to (x, y)"
 grad(f) = Symbolics.gradient(f, [x, y])
 
 # Define Lyapunov function
 dim_output = 2
+"Neural network output"
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
+"Symobolic form of the Lyapunov function"
 V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^2 + y0^2)
 #V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
 
 # Define dynamics and Lyapunov conditions
+"Simple Harmonic Oscillator Dynamics"
 dynamics(x0,y0) = [y0; -y0-x0]
+"Symbolic time derivative of the Lyapunov function"
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
 eq = max(0., V̇_sym(x, y)) ~ 0.
 κ = 20.
@@ -60,13 +65,17 @@ phi = discretization.phi
 
 u_func(x0,y0) = [ phi[i]([x0,y0], res.u.depvar[Symbol(:u,i)])[1] for i in 1:dim_output ]
 
+"Numerical form of Lyapunov function"
 function V_func(x0,y0) 
     u_vec = u_func(x0,y0) - u_func(0.,0.)
 #    u_vec = u_func(x0,y0)
     norm(u_vec)^2 + δ*log(1 + x0^2 + y0^2)
 end
 
+"Numerical gradient of Lyapunov function"
 ∇V_func(x0,y0) = ForwardDiff.gradient(p -> V_func(p[1], p[2]), [x0, y0])
+
+"Numerical time derivative of Lyapunov function"
 V̇_func(x0,y0) = dynamics(x0,y0) ⋅ ∇V_func(x0,y0)
 
 # Plot results
