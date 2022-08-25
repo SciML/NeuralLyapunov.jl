@@ -1,30 +1,35 @@
-using NeuralPDE, Lux, Optimization, OptimizationOptimisers
-import ModelingToolkit: Interval
+using NeuralPDE, Lux, Optimization, OptimizationOptimisers, Plots
 
-@parameters x y
+@parameters x
 @variables u(..)
-Dxx = Differential(x)^2
-Dyy = Differential(y)^2
 
-# 2D PDE
-eq  = Dxx(u(x,y)) + Dyy(u(x,y)) ~ -sin(pi*x)*sin(pi*y)
+# Set up equation
+v(x0) = u(x0) - u(0.)
+#v(x0) = u(x0)
+eq  = v(x) ~ sin(x)
 
-# Boundary conditions
-bcs = [u(0,y) ~ 0.0, u(1,y) ~ 0.0,
-       u(x,0) ~ 0.0, u(x,1) ~ 0.0]
-# Space and time domains
-domains = [x ∈ Interval(0.0,1.0),
-           y ∈ Interval(0.0,1.0)]
+# Set up domain
+x_min, x_max = -pi, pi
+domains = [x ∈ (x_min,x_max)]
+
+# Set up boundary condition
+bcs = [
+        v(0.) ~ 0.
+        ]
 
 # Neural network
-dim = length(domains) # number of dimensions
-chain = Lux.Chain(Dense(dim,16,Lux.σ),Dense(16,16,Lux.σ),Dense(16,1))
+hidden_dim = 16
+chain = Lux.Chain(
+                Dense(1,hidden_dim,Lux.σ),
+                Dense(hidden_dim,hidden_dim,Lux.σ),
+                Dense(hidden_dim,1)
+                )
 
 # Discretization
 dx = 0.05
 discretization = PhysicsInformedNN(chain,GridTraining(dx))
 
-@named pde_system = PDESystem(eq,bcs,domains,[x,y],[u(x, y)])
+@named pde_system = PDESystem(eq,bcs,domains,[x],[u(x)])
 prob = discretize(pde_system,discretization)
 
 #Optimizer
@@ -36,4 +41,17 @@ callback = function (p,l)
     return false
 end
 
-res = Optimization.solve(prob, opt, callback = callback, maxiters=1000)
+res = Optimization.solve(prob, opt, callback = callback, maxiters=2000)
+phi = discretization.phi
+
+xs = x_min:dx/10:x_max
+analytic_sol_func(x) = sin(x)
+predcit_sol_func(x) = first(phi(x,res.u)) - first(phi(0.,res.u))
+#predcit_sol_func(x) = first(phi(x,res.u))
+u_predict = [ predcit_sol_func(x) for x in xs]
+u_real = [analytic_sol_func(x) for x in xs]
+diff_u = abs.(u_predict .- u_real)
+
+plot(xs, u_real,label = "analytic", color = :blue)
+plot!(xs, u_predict,label = "predict", color = :gray)
+plot!(xs, diff_u,label = "error", color = :red)
