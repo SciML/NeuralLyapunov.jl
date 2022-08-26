@@ -17,7 +17,7 @@ V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^
 
 # Define dynamics and Lyapunov conditions
 "Simple Harmonic Oscillator Dynamics"
-dynamics(x0,y0) = [y0; -y0-x0]
+dynamics(pos,vel) = [vel; -vel-pos]
 "Symbolic time derivative of the Lyapunov function"
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
 #eq = max(0., V̇_sym(x, y)) ~ 0.

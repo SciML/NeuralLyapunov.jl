@@ -13,9 +13,7 @@ x_min, x_max = -pi, pi
 domains = [x ∈ (x_min,x_max)]
 
 # Set up boundary condition
-bcs = [
-        v(0.) ~ 0.
-        ]
+bcs = [ v(0.) ~ 0. ]
 
 # Neural network
 hidden_dim = 16
@@ -27,10 +25,12 @@ chain = Lux.Chain(
 
 # Discretization
 dx = 0.05
-discretization = PhysicsInformedNN(chain,GridTraining(dx))
+strategy = GridTraining(dx)
+discretization = PhysicsInformedNN(chain, strategy)
 
 @named pde_system = PDESystem(eq,bcs,domains,[x],[u(x)])
 prob = discretize(pde_system,discretization)
+symprob = symbolic_discretize(pde_system, discretization)
 
 #Optimizer
 opt = Adam()
@@ -41,7 +41,7 @@ callback = function (p,l)
     return false
 end
 
-res = Optimization.solve(prob, opt, callback = callback, maxiters=2000)
+res = Optimization.solve(prob, opt, callback = callback, maxiters=20)
 phi = discretization.phi
 
 xs = x_min:dx/10:x_max
