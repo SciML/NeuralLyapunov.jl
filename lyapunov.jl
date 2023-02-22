@@ -1,4 +1,7 @@
-using NeuralPDE, Lux, ModelingToolkit, Optimization, OptimizationOptimisers, OptimizationOptimJL, Plots, ForwardDiff, LinearAlgebra, NLopt
+using LinearAlgebra, ForwardDiff
+using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
+using Plots
+using NeuralPDE, Lux, ModelingToolkit
 
 # Define parameters and differentials
 @parameters x y
@@ -8,7 +11,7 @@ grad(f) = Symbolics.gradient(f, [x, y])
 
 # Define Lyapunov function
 dim_output = 2
-"Neural network output"
+"Symbolic form of neural network output"
 u(x0,y0) = Num.([u1(x0,y0), u2(x0,y0)])
 δ = 0.01
 "Symobolic form of the Lyapunov function"
@@ -20,9 +23,9 @@ V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^
 dynamics(pos,vel) = [vel; -vel-pos]
 "Symbolic time derivative of the Lyapunov function"
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
-#eq = max(0., V̇_sym(x, y)) ~ 0.
+eq = max(0., V̇_sym(x, y)) ~ 0.
 κ = 20.
-eq = log(1. + exp( κ * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
+#eq = log(1. + exp( κ * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
 domains = [ x ∈ (-2*pi, 2*pi),
             y ∈ (-10., 10.) 
             ]
@@ -43,14 +46,13 @@ chain = [Lux.Chain(
             ]
 
 #strategy = QuadratureTraining()
-strategy = GridTraining(0.05)
+strategy = GridTraining(0.1)
 #strategy = QuasiRandomTraining(1000, bcs_points=1)
 #strategy = StochasticTraining(1000, bcs_points=1)
+
 discretization = PhysicsInformedNN(chain, strategy)
 prob = discretize(pde_system, discretization)
-symprob = symbolic_discretize(pde_system, discretization)
-
-symprob.loss_functions
+# symprob = symbolic_discretize(pde_system, discretization)
 
 callback = function (p, l)
     println("loss: ", l)
