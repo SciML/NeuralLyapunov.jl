@@ -4,10 +4,11 @@ using Plots
 using NeuralPDE, Lux, ModelingToolkit
 
 # Define parameters and differentials
-@parameters x y
+@parameters x1 x2
+x = [x1, x2]
 @variables u1(..) u2(..)
 "Symbolic gradient with respect to (x, y)"
-grad(f) = Symbolics.gradient(f, [x, y])
+grad(f) = Symbolics.gradient(f, x)
 
 # Define Lyapunov function
 dim_output = 2
@@ -23,16 +24,16 @@ V_sym(x0,y0) = (u(x0,y0) - u(0.,0.)) ⋅ (u(x0,y0) - u(0.,0.)) + δ*log(1. + x0^
 dynamics(pos,vel) = [vel; -vel-pos]
 "Symbolic time derivative of the Lyapunov function"
 V̇_sym(x0, y0) = dynamics(x0,y0) ⋅ grad(V_sym(x0,y0))
-eq_max = max(0., V̇_sym(x, y)) ~ 0.
+eq_max = max(0., V̇_sym(x...)) ~ 0.
 κ = 20.
-eq_log = log(1. + exp( κ * V̇_sym(x,y))) ~ 0. # Stricter, but max(0, V̇) still trains fine
-domains = [ x ∈ (-2*pi, 2*pi),
-            y ∈ (-10., 10.) 
+eq_log = log(1. + exp( κ * V̇_sym(x...))) ~ 0. # Stricter, but max(0, V̇) still trains fine
+domains = [ x1 ∈ (-2*pi, 2*pi),
+            x2 ∈ (-10., 10.) 
             ]
 bcs = [ V_sym(0.,0.) ~ 0. ] 
 
 # Construct PDESystem
-@named pde_system_log = PDESystem(eq_log, bcs, domains, [x, y], u(x,y))
+@named pde_system_log = PDESystem(eq_log, bcs, domains, [x...], u(x...))
 
 # Define neural network discretization
 dim_input = length(domains)
@@ -51,8 +52,8 @@ strategy = GridTraining(0.1)
 #strategy = StochasticTraining(1000, bcs_points=1)
 
 discretization = PhysicsInformedNN(chain, strategy)
-prob_log = discretize(pde_system, discretization)
-symprob = symbolic_discretize(pde_system, discretization)
+prob_log = discretize(pde_system_log, discretization)
+#symprob_log = symbolic_discretize(pde_system_log, discretization)
 
 callback = function (p, l)
     println("loss: ", l)
@@ -68,8 +69,8 @@ end
 res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 
 # Rebuild with weaker max version
-@named pde_system_max = PDESystem(eq_max, bcs, domains, [x, y], u(x,y))
-prob_max = discretize(pde_system, discretization)
+@named pde_system_max = PDESystem(eq_max, bcs, domains, [x...], u(x...))
+prob_max = discretize(pde_system_log, discretization)
 prob_max = Optimization.remake(prob_max, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
 res = Optimization.solve(prob_max, Adam(); callback=callback, maxiters=300)
 prob_max = Optimization.remake(prob_max, u0=res.u); println("Switching from Adam to BFGS")
