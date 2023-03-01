@@ -20,11 +20,15 @@ V_sym(x) = (u(x) - u([0.0,0.0])) ⋅ (u(x) - u([0.0,0.0])) + δ*log(1.0 + x ⋅ 
 
 # Define dynamics and Lyapunov conditions
 "Simple Harmonic Oscillator Dynamics"
-function dynamics(state) 
+function dynamics(state::Matrix) 
     pos = transpose(state[1,:]); vel = transpose(state[2,:])
     vcat(vel, -vel-pos)
 end
-@register_symbolic dynamics(x)::Matrix{Number}
+function dynamics(state::Vector) 
+    pos = state[1]; vel = state[2]
+    vcat(vel, -vel-pos)
+end
+@register_symbolic dynamics(state)
 "Symbolic time derivative of the Lyapunov function"
 V̇_sym(x) = dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
 eq_max = max(0., V̇_sym(x)) ~ 0.
