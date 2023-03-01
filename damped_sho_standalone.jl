@@ -12,7 +12,7 @@ x = [x1, x2]
 # Define Lyapunov function
 dim_output = 2
 "Symbolic form of neural network output"
-u(x) = Num.([u1(x...), u2(x...)])
+u(x) = [u1(x...), u2(x...)]
 δ = 0.01
 "Symobolic form of the Lyapunov function"
 V_sym(x) = (u(x) - u([0.0,0.0])) ⋅ (u(x) - u([0.0,0.0])) + δ*log(1.0 + x ⋅ x)
@@ -20,15 +20,15 @@ V_sym(x) = (u(x) - u([0.0,0.0])) ⋅ (u(x) - u([0.0,0.0])) + δ*log(1.0 + x ⋅ 
 
 # Define dynamics and Lyapunov conditions
 "Simple Harmonic Oscillator Dynamics"
-function dynamics(state::Matrix) 
+function dynamics(state::AbstractMatrix{<:Number}) 
     pos = transpose(state[1,:]); vel = transpose(state[2,:])
     vcat(vel, -vel-pos)
 end
-function dynamics(state::Vector) 
+function dynamics(state::AbstractVector{<:Number}) 
     pos = state[1]; vel = state[2]
     vcat(vel, -vel-pos)
 end
-@register_symbolic dynamics(state)
+@register_symbolic dynamics(state::AbstractVector)
 "Symbolic time derivative of the Lyapunov function"
 V̇_sym(x) = dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
 eq_max = max(0., V̇_sym(x)) ~ 0.
