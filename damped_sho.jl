@@ -8,7 +8,7 @@ using .NeuralLyapunov
 # Set up SHO system
 function SHO_dynamics(state) 
     pos = transpose(state[1,:]); vel = transpose(state[2,:])
-    [vel; -vel-pos]
+    vcat(vel, -vel-pos)
 end
 lb = [-2*pi, -10.0]; ub = [2*pi, 10.0]
 

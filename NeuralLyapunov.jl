@@ -20,9 +20,6 @@ function NeuralLyapunovPDESystem(dynamics, lb, ub, output_dim=1; δ=0.01, relu=(
     end
     domains = [ state[i] ∈ (lb[i], ub[i]) for i in 1:state_dim ]
 
-    "Symbolic gradient with respect to (state1, ..., staten)"
-    grad(f) = Symbolics.gradient(f, state)
-
     # Define Lyapunov function
     net_syms = [Symbol(:u, i) for i in 1:output_dim]
     net = [first(@variables $s(..)) for s in net_syms]
@@ -34,7 +31,7 @@ function NeuralLyapunovPDESystem(dynamics, lb, ub, output_dim=1; δ=0.01, relu=(
 
     # Define dynamics and Lyapunov conditions
     "Symbolic time derivative of the Lyapunov function"
-    V̇_sym(x) = dynamics(x) ⋅ grad(V_sym(x))
+    V̇_sym(x) = dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
     "V̇ should be negative"
     eq = relu(V̇_sym(state)) ~ 0.0
 
