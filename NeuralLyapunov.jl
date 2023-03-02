@@ -5,7 +5,7 @@ using NeuralPDE, Lux, ModelingToolkit
 
 export NeuralLyapunovPDESystem, NumericalNeuralLyapunovFunctions
 
-function NeuralLyapunovPDESystem(dynamics, lb, ub, output_dim=1; δ=0.01, relu=(t)->max(0.0,t), fixed_point=nothing)
+function NeuralLyapunovPDESystem(dynamics::Function, lb, ub, output_dim::Integer=1; δ::Real=0.01, relu=(t)->max(0.0,t), fixed_point=nothing)::Tuple{PDESystem, Function}
     # Define state symbols
     state_dim = lb isa AbstractArray ? length(lb) : ub isa AbstractArray ? length(ub) : 1
     state_syms = [Symbol(:state, i) for i in 1:state_dim]
@@ -55,19 +55,42 @@ function NeuralLyapunovPDESystem(dynamics, lb, ub, output_dim=1; δ=0.01, relu=(
     return lyapunov_pde_system, V_func
 end
 
-function NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, dynamics; grad=ForwardDiff.gradient)
+function NeuralLyapunovPDESystem(dynamics::ODEProblem, lb, ub, output_dim::Integer=1; δ::Real=0.01, relu=(t)->max(0.0,t), fixed_point=nothing)::Tuple{PDESystem, Function}
+    f = get_dynamics_from_ODEProblem(dynamics)
+    return NeuralLyapunovPDESystem(f, lb, ub, output_dim; δ, relu, fixed_point)
+end
+
+function NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, dynamics::Function; grad=ForwardDiff.gradient)
     "Numerical form of Lyapunov function"
-    V_func(state::Matrix) = lyapunov_func(phi, result, state)
-    V_func(state::Vector) = first(lyapunov_func(phi, result, state))
+    V_func(state::AbstractMatrix) = lyapunov_func(phi, result, state)
+    V_func(state::AbstractVector) = first(lyapunov_func(phi, result, state))
 
     "Numerical gradient of Lyapunov function"
-    ∇V_func(state) = mapslices(x -> grad(y -> V_func(y), x), state, dims=[1])
+    ∇V_func(state::AbstractVector) = grad(y -> V_func(y), state)
+    ∇V_func(state::AbstractMatrix) = mapslices(x -> ∇V_func(x), state, dims=[1])
 
     "Numerical time derivative of Lyapunov function"
-    V̇_func(state::Vector) = dynamics(state) ⋅ ∇V_func(state)
-    V̇_func(state::Matrix) = reshape(map(x->x[1]⋅x[2], zip(eachslice(dynamics(state), dims=2), eachslice(∇V_func(state), dims=2))), (1,:))
+    V̇_func(state::AbstractVector) = dynamics(state) ⋅ ∇V_func(state)
+    V̇_func(state::AbstractMatrix) = reshape(map(x->x[1]⋅x[2], zip(eachslice(dynamics(state), dims=2), eachslice(∇V_func(state), dims=2))), (1,:))
 
     return V_func, V̇_func
+end
+
+function NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, dynamics::ODEProblem; grad=ForwardDiff.gradient)
+    f = get_dynamics_from_ODEProblem(dynamics)
+    return NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, f; grad)
+end
+
+function get_dynamics_from_ODEProblem(prob::ODEProblem)::Function
+    dynamicsODEfunc = prob.f
+    f_ = if dynamicsODEfunc.mass_matrix == I
+        state -> dynamicsODEfunc.f(state, prob.p, 0.0) # Let time be 0.0, since we're only considering time-invariant dynamics
+    else
+        throw(ErrorException("For now, we only accept ODEs, not DAEs"))
+    end
+    f(state::AbstractVector) = f_(state)
+    f(state::AbstractMatrix) = mapslices(f_, state, dims=[1])
+    return f
 end
 
 end
