@@ -6,8 +6,13 @@ include("./NeuralLyapunov.jl") # Change this if we start using the module in mor
 using .NeuralLyapunov
 
 # Set up SHO system
-function SHO_dynamics(state) 
+"Simple Harmonic Oscillator Dynamics"
+function SHO_dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where T <:Number
     pos = transpose(state[1,:]); vel = transpose(state[2,:])
+    vcat(vel, -vel-pos)
+end
+function SHO_dynamics(state::AbstractVector{T})::AbstractVector{T} where T <:Number
+    pos = state[1]; vel = state[2]
     vcat(vel, -vel-pos)
 end
 lb = [-2*pi, -10.0]; ub = [2*pi, 10.0]

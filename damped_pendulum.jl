@@ -3,18 +3,23 @@ using NeuralPDE, Lux
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 include("./NeuralLyapunov.jl") # Change this if we start using the module in more than one file (like a package)
+using .NeuralLyapunov
 
 # Set up SHO system
-function pendulum_dynamics(state) 
+function pendulum_dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where T <:Number
     pos = transpose(state[1,:]); vel = transpose(state[2,:])
-    [vel; -vel-sin.(pos)]
+    vcat(vel, -vel-sin.(pos))
+end
+function pendulum_dynamics(state::AbstractVector{T})::AbstractVector{T} where T <:Number
+    pos = state[1]; vel = state[2]
+    vcat(vel, -vel-sin.(pos))
 end
 lb = [-2*pi, -10.0]; ub = [2*pi, 10.0]
 
 # Make log version
 output_dim = 1
 κ=20.0
-pde_system_log, lyapunov_func = NeuralLyapunov.NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, output_dim, relu=(t)->log(1.0 + exp( κ * t)))
+pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, output_dim, relu=(t)->log(1.0 + exp( κ * t)))
 
 # Set up neural net 
 state_dim = length(lb)
@@ -43,7 +48,7 @@ end
 res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 
 # Optimize ReLU verion
-pde_system_relu, _ = NeuralLyapunov.NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, output_dim)
+pde_system_relu, _ = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, output_dim)
 prob_relu = discretize(pde_system_relu, discretization)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
 res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
@@ -51,7 +56,7 @@ prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Ad
 res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)
 
 # Get numerical numerical functions
-V_func, V̇_func = NeuralLyapunov.NumericalNeuralLyapunovFunctions(discretization.phi, res, lyapunov_func, pendulum_dynamics)
+V_func, V̇_func = NumericalNeuralLyapunovFunctions(discretization.phi, res, lyapunov_func, pendulum_dynamics)
 
 # Simulate
 xs,ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
