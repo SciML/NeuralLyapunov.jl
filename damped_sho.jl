@@ -2,7 +2,9 @@ using LinearAlgebra
 using NeuralPDE, Lux
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
-include("./NeuralLyapunov.jl") # Change this if we start using the module in more than one file (like a package)
+if !@isdefined(NeuralLyapunov) # Since it's not a normal package, we do this
+    include("./NeuralLyapunov.jl")
+end
 using .NeuralLyapunov
 
 # Set up SHO system
