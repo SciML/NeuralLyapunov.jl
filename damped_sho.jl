@@ -41,6 +41,7 @@ discretization = PhysicsInformedNN(chain, strategy)
 
 # Build optimization problem
 prob_log = discretize(pde_system_log, discretization)
+sym_prob_log = symbolic_discretize(pde_system_log, discretization)
 
 callback = function (p, l)
     println("loss: ", l)
@@ -53,6 +54,7 @@ res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 # Optimize ReLU verion
 pde_system_relu, _ = NeuralLyapunovPDESystem(SHO_dynamics, lb, ub, output_dim)
 prob_relu = discretize(pde_system_relu, discretization)
+sym_prob_relu = symbolic_discretize(pde_system_relu, discretization)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
 res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Adam to BFGS")
