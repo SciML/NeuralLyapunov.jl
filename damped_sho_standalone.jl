@@ -5,12 +5,12 @@ using Plots
 using ForwardDiff
 
 # Define parameters and differentials
-@parameters x1 x2
-x = [x1, x2]
+@parameters state1 state2
+x = [state1, state2]
 @variables u1(..) u2(..)
 
 # Define Lyapunov function
-dim_output = 1
+dim_output = 2
 "Symbolic form of neural network output"
 u(x) = [u1(x...), u2(x...)]
 δ = 0.01
@@ -36,8 +36,8 @@ V̇_sym(x) = SHO_dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
 eq_max = max(0.0, V̇_sym(x)) ~ 0.0
 κ = 20.
 eq_log = log(1.0 + exp( κ * V̇_sym(x))) ~ 0.0 # Stricter, but max(0, V̇) still trains fine
-domains = [ x1 ∈ (-2*pi, 2*pi),
-            x2 ∈ (-10.0, 10.0) 
+domains = [ state1 ∈ (-2*pi, 2*pi),
+            state2 ∈ (-10.0, 10.0) 
             ]
 bcs = [ V_sym([0.,0.]) ~ 0.0 ] 
 
@@ -82,11 +82,11 @@ res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 
 # Rebuild with weaker ReLU version
 @named pde_system_relu = PDESystem(eq_max, bcs, domains, x, u(x))
-prob_max = discretize(pde_system_relu, discretization)
-prob_max = Optimization.remake(prob_max, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
-res = Optimization.solve(prob_max, Adam(); callback=callback, maxiters=300)
-prob_max = Optimization.remake(prob_max, u0=res.u); println("Switching from Adam to BFGS")
-res = Optimization.solve(prob_max, BFGS(); callback=callback, maxiters=300)
+prob_relu = discretize(pde_system_relu, discretization)
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
+res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Adam to BFGS")
+res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)
 
 # Get numerical numerical functions
 

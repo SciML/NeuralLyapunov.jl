@@ -20,7 +20,7 @@ end
 lb = [-2*pi, -10.0]; ub = [2*pi, 10.0]
 
 # Make log version
-dim_output = 1
+dim_output = 2
 κ=20.0
 pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(SHO_dynamics, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)))
 
