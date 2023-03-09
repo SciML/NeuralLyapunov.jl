@@ -1,7 +1,7 @@
 module NeuralLyapunov
 
 import ForwardDiff
-import ModelingToolkit: PDESystem, ODEProblem
+using ModelingToolkit
 using LinearAlgebra
 
 export NeuralLyapunovPDESystem, NumericalNeuralLyapunovFunctions

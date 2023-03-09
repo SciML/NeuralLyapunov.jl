@@ -1,16 +1,16 @@
-using LinearAlgebra, ForwardDiff
+using LinearAlgebra
+using NeuralPDE, Lux, ModelingToolkit
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
-using NeuralPDE, Lux, ModelingToolkit
+using ForwardDiff
 
 # Define parameters and differentials
 @parameters x1 x2
 x = [x1, x2]
 @variables u1(..) u2(..)
-"Symbolic gradient with respect to (x, y)"
 
 # Define Lyapunov function
-dim_output = 2
+dim_output = 1
 "Symbolic form of neural network output"
 u(x) = [u1(x...), u2(x...)]
 δ = 0.01
@@ -18,19 +18,21 @@ u(x) = [u1(x...), u2(x...)]
 V_sym(x) = (u(x) - u([0.0,0.0])) ⋅ (u(x) - u([0.0,0.0])) + δ*log(1.0 + x ⋅ x)
 #V_sym(x0,y0) = (u(x0,y0)) ⋅ (u(x0,y0)) + δ*log(1. + x0^2 + y0^2)
 
-# Define dynamics and Lyapunov conditions
+# Define dynamics
 "Simple Harmonic Oscillator Dynamics"
-function dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where T <:Number
+function SHO_dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where T <:Number
     pos = transpose(state[1,:]); vel = transpose(state[2,:])
     vcat(vel, -vel-pos)
 end
-function dynamics(state::AbstractVector{T})::AbstractVector{T} where T <:Number
+function SHO_dynamics(state::AbstractVector{T})::AbstractVector{T} where T <:Number
     pos = state[1]; vel = state[2]
     vcat(vel, -vel-pos)
 end
-NeuralPDE.dottable_(x::typeof(dynamics)) = false
+NeuralPDE.dottable_(x::typeof(SHO_dynamics)) = false
+
+# Define Lyapunov conditions
 "Symbolic time derivative of the Lyapunov function"
-V̇_sym(x) = dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
+V̇_sym(x) = SHO_dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
 eq_max = max(0.0, V̇_sym(x)) ~ 0.0
 κ = 20.
 eq_log = log(1.0 + exp( κ * V̇_sym(x))) ~ 0.0 # Stricter, but max(0, V̇) still trains fine
@@ -43,24 +45,27 @@ bcs = [ V_sym([0.,0.]) ~ 0.0 ]
 @named pde_system_log = PDESystem(eq_log, bcs, domains, x, u(x))
 
 # Define neural network discretization
-dim_input = length(domains)
+dim_state = length(domains)
 dim_hidden = 15
 chain = [Lux.Chain(
-                Dense(dim_input, dim_hidden, tanh), 
+                Dense(dim_state, dim_hidden, tanh), 
                 Dense(dim_hidden, dim_hidden, tanh),
                 Dense(dim_hidden, 1, use_bias=false)
                 )
             for _ in 1:dim_output
             ]
 
-#strategy = QuadratureTraining()
+# Define neural network discretization
 strategy = GridTraining(0.1)
+#strategy = QuadratureTraining()
 #strategy = QuasiRandomTraining(1000, bcs_points=3)
 #strategy = StochasticTraining(1000, bcs_points=1)
 
 discretization = PhysicsInformedNN(chain, strategy)
+
+# Build optimization problem
 prob_log = discretize(pde_system_log, discretization)
-#symprob_log = symbolic_discretize(pde_system_log, discretization)
+sym_prob_log = symbolic_discretize(pde_system_log, discretization)
 
 callback = function (p, l)
     println("loss: ", l)
@@ -75,13 +80,15 @@ end
 #opt = Optim.SimulatedAnnealing()
 res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 
-# Rebuild with weaker max version
-@named pde_system_max = PDESystem(eq_max, bcs, domains, x, u(x))
-prob_max = discretize(pde_system_max, discretization)
+# Rebuild with weaker ReLU version
+@named pde_system_relu = PDESystem(eq_max, bcs, domains, x, u(x))
+prob_max = discretize(pde_system_relu, discretization)
 prob_max = Optimization.remake(prob_max, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
 res = Optimization.solve(prob_max, Adam(); callback=callback, maxiters=300)
 prob_max = Optimization.remake(prob_max, u0=res.u); println("Switching from Adam to BFGS")
 res = Optimization.solve(prob_max, BFGS(); callback=callback, maxiters=300)
+
+# Get numerical numerical functions
 
 phi = discretization.phi
 
@@ -98,7 +105,7 @@ end
 ∇V_func(x0,y0) = ForwardDiff.gradient(p -> V_func(p[1], p[2]), [x0, y0])
 
 "Numerical time derivative of Lyapunov function"
-V̇_func(x0,y0) = dynamics([x0,y0]) ⋅ ∇V_func(x0,y0)
+V̇_func(x0,y0) = SHO_dynamics([x0,y0]) ⋅ ∇V_func(x0,y0)
 
 # Simulate
 xs,ys = [ModelingToolkit.infimum(d.domain):0.02:ModelingToolkit.supremum(d.domain) for d in domains]
