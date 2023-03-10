@@ -66,8 +66,10 @@ V_func, V̇_func = NumericalNeuralLyapunovFunctions(discretization.phi, res, lya
 # Simulate
 xs,ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
 states = Iterators.map(x->[x...], Iterators.product(ys, xs))
-V_predict = V_func(hcat(states...))
-dVdt_predict = V̇_func(hcat(states...))
+#V_predict = V_func(hcat(states...))
+#dVdt_predict = V̇_func(hcat(states...))
+V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
+dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Print statistics
 println("V(0.,0.) = ", V_func([0.,0.]))
@@ -76,8 +78,8 @@ println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func([0.,0.]), maximum
 
 # Plot results
 
-p1 = plot(xs, ys, reshape(V_predict, (length(ys), length(xs))), linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
-p2 = plot(xs, ys, reshape(dVdt_predict, (length(ys), length(xs))), linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
+p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
+p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
 #p2 = scatter!([-pi, pi], [0., 0.], label="Unstable equilibria");
 #p2 = scatter!([-2*pi, 0., 2*pi], [0., 0., 0.], label="Stable equilibria");
 plot(p1, p2)
