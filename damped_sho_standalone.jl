@@ -120,7 +120,5 @@ println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func(0.,0.), maximum(d
 # Plot results
 p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
-#p2 = scatter!([-pi, pi], [0., 0.], label="Unstable equilibria");
-#p2 = scatter!([-2*pi, 0., 2*pi], [0., 0., 0.], label="Stable equilibria");
 plot(p1, p2)
 # savefig("Lyapunov_sol")
