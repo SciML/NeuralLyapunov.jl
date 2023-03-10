@@ -43,7 +43,7 @@ function NeuralLyapunovPDESystem(dynamics::Function, lb, ub, output_dim::Integer
 
     # Make Lyapunov function 
     "Numerical form of neural network output"
-    u_func(phi, res, x) = vcat([ phi[i](x, res.u.depvar[net_syms[i]]) for i in 1:output_dim ]...)
+    u_func(phi, res, x) = reduce( vcat, phi[i](x, res.u.depvar[net_syms[i]]) for i in 1:output_dim )
 
     "Numerical form of Lyapunov function"
     function V_func(phi, res, x) 
