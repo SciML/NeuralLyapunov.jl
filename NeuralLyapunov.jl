@@ -67,8 +67,8 @@ function NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, dynamics::
     V_func(state::AbstractVector) = first(lyapunov_func(phi, result, state))
 
     "Numerical gradient of Lyapunov function"
-    ∇V_func(state::AbstractVector) = grad(y -> V_func(y), state)
-    ∇V_func(state::AbstractMatrix) = mapslices(x -> ∇V_func(x), state, dims=[1])
+    ∇V_func(state::AbstractVector) = grad(V_func, state)
+    ∇V_func(state::AbstractMatrix) = mapslices(∇V_func, state, dims=[1])
 
     "Numerical time derivative of Lyapunov function"
     V̇_func(state::AbstractVector) = dynamics(state) ⋅ ∇V_func(state)
