@@ -87,7 +87,7 @@ function get_dynamics_from_ODEProblem(prob::ODEProblem)::Function
     f_ = if dynamicsODEfunc.mass_matrix == I
         state -> dynamicsODEfunc.f(state, prob.p, 0.0) # Let time be 0.0, since we're only considering time-invariant dynamics
     else
-        throw(ErrorException("For now, we only accept ODEs, not DAEs"))
+        throw(ErrorException("DAEs are not supported at this time"))
     end
     f(state::AbstractVector) = f_(state)
     f(state::AbstractMatrix) = mapslices(f_, state, dims=[1])
