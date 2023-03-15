@@ -65,7 +65,7 @@ V_func, V̇_func = NumericalNeuralLyapunovFunctions(discretization.phi, res, lya
 
 # Simulate
 xs,ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
-states = Iterators.map(x->[x...], Iterators.product(xs, ys))
+states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
 # V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
@@ -79,6 +79,10 @@ println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func([0.,0.]), maximum
 # Plot results
 
 p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
+p1 = scatter!([0],[0], label="Equilibrium");
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
-plot(p1, p2)
+p2 = scatter!([0],[0], label="Equilibrium");
+p3 = plot(xs, ys, dVdt_predict.<0, linetype=:contourf, title="dV/dt < 0", xlabel="x", ylabel="ẋ", colorbar=false);
+p3 = scatter!([0],[0], label="Equilibrium");
+plot(p1, p2, p3)
 # savefig("SHO")

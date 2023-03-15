@@ -17,12 +17,13 @@ function pendulum_dynamics(state::AbstractVector{T})::AbstractVector{T} where T 
     pos = state[1]; vel = state[2]
     vcat(vel, -vel-sin.(pos))
 end
-lb = [-2*pi, -10.0]; ub = [2*pi, 10.0]
+lb = [-2*pi, -10.0]; ub = [6*pi, 10.0]
+fixed_point = [2*pi, 0.0]
 
 # Make log version
 dim_output = 2
 κ=20.0
-pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)))
+pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)), fixed_point=fixed_point)
 
 # Define neural network discretization
 dim_state = length(lb)
@@ -52,7 +53,7 @@ end
 res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 
 # Rebuild with weaker ReLU version
-pde_system_relu, _ = NeuralLyapunovPDESystem(SHO_dynamics, lb, ub, dim_output)
+pde_system_relu, _ = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, dim_output)
 prob_relu = discretize(pde_system_relu, discretization)
 sym_prob_relu = symbolic_discretize(pde_system_relu, discretization)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
@@ -65,22 +66,25 @@ V_func, V̇_func = NumericalNeuralLyapunovFunctions(discretization.phi, res, lya
 
 # Simulate
 xs,ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
-states = Iterators.map(x->[x...], Iterators.product(xs, ys))
+states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
 # V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
 # dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Print statistics
-println("V(0.,0.) = ", V_func([0.,0.]))
-println("V ∋ [", min(V_func([0.,0.]), minimum(V_predict)), ", ", maximum(V_predict), "]")
-println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func([0.,0.]), maximum(dVdt_predict)), "]")
+println("V(2π, 0) = ", V_func(fixed_point))
+println("V ∋ [", min(V_func(fixed_point), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func(fixed_point), maximum(dVdt_predict)), "]")
 
 # Plot results
 
 p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
-p2 = scatter!([-pi, pi], [0., 0.], label="Unstable equilibria");
-p2 = scatter!([-2*pi, 0., 2*pi], [0., 0., 0.], label="Stable equilibria");
+p2 = scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria");
+p2 = scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria");
 plot(p1, p2)
 # savefig("Pendulum")
+plot(xs,ys, dVdt_predict.<0, linetype=:contourf, title="dVdt<0", xlabel="x", ylabel="ẋ", levels=1,colorbar_ticks=(0:1,["False","True"]))
+scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria")
+scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria")
