@@ -1,6 +1,13 @@
+using LinearAlgebra
 using DifferentialEquations
+using NeuralPDE, Lux
+using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NLsolve
+if !@isdefined(NeuralLyapunov) # Since it's not a normal package, we do this
+    include("./NeuralLyapunov.jl")
+end
+using .NeuralLyapunov
 
 p_vsm = [
     # Outer Control VSM
@@ -259,21 +266,75 @@ end
 # Initialize
 init_model = (dx, x) -> inverter_vsm!(dx, x, p_vsm, 0.0)
 sys_solve = nlsolve(init_model, init_guess_x0)
-init_x0 = sys_solve.zero
+fixed_point = sys_solve.zero
 
 # Construct Problem
 tspan = (0.0, 2.0)
-prob = ODEProblem(inverter_vsm,init_x0,tspan, p_vsm)
+ODEprob = ODEProblem(inverter_vsm,fixed_point,tspan, p_vsm)
 
-# Solve Problem
-sol = solve(prob, TRBDF2())
-# Should stay still since is a stable operating point
-plot(sol)
+lb = -0.5*ones(size(fixed_point)); ub = 1.5*ones(size(fixed_point))
 
-# Do some dynamics
-p_vsm_new = copy(p_vsm)
-p_vsm_new[26] = 1.0
+# Make log version
+dim_output = 1
+κ=20.0
+pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)), fixed_point=fixed_point);
 
-prob_new = ODEProblem(inverter_vsm,init_x0,tspan, p_vsm_new)
-sol_new = solve(prob_new, TRBDF2())
-plot(sol_new, legend = :outertopright)
+# Set up neural net 
+dim_state = length(lb)
+dim_hidden = 3*dim_state
+chain = [Lux.Chain(
+                Dense(dim_state, dim_hidden, tanh), 
+                Dense(dim_hidden, dim_hidden, tanh),
+                Dense(dim_hidden, 1, use_bias=false)
+                )
+            for _ in 1:dim_output
+            ]
+
+# Define neural network discretization
+strategy = QuasiRandomTraining(100)
+discretization = PhysicsInformedNN(chain, strategy)
+
+# Build optimization problem
+prob_log = discretize(pde_system_log, discretization)
+sym_prob_log = symbolic_discretize(pde_system_log, discretization)
+
+callback = function (p, l)
+    println("loss: ", l)
+    return false
+end
+
+# Optimize log version
+res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
+
+# Optimize ReLU verion
+pde_system_relu, _ = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output);
+prob_relu = discretize(pde_system_relu, discretization);
+sym_prob_relu = symbolic_discretize(pde_system_relu, discretization);
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
+res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Adam to BFGS")
+res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)
+
+# Get numerical numerical functions
+V_func, V̇_func = NumericalNeuralLyapunovFunctions(discretization.phi, res, lyapunov_func, ODEprob)
+
+
+############ This is not right ###########################
+"""
+# Simulate
+xs,ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
+states = Iterators.map(collect, Iterators.product(xs, ys))
+V_predict = vec(V_func(hcat(states...)))
+dVdt_predict = vec(V̇_func(hcat(states...)))
+
+# Print statistics
+println("V(equilibrium) = ", V_func(fixed_point))
+println("V ∋ [", min(V_func(fixed_point), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func(fixed_point), maximum(dVdt_predict)), "]")
+
+# Plot results
+
+p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
+p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
+plot(p1, p2)
+"""
