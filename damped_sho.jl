@@ -71,6 +71,11 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 # V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
 # dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
+# Get RoA Estimate
+data = reshape(V_predict, (length(xs), length(ys)));
+data = vcat(data[1,:], data[end,:], data[:,1],data[:,end]);
+ρ = minimum(data)
+
 # Print statistics
 println("V(0.,0.) = ", V_func([0.,0.]))
 println("V ∋ [", min(V_func([0.,0.]), minimum(V_predict)), ", ", maximum(V_predict), "]")
@@ -82,7 +87,8 @@ p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel
 p1 = scatter!([0],[0], label="Equilibrium");
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
 p2 = scatter!([0],[0], label="Equilibrium");
-p3 = plot(xs, ys, dVdt_predict.<0, linetype=:contourf, title="dV/dt < 0", xlabel="x", ylabel="ẋ", colorbar=false);
-p3 = scatter!([0],[0], label="Equilibrium");
-plot(p1, p2, p3)
+p3 = plot(xs, ys, V_predict.<ρ, linetype=:contourf, title="Estimated RoA", xlabel="x", ylabel="ẋ", colorbar=false);
+p4 = plot(xs, ys, dVdt_predict.<0, linetype=:contourf, title="dV/dt < 0", xlabel="x", ylabel="ẋ", colorbar=false);
+p4 = scatter!([0],[0], label="Equilibrium");
+plot(p1, p2, p3,p4)
 # savefig("SHO")

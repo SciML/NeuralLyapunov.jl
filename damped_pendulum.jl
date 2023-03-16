@@ -17,7 +17,7 @@ function pendulum_dynamics(state::AbstractVector{T})::AbstractVector{T} where T 
     pos = state[1]; vel = state[2]
     vcat(vel, -vel-sin.(pos))
 end
-lb = [-2*pi, -10.0]; ub = [6*pi, 10.0]
+lb = [0.0, -10.0]; ub = [4*pi, 10.0]
 fixed_point = [2*pi, 0.0]
 
 # Make log version
@@ -83,8 +83,8 @@ p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
 p2 = scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria");
 p2 = scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria");
-plot(p1, p2)
+p3 = plot(xs,ys, dVdt_predict.<0, linetype=:contourf, title="dVdt<0", xlabel="x", ylabel="ẋ", colorbar=false);
+p3 = scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria");
+p3 = scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria");
+plot(p1, p2, p3)
 # savefig("Pendulum")
-plot(xs,ys, dVdt_predict.<0, linetype=:contourf, title="dVdt<0", xlabel="x", ylabel="ẋ", levels=1,colorbar_ticks=(0:1,["False","True"]))
-scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria")
-scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria")
