@@ -23,7 +23,7 @@ fixed_point = [2*pi, 0.0]
 # Make log version
 dim_output = 2
 κ=20.0
-pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)), fixed_point=fixed_point)
+pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, dim_output, δ=0.1, relu=(t)->log(1.0 + exp( κ * t))/κ, fixed_point=fixed_point)
 
 # Define neural network discretization
 dim_state = length(lb)
@@ -72,19 +72,42 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 # V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
 # dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
+# Get RoA Estimate
+data = reshape(V_predict, (length(xs), length(ys)));
+data = vcat(data[1,:], data[end,:], data[:,1],data[:,end]);
+ρ_max = minimum(data)
+ρ_min = 1e-4
+ρ = ρ_max
+while abs(ρ_max - ρ_min) > maximum(data)*1e-6
+    RoA_est = ρ_min .< V_predict .< ρ;
+    if sum(RoA_est) == 0
+        ρ = ρ_min
+        break
+    end
+    if maximum(dVdt_predict[RoA_est]) > 0
+        ρ_max = ρ
+    else
+        ρ_min = ρ
+    end
+    ρ = (ρ_max +ρ_min)/2
+end
+
 # Print statistics
 println("V(2π, 0) = ", V_func(fixed_point))
 println("V ∋ [", min(V_func(fixed_point), minimum(V_predict)), ", ", maximum(V_predict), "]")
 println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func(fixed_point), maximum(dVdt_predict)), "]")
+println("Certified V ∈ [0.0, ", ρ, ")")
 
 # Plot results
+#ρ = 1
 
 p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
 p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
 p2 = scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria");
 p2 = scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria");
-p3 = plot(xs,ys, dVdt_predict.<0, linetype=:contourf, title="dVdt<0", xlabel="x", ylabel="ẋ", colorbar=false);
-p3 = scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria");
-p3 = scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria");
-plot(p1, p2, p3)
+p3 = plot(xs, ys, V_predict .≤ ρ, linetype=:contourf, title="Estimated RoA", xlabel="x", ylabel="ẋ", colorbar=false);
+p4 = plot(xs,ys, dVdt_predict.<0, linetype=:contourf, title="dVdt<0", xlabel="x", ylabel="ẋ", colorbar=false);
+p4 = scatter!((lb[1]+pi):2*pi:ub[1], zeros(4), label="Unstable equilibria");
+p4 = scatter!(lb[1]:2*pi:ub[1], zeros(5), label="Stable equilibria");
+plot(p1, p2, p3, p4)
 # savefig("Pendulum")
