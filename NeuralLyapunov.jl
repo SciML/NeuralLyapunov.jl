@@ -34,11 +34,14 @@ function NeuralLyapunovPDESystem(dynamics::Function, lb, ub, output_dim::Integer
     # V̇_sym(x) is the symbolic time derivative of the Lyapunov function
     V̇_sym(x) = dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
     # V̇ should be negative when V < 1, and try not to let V >> 1
-    eqs = [ relu(V̇_sym(state)+ϵ*state⋅state)*relu(1 - V_sym(state)) ~ 0.0,
+    eqs = [ relu(V̇_sym(state)+ϵ*(state - fixed_point)⋅(state - fixed_point))*relu(1 - V_sym(state)) ~ 0.0,
             relu(V_sym(state) - 1) ~ 0.0
             ]
+    #eqs = [ relu(V̇_sym(state)+ϵ*(state - fixed_point)⋅(state - fixed_point)) ~ 0.0 ]
 
     # Construct PDESystem
+    bcs = vcat( collect(V_sym(vcat(state[1:i-1], lb[i], state[i+1:end])) ~ 1.1 for i in 1:state_dim),
+                collect(V_sym(vcat(state[1:i-1], ub[i], state[i+1:end])) ~ 1.1 for i in 1:state_dim))
     bcs = [ V_sym(fixed_point) ~ 0.0 ] # V should be 0 at the fixed point
     @named lyapunov_pde_system = PDESystem(eqs, bcs, domains, state, u(state))
 
