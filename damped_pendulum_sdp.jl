@@ -47,23 +47,26 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 # dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Get RoA Estimate
-data = reshape(V_predict, (length(xs), length(ys)));
-edges = vcat(data[1,:], data[end,:], data[:,1],data[:,end]);
-ρ_max = minimum(edges)
-ρ_min = 0.0
-ρ = ρ_max
-while true #abs(ρ_max - ρ_min) > maximum(data)*1e-6
-    marginal_RoA_est = ρ_min .< V_predict .< ρ;
-    if sum(marginal_RoA_est) == 0
-        ρ = ρ_min
-        break
+ρ = let
+    data = reshape(V_predict, (length(xs), length(ys)));
+    edges = vcat(data[1,:], data[end,:], data[:,1],data[:,end]);
+    ρ_max = minimum(edges)
+    ρ_min = 0.0
+    ρ = ρ_max
+    while true #abs(ρ_max - ρ_min) > maximum(data)*1e-6
+        marginal_RoA_est = ρ_min .< V_predict .< ρ;
+        if sum(marginal_RoA_est) == 0
+            ρ = ρ_min
+            break
+        end
+        if maximum(dVdt_predict[marginal_RoA_est]) > 0
+            ρ_max = ρ
+        else
+            ρ_min = ρ
+        end
+        ρ = (ρ_max +ρ_min)/2
     end
-    if maximum(dVdt_predict[marginal_RoA_est]) > 0
-        ρ_max = ρ
-    else
-        ρ_min = ρ
-    end
-    ρ = (ρ_max +ρ_min)/2
+    ρ_min
 end
 
 # Print statistics
