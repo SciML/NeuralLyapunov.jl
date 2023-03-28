@@ -1,16 +1,10 @@
 function NeuralLyapunovPDESystem(dynamics::Function, lb, ub, output_dim::Integer=1; δ::Real=0.01, ϵ::Real=0.01, relu=(t)->max(0.0,t), fixed_point=nothing)::Tuple{PDESystem, Function}
     # Define state symbols
-    state_dim = lb isa AbstractArray ? length(lb) : ub isa AbstractArray ? length(ub) : 1
+    state_dim = length(lb) 
     state_syms = [Symbol(:state, i) for i in 1:state_dim]
     state = [first(@parameters $s) for s in state_syms]
 
     # Define domains
-    if !(lb isa AbstractArray)
-        lb = ones(state_dim) .* lb
-    end
-    if !(ub isa AbstractArray)
-        ub = ones(state_dim) .* ub
-    end
     domains = [ state[i] ∈ (lb[i], ub[i]) for i in 1:state_dim ]
 
     # Define Lyapunov function

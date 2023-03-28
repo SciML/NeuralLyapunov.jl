@@ -1,21 +1,12 @@
 """
-    get_RoA_estimate(V, dVdt, lb, ub; nthreads)
+    get_RoA_estimate(V, dVdt, lb, ub)
 
 Finds the level of the largest sublevelset in the domain in which the Lyapunov
 conditions are met. Specifically finds the largest ρ such that
     V(x) < ρ => lb .< x .< ub && dVdt(x) < 0
-To parallelize the search over each face of the bounding box use nthreads to
-specify a number of threads.
 """
 function get_RoA_estimate(V, dVdt, lb, ub; fixed_point=nothing, ∇V=nothing)
-
-    state_dim = lb isa AbstractArray ? length(lb) : ub isa AbstractArray ? length(ub) : 1
-    if !(lb isa AbstractArray)
-        lb = ones(state_dim) .* lb
-    end
-    if !(ub isa AbstractArray)
-        ub = ones(state_dim) .* ub
-    end
+    state_dim = length(lb) 
 
     fixed_point = isnothing(fixed_point) ? zeros(state_dim) : fixed_point
 
