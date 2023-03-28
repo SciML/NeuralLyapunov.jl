@@ -4,7 +4,7 @@ using NLsolve
 
 r_line = 0.01 # line+gen resistance pu
 x_line = 0.1 # line+gen reactance pu
-y_line = 1.0/(r_line + x_line * 1im) # line+gen admittance
+y_line = 1.0 / (r_line + x_line * 1im) # line+gen admittance
 
 g_line = real(y_line) # line conductance pu
 b_line = imag(y_line) # line+gen susceptance pu
@@ -14,7 +14,7 @@ Pm = 0.5 # mechanical power from gen in pu
 E = 1.01 # Generator voltage
 E_∞ = 1.0 # Infinite bus voltage
 H = 8.0 # Generator Inertia [seconds]
-Ω_b = 2*pi*60 # Base Frequency
+Ω_b = 2 * pi * 60 # Base Frequency
 T = 0.1 # Damping Coefficient
 
 p_omib = [
@@ -26,10 +26,7 @@ p_omib = [
     Ω_b, # nominal frequency
 ]
 
-init_guess_x0 = [
-    0.05,
-    0.0,
-]
+init_guess_x0 = [0.05, 0.0]
 
 """
 This system describes a classic machine model against an infinite bus, described as:
@@ -58,7 +55,7 @@ sys_solve = nlsolve(init_model, init_guess_x0)
 init_x0 = sys_solve.zero
 
 tspan = (0.0, 5.0)
-prob = ODEProblem(omib_diffeq!,init_x0,tspan, p_omib)
+prob = ODEProblem(omib_diffeq!, init_x0, tspan, p_omib)
 
 # Solve Problem
 sol = solve(prob, TRBDF2())
@@ -67,7 +64,7 @@ plot(sol)
 
 # Add some dynamics
 x0_perturbed = [0.06, 0.0]
-prob2 = ODEProblem(omib_diffeq!,x0_perturbed,tspan, p_omib)
+prob2 = ODEProblem(omib_diffeq!, x0_perturbed, tspan, p_omib)
 
 # Solve Problem
 sol2 = solve(prob2, TRBDF2())
