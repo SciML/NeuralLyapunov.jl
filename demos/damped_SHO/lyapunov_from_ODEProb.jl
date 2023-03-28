@@ -3,10 +3,7 @@ using DifferentialEquations
 using NeuralPDE, Lux
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
-if !@isdefined(NeuralLyapunov) # Since it's not a normal package, we do this
-    include("./NeuralLyapunov.jl")
-end
-using .NeuralLyapunov
+using NeuralLyapunov
 
 # Set up the ODE
 @variables t x(t)
@@ -24,7 +21,7 @@ lb = [-2*pi, -10.0]; ub = [2*pi, 10.0]
 # Make log version
 dim_output = 1
 κ=20.0
-pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)))
+pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t))/κ)
 
 # Set up neural net 
 dim_state = length(lb)
@@ -55,7 +52,7 @@ res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 # Optimize ReLU verion
 pde_system_relu, _ = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output)
 prob_relu = discretize(pde_system_relu, discretization)
-prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇))/κ to max(0,V̇)")
 res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Adam to BFGS")
 res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)

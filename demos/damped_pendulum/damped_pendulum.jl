@@ -2,10 +2,7 @@ using LinearAlgebra
 using NeuralPDE, Lux, ModelingToolkit
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
-if !@isdefined(NeuralLyapunov) # Since it's not a normal package, we do this
-    include("./NeuralLyapunov.jl")
-end
-using .NeuralLyapunov
+using NeuralLyapunov
 
 # Define dynamics
 "Pendulum Dynamics"
@@ -56,7 +53,7 @@ res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 pde_system_relu, _ = NeuralLyapunovPDESystem(pendulum_dynamics, lb, ub, dim_output)
 prob_relu = discretize(pde_system_relu, discretization)
 sym_prob_relu = symbolic_discretize(pde_system_relu, discretization)
-prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇))/κ to max(0,V̇)")
 res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Adam to BFGS")
 res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)

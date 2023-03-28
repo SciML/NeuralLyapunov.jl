@@ -4,10 +4,7 @@ using NeuralPDE, Lux
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NLsolve
-if !@isdefined(NeuralLyapunov) # Since it's not a normal package, we do this
-    include("./NeuralLyapunov.jl")
-end
-using .NeuralLyapunov
+using NeuralLyapunov
 
 p_vsm = [
     # Outer Control VSM
@@ -277,7 +274,7 @@ lb = -0.5*ones(size(fixed_point)); ub = 1.5*ones(size(fixed_point))
 # Make log version
 dim_output = 1
 κ=20.0
-pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t)), fixed_point=fixed_point);
+pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output, relu=(t)->log(1.0 + exp( κ * t))/κ, fixed_point=fixed_point);
 
 # Set up neural net 
 dim_state = length(lb)
@@ -310,7 +307,7 @@ res = Optimization.solve(prob_log, Adam(); callback=callback, maxiters=300)
 pde_system_relu, _ = NeuralLyapunovPDESystem(ODEprob, lb, ub, dim_output);
 prob_relu = discretize(pde_system_relu, discretization);
 sym_prob_relu = symbolic_discretize(pde_system_relu, discretization);
-prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇)) to max(0,V̇)")
+prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from log(1 + κ exp(V̇))/κ to max(0,V̇)")
 res = Optimization.solve(prob_relu, Adam(); callback=callback, maxiters=300)
 prob_relu = Optimization.remake(prob_relu, u0=res.u); println("Switching from Adam to BFGS")
 res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)
@@ -318,23 +315,4 @@ res = Optimization.solve(prob_relu, BFGS(); callback=callback, maxiters=300)
 # Get numerical numerical functions
 V_func, V̇_func = NumericalNeuralLyapunovFunctions(discretization.phi, res, lyapunov_func, ODEprob)
 
-
-############ This is not right ###########################
-"""
-# Simulate
-xs,ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
-states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V_func(hcat(states...)))
-dVdt_predict = vec(V̇_func(hcat(states...)))
-
-# Print statistics
-println("V(equilibrium) = ", V_func(fixed_point))
-println("V ∋ [", min(V_func(fixed_point), minimum(V_predict)), ", ", maximum(V_predict), "]")
-println("V̇ ∋ [", minimum(dVdt_predict), ", ", max(V̇_func(fixed_point), maximum(dVdt_predict)), "]")
-
-# Plot results
-
-p1 = plot(xs, ys, V_predict, linetype=:contourf, title = "V", xlabel="x", ylabel="ẋ");
-p2 = plot(xs, ys, dVdt_predict, linetype=:contourf, title="dV/dt", xlabel="x", ylabel="ẋ");
-plot(p1, p2)
-"""
+# TODO: Check Lyapunov functions
