@@ -55,7 +55,13 @@ function NeuralLyapunovPDESystem(
     u_func(phi, res, x) =
         reduce(vcat, Array(phi[i](x, res.u.depvar[net_syms[i]])) for i = 1:output_dim)
 
-    # V_func is the numerical form of Lyapunov function
+    """
+        V_func(phi, res, x)
+    Numerical form of the Lyapunov function.
+
+    Evaluates the Lyapunov function using the neural net phi and parameters res
+    at the state x. If x is a matrix of states, V_func operates columnwise.
+    """
     function V_func(phi, res, x)
         u_vec = u_func(phi, res, x) .- u_func(phi, res, fixed_point)
         u2 = mapslices(norm, u_vec, dims = [1]) .^ 2
@@ -79,13 +85,22 @@ function NeuralLyapunovPDESystem(
     return NeuralLyapunovPDESystem(f, lb, ub, output_dim; δ, relu, fixed_point)
 end
 
+"""
+    NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, dynamics, grad)
+Returns the Lyapunov function and its time derivative: V(state), V̇(state)
+
+These functions can operate on a state vector or columnwise on a matrix of state
+vectors. Gradients are calculated using grad, which defaults to ForwardDiff.gradient.
+phi is the neural network with parameters given by result. lyapunov_func is an 
+output of NeuralLyapunovPDESystem.
+"""
 function NumericalNeuralLyapunovFunctions(
     phi,
     result,
     lyapunov_func,
     dynamics::Function;
     grad = ForwardDiff.gradient,
-)
+)::Tuple{Function, Function}
     # Numerical form of Lyapunov function
     V_func(state::AbstractMatrix) = lyapunov_func(phi, result, state)
     V_func(state::AbstractVector) = first(lyapunov_func(phi, result, state))
@@ -113,11 +128,19 @@ function NumericalNeuralLyapunovFunctions(
     lyapunov_func,
     dynamics::ODEProblem;
     grad = ForwardDiff.gradient,
-)
+)::Tuple{Function, Function}
     f = get_dynamics_from_ODEProblem(dynamics)
     return NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, f; grad)
 end
 
+
+"""
+    get_dynamics_from_ODEProblem(prob)
+Extracts f such that ODEProblem is ẋ = f(x)
+
+The returned function f can operate on a single x vector or columnwise on a 
+matrix of x values.
+"""
 function get_dynamics_from_ODEProblem(prob::ODEProblem)::Function
     dynamicsODEfunc = prob.f
     f_ = if dynamicsODEfunc.mass_matrix == I
