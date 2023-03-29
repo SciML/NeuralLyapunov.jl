@@ -7,9 +7,11 @@ Lyapunov conditions are met. Specifically finds the largest ρ such that
 """
 function get_RoA_estimate(V, dVdt, lb, ub; fixed_point = nothing, ∇V = nothing)
     state_dim = length(lb)
-
     fixed_point = isnothing(fixed_point) ? zeros(state_dim) : fixed_point
+    get_RoA_estimate(V, dVdt, state_dim, lb, ub, fixed_point, ∇V)
+end
 
+function get_RoA_estimate(V, dVdt, state_dim, lb, ub, fixed_point, ∇V)
     # Let ρ_max = minimum value of V on the boundary
     # TODO: @view to speed up?
     candidates = Vector{Any}(undef, 2 * state_dim)
@@ -35,15 +37,13 @@ function get_RoA_estimate(V, dVdt, lb, ub; fixed_point = nothing, ∇V = nothing
         prob = OptimizationProblem(f, state0, lb = _lb, ub = _ub)
         opt = OptimizationOptimJL.ParticleSwarm(lower = _lb, upper = _ub, n_particles = 100)
         res = solve(prob, opt)
-        @show candidates[j] = vcat(res.u[1:i-1], b, res.u[i:end])
-        @show V(candidates[j])
+        candidates[j] = vcat(res.u[1:i-1], b, res.u[i:end])
+        V(candidates[j])
     end
-    @show ρ_max, j_guess = findmin(V, candidates)
-
-    # Find a point just interior of the boundary to start optimization
-    guess = candidates[j_guess]
-    i_bd = (j_guess - 1) % state_dim + 1
-    guess[i_bd] = 0.9 * (guess[i_bd] - fixed_point[i_bd]) + fixed_point[i_bd]
+    ρ_max, j_opt = findmin(V, candidates)
+    i_bd = (j_opt - 1) % state_dim + 1
+    x_opt = candidates[j_opt]
+    x_opt[i_bd] -= √eps(typeof(x_opt[i_bd])) * sign(x_opt[i_bd] - fixed_point[i_bd]) 
 
     # Binary search for max ρ : ( (max V̇(x) : V(x) < ρ) < 0)
     ρ_min = 0.0
@@ -62,19 +62,23 @@ function get_RoA_estimate(V, dVdt, lb, ub; fixed_point = nothing, ∇V = nothing
         V(x)
     end
     function ∇V_param(∇V_out, x, p)
-        ∇V_out .= transpose(∇V(x))
+        ∇V_out .=  reshape(∇V(x), size(∇V_out))
     end
     function ∇V_param(x, p)
         ∇V(x)
     end
+
     f = OptimizationFunction{true}(
         negV̇,
         Optimization.AutoFiniteDiff();
         cons = V_param,
         cons_j = ∇V_param,
     )
+    cb = (x, negdVdt) -> negdVdt < 0 # i.e., V̇ > 0
 
-    while abs(ρ_max - ρ_min) > √eps(Float64)
+    while abs(ρ_max - ρ_min) > √eps(typeof(ρ_min))
+        # Find a point just interior of the boundary to start optimization
+        guess = initialize_guess(V_param, lb, ub, ρ_min, ρ, x_opt; ∇V_param)
         # Find max V̇(x) : ρ_min ≤ V(x) < ρ_max
         # Since, we've already verified V(x) < ρ_min and excluded V(x) > ρ_max
         prob = OptimizationProblem{true}(
@@ -84,18 +88,45 @@ function get_RoA_estimate(V, dVdt, lb, ub; fixed_point = nothing, ∇V = nothing
             ub = ub,
             lcons = [ρ_min],
             ucons = [ρ],
+            callback = cb,
         )
         opt = OptimizationOptimJL.IPNewton()
         res = solve(prob, opt, allow_f_increases = true, successive_f_tol = 2)
         V̇_max = dVdt(res.u)
 
         if V̇_max > √eps(Float64)
-            ρ_max = V(res.u)
-            guess = 0.9 * (res.u - fixed_point) + fixed_point
+            x_opt = res.u
+            ρ_max = V(x_opt)
         else
             ρ_min = ρ
         end
         ρ = (ρ_max + ρ_min) / 2
     end
     return ρ_min
+end
+
+"""
+    initialize_guess(V_param, lb, ub, ρ_min, ρ, x_opt; ∇V_param = nothing)
+Finds a point x of the same shape as x_opt such that ρ_min < V(x) < ρ
+"""
+function initialize_guess(V_param, lb, ub, ρ_min, ρ, x_opt; ∇V_param = nothing)
+    f = OptimizationFunction{true}(
+        V_param,
+        Optimization.AutoFiniteDiff();
+        grad = ∇V_param,
+        cons = V_param,
+        cons_j = ∇V_param,
+    )
+    prob = OptimizationProblem{true}(
+        f,
+        x_opt,
+        lb = lb,
+        ub = ub,
+        lcons = [ρ_min],
+        ucons = [Inf]
+    )
+    opt = OptimizationOptimJL.IPNewton()
+    cb = (x, V) -> V < ρ
+    res = solve(prob, opt, allow_f_increases = true, successive_f_tol = 2, callback=cb)
+    return res.u
 end
