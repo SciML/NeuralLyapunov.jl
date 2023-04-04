@@ -87,7 +87,8 @@ end
 
 """
     NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, dynamics, grad)
-Returns the Lyapunov function and its time derivative: V(state), V̇(state)
+Returns the Lyapunov function, its time derivative, and its gradient: V(state), 
+V̇(state)
 
 These functions can operate on a state vector or columnwise on a matrix of state
 vectors. Gradients are calculated using grad, which defaults to ForwardDiff.gradient.
@@ -100,7 +101,7 @@ function NumericalNeuralLyapunovFunctions(
     lyapunov_func,
     dynamics::Function;
     grad = ForwardDiff.gradient,
-)::Tuple{Function, Function}
+)::Tuple{Function, Function, Function}
     # Numerical form of Lyapunov function
     V_func(state::AbstractMatrix) = lyapunov_func(phi, result, state)
     V_func(state::AbstractVector) = first(lyapunov_func(phi, result, state))
@@ -119,7 +120,7 @@ function NumericalNeuralLyapunovFunctions(
         (1, :),
     )
 
-    return V_func, V̇_func
+    return V_func, V̇_func, ∇V_func
 end
 
 function NumericalNeuralLyapunovFunctions(
@@ -128,7 +129,7 @@ function NumericalNeuralLyapunovFunctions(
     lyapunov_func,
     dynamics::ODEProblem;
     grad = ForwardDiff.gradient,
-)::Tuple{Function, Function}
+)::Tuple{Function, Function, Function}
     f = get_dynamics_from_ODEProblem(dynamics)
     return NumericalNeuralLyapunovFunctions(phi, result, lyapunov_func, f; grad)
 end

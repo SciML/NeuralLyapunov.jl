@@ -72,7 +72,7 @@ println("Switching from Adam to BFGS");
 res = Optimization.solve(prob_relu, BFGS(); callback = callback, maxiters = 300)
 
 # Get numerical numerical functions
-V_func, V̇_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res,
     lyapunov_func,
@@ -88,24 +88,7 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 # dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Get RoA Estimate
-data = reshape(V_predict, (length(xs), length(ys)));
-data = vcat(data[1, :], data[end, :], data[:, 1], data[:, end]);
-ρ_max = minimum(data)
-ρ_min = 1e-4
-ρ = ρ_max
-while abs(ρ_max - ρ_min) > maximum(data) * 1e-6
-    RoA_est = ρ_min .< V_predict .< ρ
-    if sum(RoA_est) == 0
-        ρ = ρ_min
-        break
-    end
-    if maximum(dVdt_predict[RoA_est]) > 0
-        ρ_max = ρ
-    else
-        ρ_min = ρ
-    end
-    ρ = (ρ_max + ρ_min) / 2
-end
+ρ = get_RoA_estimate(V_func, V̇_func, lb, ub; fixed_point = fixed_point)
 
 # Print statistics
 println("V(2π, 0) = ", V_func(fixed_point))

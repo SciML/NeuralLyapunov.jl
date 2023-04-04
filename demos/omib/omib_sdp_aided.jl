@@ -5,27 +5,72 @@ using Plots
 using NeuralLyapunov
 
 # Define dynamics
-"Pendulum Dynamics"
-function pendulum_dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where {T<:Number}
-    pos = transpose(state[1, :])
-    vel = transpose(state[2, :])
-    vcat(vel, -vel - sin.(pos))
+r_line = 0.01 # line+gen resistance pu
+x_line = 0.1 # line+gen reactance pu
+y_line = 1.0 / (r_line + x_line * 1im) # line+gen admittance
+
+g_line = real(y_line) # line conductance pu
+b_line = imag(y_line) # line+gen susceptance pu
+
+Pm = 0.5 # mechanical power from gen in pu
+
+E = 1.01 # Generator voltage
+E_∞ = 1.0 # Infinite bus voltage
+H = 8.0 # Generator Inertia [seconds]
+Ω_b = 2 * pi * 60 # Base Frequency
+T = 0.1 # Damping Coefficient
+
+p_omib = [
+    Pm - E^2 * g_line, # P: Total Power with losses
+    -E * E_∞ * b_line, # C: sine coefficient term
+    -E * E_∞ * g_line, # D: cosine coefficient term
+    T, # damping coefficient
+    H, # inertia term
+    Ω_b, # nominal frequency
+]
+
+"""
+This system describes a classic machine model against an infinite bus, described as:
+δ_dot = ω
+ω_dot = (Ω_b / H) * (P - C * sin(δ) - D * cos(δ) - T * ω)
+where δ is the rotor angle and ω is the frequency deviation from the synchronous frequency.
+
+This model incorporates line losses and has a general Lyapunov function in the usual sense as:
+V(δ, ω) = (H / Ω_b) * (ω^2 / 2) - P * δ - C * cos(δ) + D * sin(δ) + α
+where α is an arbitrary constant. It can be shown that the derivative of V along the orbits satisfies:
+V_dot = - T * ω^2 ≤ 0
+which is a negative semi-definite function. V also satisfies the requirements of LaSalle's invariance principle
+and hence V can be used to study the stability of this system in the usual way.
+"""
+function omib_dynamics(state::AbstractVector{S})::AbstractVector{S} where {S<:Number}
+    δ, ω = @view state[1:2]
+    P, C, D, T, H, Ω_b = @view p_omib[1:6]
+
+    return [ ω; (Ω_b / H) * (P - C * sin(δ) - D * cos(δ) - T * ω)]
 end
-function pendulum_dynamics(state::AbstractVector{T})::AbstractVector{T} where {T<:Number}
-    pos = @view state[1]
-    vel = @view state[2]
-    vcat(vel, -vel - sin.(pos))
+function omib_dynamics(state::AbstractMatrix{S})::AbstractMatrix{S} where {S<:Number}
+    δ = @view state[1,:]
+    ω = @view state[2,:]
+    P, C, D, T, H, Ω_b = @view p_omib[1:6]
+
+    return vcat(transpose(ω), transpose((Ω_b / H) .* (P .- C .* sin.(δ) .- D .* cos.(δ) .- T .* ω)))
 end
-lb = [0.0, -10.0];
-ub = [4 * pi, 10.0];
-fixed_point = [2 * pi, 0.0]
+
+lb = [-0.25, -0.25];
+ub = [0.25, 0.25];
+fixed_point = let (P, C, D, T, H, Ω_b) = p_omib[1:6]
+    println(P)
+    hypot = sqrt(C^2+D^2)
+    #return [asin(P/hypot) - asin(D/hypot), 0.0]
+    return [asin(P/hypot*sqrt(1-D^2/hypot^2) - D/hypot*sqrt(1-P^2/hypot^2)),0.0]
+end
 
 # Make log version
 dim_output = 2
 κ = 20.0
 δ = 0.1
 pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(
-    pendulum_dynamics,
+    omib_dynamics,
     lb,
     ub,
     dim_output,
@@ -65,7 +110,7 @@ res = Optimization.solve(prob_log, Adam(); callback = callback, maxiters = 300)
 
 # Rebuild with weaker ReLU version
 pde_system_relu, _ = NeuralLyapunovPDESystem(
-    pendulum_dynamics,
+    omib_dynamics,
     lb,
     ub,
     dim_output,
@@ -86,13 +131,13 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res,
     lyapunov_func,
-    pendulum_dynamics,
+    omib_dynamics,
 )
 
 ##################### Get local RoA Estimate ##########################
 
 V_local, V̇_local, ∇V_local = local_Lyapunov(
-    pendulum_dynamics, 
+    omib_dynamics, 
     length(lb); 
     fixed_point = fixed_point
 )
@@ -131,7 +176,7 @@ dVdt_local_predict = vec(V̇_local(hcat(states...)))
 # dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Print statistics
-println("V(2π, 0) = ", V_func(fixed_point))
+@show V_func(fixed_point)
 println(
     "V ∋ [",
     min(V_func(fixed_point), minimum(V_predict)),
@@ -158,13 +203,7 @@ p2 = plot(
     xlabel = "x",
     ylabel = "ẋ",
 );
-p2 = scatter!(
-    (lb[1]+pi):2*pi:ub[1],
-    zeros(4),
-    labels = false,
-    markershape = :x,
-);
-p2 = scatter!(lb[1]:2*pi:ub[1], zeros(5), labels = false, markershape = :+);
+p2 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
 p3 = plot(xs, ys, V_local_predict, linetype = :contourf, title = "Local V", xlabel = "x", ylabel = "ẋ");
 p4 = plot(
     xs,
@@ -175,30 +214,18 @@ p4 = plot(
     xlabel = "x",
     ylabel = "ẋ",
 );
-p4 = scatter!(
-    (lb[1]+pi):2*pi:ub[1],
-    zeros(4),
-    labels = false,
-    markershape = :x,
-);
-p4 = scatter!(lb[1]:2*pi:ub[1], zeros(5), labels = false, markershape = :+);
+p4 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
 p5 = plot(
     xs,
     ys,
-    V_predict .≤ ρ,
+    V_local_predict .≤ ρ_local,
     linetype = :contourf,
-    title = "Estimated RoA",
+    title = "Estimated RoA, local",
     xlabel = "x",
     ylabel = "ẋ",
     colorbar = false,
 );
-p5 = scatter!(
-    (lb[1]+pi):2*pi:ub[1],
-    zeros(4),
-    labels = false,
-    markershape = :x,
-);
-p5 = scatter!(lb[1]:2*pi:ub[1], zeros(5), labels = false, markershape = :+);
+p5 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
 p6 = plot(
     xs,
     ys,
@@ -209,45 +236,5 @@ p6 = plot(
     ylabel = "ẋ",
     colorbar = false,
 );
-p6 = scatter!(
-    (lb[1]+pi):2*pi:ub[1],
-    zeros(4),
-    labels = false,
-    markershape = :x,
-);
-p6 = scatter!(lb[1]:2*pi:ub[1], zeros(5), labels = false, markershape = :+);
-p7 = plot(
-    xs,
-    ys,
-    V_local_predict .≤ ρ_local,
-    linetype = :contourf,
-    title = "Estimated RoA, local",
-    xlabel = "x",
-    ylabel = "ẋ",
-    colorbar = false,
-);
-p7 = scatter!(
-    (lb[1]+pi):2*pi:ub[1],
-    zeros(4),
-    labels = false,
-    markershape = :x,
-);
-p7 = scatter!(lb[1]:2*pi:ub[1], zeros(5), labels = false, markershape = :+);
-p8 = plot(
-    xs,
-    ys,
-    dVdt_local_predict .< 0,
-    linetype = :contourf,
-    title = "Local dV/dt < 0",
-    xlabel = "x",
-    ylabel = "ẋ",
-    colorbar = false,
-);
-p8 = scatter!(
-    (lb[1]+pi):2*pi:ub[1],
-    zeros(4),
-    labels = false,
-    markershape = :x,
-);
-p8 = scatter!(lb[1]:2*pi:ub[1], zeros(5), labels = false, markershape = :+);
-plot(p1, p2, p3, p4, p5, p6, p7, p8, layout = (2,4))
+p6 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
+plot(p1, p2, p3, p4, p5, p6, layout = (3,2))
