@@ -4,6 +4,7 @@ using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NeuralLyapunov
 
+###################### Set up system #############################
 # Define dynamics
 r_line = 0.01 # line+gen resistance pu
 x_line = 0.1 # line+gen reactance pu
@@ -56,14 +57,28 @@ function omib_dynamics(state::AbstractMatrix{S})::AbstractMatrix{S} where {S<:Nu
     return vcat(transpose(ω), transpose((Ω_b / H) .* (P .- C .* sin.(δ) .- D .* cos.(δ) .- T .* ω)))
 end
 
-lb = [-0.25, -0.25];
-ub = [0.25, 0.25];
+lb = [-0.25, -1.0];
+ub = [0.25, 1.0];
 fixed_point = let (P, C, D, T, H, Ω_b) = p_omib[1:6]
-    println(P)
-    hypot = sqrt(C^2+D^2)
-    #return [asin(P/hypot) - asin(D/hypot), 0.0]
-    return [asin(P/hypot*sqrt(1-D^2/hypot^2) - D/hypot*sqrt(1-P^2/hypot^2)),0.0]
+    [asin(P/sqrt(C^2+D^2)) - atan(D, C), 0.0]
 end
+
+##################### Get local RoA Estimate ##########################
+
+V_local, V̇_local, ∇V_local = local_Lyapunov(
+    omib_dynamics, 
+    length(lb); 
+    fixed_point = fixed_point
+)
+ρ_local = get_RoA_estimate(
+    V_local, 
+    V̇_local, 
+    lb, ub; 
+    fixed_point = fixed_point, 
+    ∇V=∇V_local
+)
+
+########################## Neural search ########################
 
 # Make log version
 dim_output = 2
@@ -91,9 +106,9 @@ chain = [
 ]
 
 # Define neural network discretization
-# strategy = GridTraining(0.1)
-# strategy = QuasiRandomTraining(100)
-strategy = QuadratureTraining()
+# strategy = GridTraining(0.01)
+strategy = QuasiRandomTraining(100)
+# strategy = QuadratureTraining()
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Build optimization problem
@@ -134,21 +149,6 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     omib_dynamics,
 )
 
-##################### Get local RoA Estimate ##########################
-
-V_local, V̇_local, ∇V_local = local_Lyapunov(
-    omib_dynamics, 
-    length(lb); 
-    fixed_point = fixed_point
-)
-ρ_local = get_RoA_estimate(
-    V_local, 
-    V̇_local, 
-    lb, ub; 
-    fixed_point = fixed_point, 
-    ∇V=∇V_local
-)
-
 ################## Get Neural Lyapunov RoA Estimate ###################
 
 ρ = NeuralLyapunov.get_RoA_estimate_aided(
@@ -166,7 +166,7 @@ V_local, V̇_local, ∇V_local = local_Lyapunov(
 ########################### Plot results ###########################
 
 # Simulate
-xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
+xs, ys = [lb[i]:0.005:ub[i] for i in eachindex(lb)]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
@@ -194,6 +194,7 @@ println(
 println("Certified V ∈ [0.0, ", ρ, ")")
 
 p1 = plot(xs, ys, V_predict, linetype = :contourf, title = "V", xlabel = "x", ylabel = "ẋ");
+p1 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
 p2 = plot(
     xs,
     ys,
@@ -203,8 +204,9 @@ p2 = plot(
     xlabel = "x",
     ylabel = "ẋ",
 );
-p2 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
+p2 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
 p3 = plot(xs, ys, V_local_predict, linetype = :contourf, title = "Local V", xlabel = "x", ylabel = "ẋ");
+p3 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
 p4 = plot(
     xs,
     ys,
@@ -214,7 +216,7 @@ p4 = plot(
     xlabel = "x",
     ylabel = "ẋ",
 );
-p4 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
+p4 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
 p5 = plot(
     xs,
     ys,
@@ -225,16 +227,38 @@ p5 = plot(
     ylabel = "ẋ",
     colorbar = false,
 );
-p5 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
+p5 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
 p6 = plot(
     xs,
     ys,
-    dVdt_predict .< 0,
+    dVdt_local_predict .< 0,
     linetype = :contourf,
-    title = "dV/dt<0",
+    title = "Local dV/dt < 0",
     xlabel = "x",
     ylabel = "ẋ",
     colorbar = false,
 );
-p6 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+);
-plot(p1, p2, p3, p4, p5, p6, layout = (3,2))
+p6 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
+p7 = plot(
+    xs,
+    ys,
+    V_predict .≤ ρ,
+    linetype = :contourf,
+    title = "Certified RoA",
+    xlabel = "x",
+    ylabel = "ẋ",
+    colorbar = false,
+);
+p7 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
+p8 = plot(
+    xs,
+    ys,
+    dVdt_predict .< 0,
+    linetype = :contourf,
+    title = "dV/dt < 0",
+    xlabel = "x",
+    ylabel = "ẋ",
+    colorbar = false,
+);
+p8 = scatter!([fixed_point[1]], [fixed_point[2]], labels = false, markershape = :+, markercolor=:green);
+plot(p1, p2, p3, p4, p5, p6, p7, p8, layout = (4,2))

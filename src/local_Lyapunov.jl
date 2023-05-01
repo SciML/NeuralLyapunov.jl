@@ -19,7 +19,7 @@ function local_Lyapunov(dynamics::Function, state_dim; fixed_point = zeros(state
         elseif dynamics_jac isa Function
             dynamics_jac(fixed_point)
         else
-            throw(ErrorException("Unable to Calculate Jacobian from dynamics_jac."))
+            throw(ErrorException("Unable to calculate Jacobian from dynamics_jac."))
         end
     
     # Use quadratic semidefinite programming to calculate a Lyapunov function
