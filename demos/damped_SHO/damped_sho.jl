@@ -26,7 +26,8 @@ pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(
     SHO_dynamics,
     lb,
     ub,
-    dim_output,
+    default_ps = [1.0, 0.5],
+    output_dim = dim_output,
     relu = (t) -> log(1.0 + exp(κ * t)) / κ,
 )
 

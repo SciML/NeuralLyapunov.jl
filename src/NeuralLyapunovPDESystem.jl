@@ -1,17 +1,51 @@
 function NeuralLyapunovPDESystem(
-    dynamics::Function,
+    dynamics::ODEFunction,
     lb,
-    ub,
-    output_dim::Integer = 1;
+    ub;
+    default_ps = SciMLBase.NullParameters(),
+    output_dim::Integer = 1,
     δ::Real = 0.01,
     ϵ::Real = 0.01,
     relu = (t) -> max(0.0, t),
     fixed_point = nothing,
 )::Tuple{PDESystem,Function}
-    # Define state symbols
+    if dynamics.mass_matrix !== I
+        throw(ErrorException("DAEs are not supported at this time"))
+    end
     state_dim = length(lb)
-    state_syms = [Symbol(:state, i) for i = 1:state_dim]
+
+    # Define state symbols, if not already defined
+    state_syms = if isnothing(dynamics.syms)
+        [Symbol(:state, i) for i = 1:state_dim]  
+    else
+        dynamics.syms
+    end
     state = [first(@parameters $s) for s in state_syms]
+
+    # Define parameter symbols, if not already defined
+    param_syms, default_ps = if default_ps == SciMLBase.NullParameters()
+        [], default_ps
+    elseif isa(default_ps, Dict)
+        [first(_pair) for _pair in default_ps], default_ps
+    elseif isa(default_ps, Vector) && isa(first(default_ps), Pair)
+        first.(default_ps), Dict(default_ps)
+    elseif isa(default_ps, Vector)
+        if isnothing(dynamics.paramsyms)
+            syms = [Symbol(:param, i) for i = 1:length(default_ps)]
+            syms, Dict([ sym => val for (sym, val) in zip(syms, default_ps)])
+        else
+            dynamics.paramsyms, Dict([ sym => val for (sym, val) in zip(dynamics.paramsyms, default_ps)])
+        end
+    else
+        throw(ErrorException("Default parameters have unsupported type. default_ps should be NullParameters, Dict, Vector{Pair}, or Vector of values"))
+    end
+    
+    params = [first(@parameters $s) for s in param_syms]
+    defaults = if default_ps == SciMLBase.NullParameters()
+        default_ps
+    else
+        Dict([ param => default_ps[param_sym] for (param, param_sym) in zip(params, param_syms) ])
+    end
 
     # Define domains
     domains = [state[i] ∈ (lb[i], ub[i]) for i = 1:state_dim]
@@ -20,7 +54,7 @@ function NeuralLyapunovPDESystem(
     net_syms = [Symbol(:u, i) for i = 1:output_dim]
     net = [first(@variables $s(..)) for s in net_syms]
     # u(x) is the symbolic form of neural network output
-    u(x) = Num.([ui(x...) for ui in net])
+    u(x) = [Num(ui(x...)) for ui in net]
     fixed_point = isnothing(fixed_point) ? zeros(state_dim) : fixed_point
     # V_sym(x) is the symobolic form of the Lyapunov function
     V_sym(x) =
@@ -29,11 +63,10 @@ function NeuralLyapunovPDESystem(
 
     # Define dynamics and Lyapunov conditions
     # V̇_sym(x) is the symbolic time derivative of the Lyapunov function
-    V̇_sym(x) = dynamics(x) ⋅ Symbolics.gradient(V_sym(x), x)
+    V̇_sym(x) = dynamics(x, params, 0.0) ⋅ Symbolics.gradient(V_sym(x), x)
     # V̇ should be negative when V < 1, and try not to let V >> 1
     eqs = [
-        relu(V̇_sym(state) + ϵ * (state - fixed_point) ⋅ (state - fixed_point)) *
-        relu(1 - V_sym(state)) ~ 0.0,
+        relu(V̇_sym(state) + ϵ * (state - fixed_point) ⋅ (state - fixed_point)) * relu(1 - V_sym(state)) ~ 0.0,
         relu(V_sym(state) - 1) ~ 0.0,
     ]
     #eqs = [ relu(V̇_sym(state)+ϵ*(state - fixed_point)⋅(state - fixed_point)) ~ 0.0 ]
@@ -48,7 +81,7 @@ function NeuralLyapunovPDESystem(
         ),
     )
     bcs = [V_sym(fixed_point) ~ 0.0] # V should be 0 at the fixed point
-    @named lyapunov_pde_system = PDESystem(eqs, bcs, domains, state, u(state))
+    @named lyapunov_pde_system = PDESystem(eqs, bcs, domains, state, u(state), params, defaults=defaults)
 
     # Make Lyapunov function 
     # u_func is the numerical form of neural network output
@@ -70,6 +103,28 @@ function NeuralLyapunovPDESystem(
     end
 
     return lyapunov_pde_system, V_func
+end
+
+function NeuralLyapunovPDESystem(
+    dynamics::Function,
+    lb,
+    ub,
+    output_dim::Integer = 1;
+    δ::Real = 0.01,
+    ϵ::Real = 0.01,
+    relu = (t) -> max(0.0, t),
+    fixed_point = nothing,
+)::Tuple{PDESystem,Function}
+    return NeuralLyapunovPDESystem(
+            ODEFunction(dynamics),
+            lb,
+            ub,
+            output_dim;
+            δ,
+            ϵ,
+            relu,
+            fixed_point,
+        )      
 end
 
 function NeuralLyapunovPDESystem(
