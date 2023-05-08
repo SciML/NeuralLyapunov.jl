@@ -14,7 +14,7 @@ include("conditions_specification.jl")
 
 export NeuralLyapunovPDESystem, NumericalNeuralLyapunovFunctions
 export get_RoA_estimate, local_Lyapunov
-export NeuralLyapunovSpecifications, NeuralLyapunovStructure, 
+export NeuralLyapunovSpecification, NeuralLyapunovStructure, 
     UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov, 
     LyapunovMinimizationCondition, StrictlyPositiveDefinite, 
     PositiveSemiDefinite, DontCheckNonnegativity, LyapunovDecreaseCondition,
