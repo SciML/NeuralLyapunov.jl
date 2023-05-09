@@ -15,6 +15,7 @@ derivative of the Lyapunov function at state.
 """
 struct NeuralLyapunovStructure
     V::Function
+    ∇V::Function
     V̇::Function
     network_dim::Integer
 end
@@ -28,14 +29,15 @@ conditions.
 """
 function UnstructuredNeuralLyapunov()
     NeuralLyapunovStructure(
-        (phi, state, fixed_point) -> phi(state), 
-        (phi, grad_phi, f, state, fixed_point) -> grad_phi(state) ⋅ f(state),
+        (net, state, fixed_point) -> net(state), 
+        (net, grad_net, state, fixed_point) -> grad_net(state),
+        (net, grad_net, f, state, fixed_point) -> grad_net(state) ⋅ f(state),
         1
         )
 end
 
 """
-    NonnegativeNeuralLyapunov(network_dim, δ, pos_def)
+    NonnegativeNeuralLyapunov(network_dim, δ, pos_def; grad_pos_def, grad)
 
 Creates a NeuralLyapunovStructure where the Lyapunov function is the L2 norm of
 the neural network output plus a constant δ times a function pos_def.
@@ -43,28 +45,46 @@ the neural network output plus a constant δ times a function pos_def.
 The condition that the Lyapunov function must be minimized uniquely at the
 fixed point can be represented as V(fixed_point) = 0, V(state) > 0 when 
 state != fixed_point. This structure ensures V(state) ≥ 0. Further, if δ > 0
-and pos_def(fixed_point) = 0, but pos_def(state) > 0 when state != fixed_point,
-this ensures that V(state) > 0 when state != fixed_point. This does not enforce
-V(fixed_point) = 0, so that condition must included in the neural Lyapunov loss
-function.
+and pos_def(fixed_point, fixed_point) = 0, but pos_def(state, fixed_point) > 0 
+when state != fixed_point, this ensures that V(state) > 0 when 
+state != fixed_point. This does not enforce V(fixed_point) = 0, so that 
+condition must included in the neural Lyapunov loss function.
+
+grad_pos_def(state, fixed_point) should be the gradient of pos_def with respect
+to state at state. If grad_pos_def is not defined, it is evaluated using grad,
+which defaults to ForwardDiff.gradient.
 
 The neural network output has dimension network_dim.
 """
 function NonnegativeNeuralLyapunov(
     network_dim::Integer,
     δ::Real = 0.0, 
-    pos_def::Function = (state, fixed_point) -> log(1.0 + (state - fixed_point) ⋅ (state - fixed_point))
+    pos_def::Function = (state, fixed_point) -> log(1.0 + (state - fixed_point) ⋅ (state - fixed_point));
+    grad_pos_def::Function = nothing,
+    grad = ForwardDiff.gradient,
     )
     if δ == 0.0
         NeuralLyapunovStructure(
-            (phi, state, fixed_point) -> phi(state) ⋅ phi(state), 
-            (phi, J_phi, f, state, fixed_point) -> 2 * dot(phi(state), J_phi(state), f(state)),
+            (net, state, fixed_point) -> net(state) ⋅ net(state), 
+            (net, J_net, state, fixed_point) -> 2 * transpose(net(state)) * J_net(state),
+            (net, J_net, f, state, fixed_point) -> 2 * dot(net(state), J_net(state), f(state)),
             network_dim
             )
     else
+        grad_pos_def = if isnothing(grad_pos_def)
+            (state, fixed_point) -> grad((x) -> pos_def(x, fixed_point), state)
+        else
+            grad_pos_def
+        end
         NeuralLyapunovStructure(
-            (phi, state, fixed_point) -> phi(state) ⋅ phi(state) + δ * pos_def(state, fixed_point), 
-            (phi, J_phi, f, state, fixed_point) -> 2 * dot(phi(state), J_phi(state), f(state)) + δ * ForwardDiff.gradient((x) -> pos_def(x, fixed_point), state) ⋅ f(state),
+            (net, state, fixed_point) -> net(state) ⋅ net(state) + δ * pos_def(state, fixed_point), 
+            (net, J_net, state, fixed_point) -> 2 * transpose(net(state)) * J_net(state) + 
+                δ * grad_pos_def(state, fixed_point),
+            (net, J_net, f, state, fixed_point) -> 2 * dot(
+                net(state), 
+                J_net(state), 
+                f(state)
+                ) + δ * grad_pos_def(state, fixed_point) ⋅ f(state),
             network_dim
             )
     end
@@ -73,9 +93,29 @@ end
 abstract type AbstractLyapunovMinimizationCondition end
 
 """
+check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)
+
+True if cond specifies training to meet the Lyapunov minimization condition, 
+false if cond specifies no training to meet this condition.
+"""
+function check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)::Bool
+    error("check_nonnegativity not implemented for AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+end
+
+"""
+    check_fixed_point(cond::AbstractLyapunovMinimizationCondition)
+
+True if cond specifies training for the Lyapunov function to equal zero at the
+fixed point, false if cond specifies no training to meet this condition.
+"""
+function check_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
+    error("check_fixed_point not implemented for AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+end
+
+"""
     get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
 
-Returns a function of V, dVdt, state, and fixed_point that equals zero when the 
+Returns a function of V, state, and fixed_point that equals zero when the 
 Lyapunov minimization condition is met and greater than zero when it's violated
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
@@ -186,6 +226,26 @@ function DontCheckNonnegativity(check_fixed_point = false)
 end
 
 abstract type AbstractLyapunovDecreaseCondition end
+
+"""
+    check_decrease(cond::AbstractLyapunovDecreaseCondition)
+
+True if cond specifies training to meet the Lyapunov decrease condition, false
+if cond specifies no training to meet this condition.
+"""
+function check_decrease(cond::AbstractLyapunovDecreaseCondition)::Bool
+    error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type $(typeof(cond))")
+end
+
+"""
+    check_stationary_fixed_point(cond::AbstractLyapunovDecreaseCondition)
+
+True if cond specifies training for the Lyapunov function not to change at the 
+fixed point, false if cond specifies no training to meet this condition.
+"""
+function check_stationary_fixed_point(cond::AbstractLyapunovDecreaseCondition)::Bool
+    error("check_fixed_point not implemented for AbstractLyapunovDecreaseCondition of type $(typeof(cond))")
+end
 
 """
     get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
