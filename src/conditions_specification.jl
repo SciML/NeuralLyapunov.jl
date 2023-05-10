@@ -27,7 +27,7 @@ Creates a NeuralLyapunovStructure where the Lyapunov function is the neural
 network evaluated at state. This does not structurally enforce any Lyapunov 
 conditions.
 """
-function UnstructuredNeuralLyapunov()
+function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
         (net, state, fixed_point) -> net(state), 
         (net, grad_net, state, fixed_point) -> grad_net(state),
@@ -57,12 +57,12 @@ which defaults to ForwardDiff.gradient.
 The neural network output has dimension network_dim.
 """
 function NonnegativeNeuralLyapunov(
-    network_dim::Integer,
+    network_dim::Integer;
     δ::Real = 0.0, 
-    pos_def::Function = (state, fixed_point) -> log(1.0 + (state - fixed_point) ⋅ (state - fixed_point));
-    grad_pos_def::Function = nothing,
+    pos_def::Function = (state, fixed_point) -> log(1.0 + (state - fixed_point) ⋅ (state - fixed_point)),
+    grad_pos_def = nothing,
     grad = ForwardDiff.gradient,
-    )
+    )::NeuralLyapunovStructure
     if δ == 0.0
         NeuralLyapunovStructure(
             (net, state, fixed_point) -> net(state) ⋅ net(state), 
@@ -159,6 +159,14 @@ struct LyapunovMinimizationCondition <: AbstractLyapunovMinimizationCondition
     check_fixed_point::Bool
 end
 
+function check_nonnegativity(cond::LyapunovMinimizationCondition)::Bool
+    cond.check_nonnegativity
+end
+
+function check_fixed_point(cond::LyapunovMinimizationCondition)::Bool
+    cond.check_fixed_point
+end
+
 function get_minimization_condition(cond::LyapunovMinimizationCondition)
     if cond.check_nonnegativity
         return (V, x, fixed_point) -> cond.relu(V(x) - cond.strength(x, fixed_point))
@@ -177,7 +185,11 @@ If check_fixed_point is true, then training will also attempt to enforce
 
 The inequality is represented by a ≥ b <==> relu(b-a) = 0.0
 """
-function StrictlyPositiveDefinite(; check_fixed_point = true, C::Real = 1e-6, relu = (t) -> max(0.0, t))
+function StrictlyPositiveDefinite(; 
+    check_fixed_point = true, 
+    C::Real = 1e-6, 
+    relu = (t) -> max(0.0, t)
+    )::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         true,
         (state, fixed_point) -> C * (state - fixed_point) ⋅ (state - fixed_point),
@@ -196,7 +208,10 @@ If check_fixed_point is true, then training will also attempt to enforce
 
 The inequality is represented by a ≥ b <==> relu(b-a) = 0.0
 """
-function PositiveSemiDefinite(; check_fixed_point = true, relu = (t) -> max(0.0, t))
+function PositiveSemiDefinite(; 
+    check_fixed_point = true, 
+    relu = (t) -> max(0.0, t)
+    )::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         true,
         (state, fixed_point) -> 0.0,
@@ -216,10 +231,10 @@ It is still possible to check for V(fixed_point) = 0, even in this case, for
 example if V is structured to be positive for state != fixed_point, but it is
 not guaranteed structurally that V(fixed_point) = 0.
 """
-function DontCheckNonnegativity(check_fixed_point = false)
+function DontCheckNonnegativity(;check_fixed_point = false)::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         false,
-        nothing,
+        (state, fixed_point) -> 0.0,
         (t) -> 0.0,
         check_fixed_point
     )    
@@ -291,9 +306,19 @@ struct LyapunovDecreaseCondition <: AbstractLyapunovDecreaseCondition
     check_fixed_point::Bool
 end
 
+function check_decrease(cond::LyapunovDecreaseCondition)::Bool
+    cond.check_decrease
+end
+
+function check_stationary_fixed_point(cond::LyapunovDecreaseCondition)::Bool
+    cond.check_fixed_point
+end
+
 function get_decrease_condition(cond::LyapunovDecreaseCondition)
     if cond.check_decrease
-        return (V, dVdt, x, fixed_point) -> cond.relu(cond.decrease(V, dVdt) - cond.strength(x, fixed_point))
+        return (V, dVdt, x, fixed_point) -> cond.relu(
+            cond.decrease(V(x), dVdt(x)) - cond.strength(x, fixed_point)
+            )
     else
         return nothing
     end
@@ -309,7 +334,12 @@ condition is dV/dt ≤ - C | state - fixed_point |^2
 
 The inequality is represented by a ≥ b <==> relu(b-a) = 0.0
 """
-function AsymptoticDecrease(strict::Bool = false; check_fixed_point::Bool = false, C::Real = 1e-6, relu = (t) -> max(0.0, t))
+function AsymptoticDecrease(;
+    strict::Bool = false, 
+    check_fixed_point::Bool = false, 
+    C::Real = 1e-6, 
+    relu = (t) -> max(0.0, t)
+    )::LyapunovDecreaseCondition
     if strict
         return LyapunovDecreaseCondition(
             true,
@@ -339,7 +369,13 @@ condition is dV/dt ≤ -k * V - C * ||state - fixed_point||^2
 
 The inequality is represented by a ≥ b <==> relu(b-a) = 0.0
 """
-function ExponentialDecrease(k::Real, strict::Bool = false; check_fixed_point::Bool = false, C::Real = 1e-6, relu = (t) -> max(0.0, t))
+function ExponentialDecrease(
+    k::Real; 
+    strict::Bool = false, 
+    check_fixed_point::Bool = false, 
+    C::Real = 1e-6, 
+    relu = (t) -> max(0.0, t)
+    )::LyapunovDecreaseCondition
     if strict
         return LyapunovDecreaseCondition(
             true,
@@ -368,11 +404,11 @@ in cases when the Lyapunov decrease condition has been structurally enforced.
 
 It is still possible to check for dV/dt = 0 at fixed_point, even in this case.
 """
-function DontCheckDecrease(check_fixed_point::Bool = false)
+function DontCheckDecrease(check_fixed_point::Bool = false)::LyapunovDecreaseCondition
     return LyapunovDecreaseCondition(
         false,
-        nothing,
-        nothing,
+        (V, dVdt) -> 0.0,
+        (state, fixed_point) -> 0.0,
         (t) -> 0.0,
         check_fixed_point
     )

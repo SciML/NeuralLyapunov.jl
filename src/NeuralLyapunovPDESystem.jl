@@ -23,7 +23,7 @@ function NeuralLyapunovPDESystem(
     lb,
     ub,
     spec::NeuralLyapunovSpecification;
-    fixed_point = nothing,
+    fixed_point = zeros(length(lb)),
 )::Tuple{PDESystem,Function}
     ########################## Unpack specifications ##########################
     structure = spec.structure
@@ -48,9 +48,6 @@ function NeuralLyapunovPDESystem(
     # u(x) is the symbolic form of neural network output
     u(x) = Num.([ui(x...) for ui in net])
 
-    # The default fixed point is the origin
-    fixed_point = isnothing(fixed_point) ? zeros(state_dim) : fixed_point
-
     # V_sym(x) is the symobolic form of the Lyapunov function
     V_sym(x) = structure.V(u, x, fixed_point)
 
@@ -62,12 +59,12 @@ function NeuralLyapunovPDESystem(
 
     if check_nonnegativity(minimzation_condition)
         cond = get_minimization_condition(minimzation_condition)
-        push!(eqs, cond(V_sym, state, fixed_point))
+        push!(eqs, cond(V_sym, state, fixed_point) ~ 0.0)
     end
 
     if check_decrease(decrease_condition)
         cond = get_decrease_condition(decrease_condition)
-        push!(eqs, cond(V_sym, V̇_sym, state, fixed_point))
+        push!(eqs, cond(V_sym, V̇_sym, state, fixed_point) ~ 0.0)
     end
 
     bcs = [] 
@@ -101,7 +98,7 @@ function NeuralLyapunovPDESystem(
     lb,
     ub,
     spec::NeuralLyapunovSpecification;
-    fixed_point = nothing,
+    fixed_point = zeros(length(lb)),
 )::Tuple{PDESystem,Function}
     f = get_dynamics_from_ODEProblem(dynamics)
     return NeuralLyapunovPDESystem(f, lb, ub, spec; fixed_point)
@@ -158,7 +155,7 @@ function NumericalNeuralLyapunovFunctions(
         state, 
         fixed_point
         )
-    V_func(state::AbstractMatrix) = mapslices(V̇_func, state, dims = [1])
+    V̇_func(state::AbstractMatrix) = mapslices(V̇_func, state, dims = [1])
 
     return V_func, V̇_func, ∇V_func
 end
@@ -199,6 +196,8 @@ function NumericalNeuralLyapunovFunctions(
 
     # Numerical time derivative of Lyapunov function
     V̇_func(state::AbstractVector) = dynamics(state) ⋅ ∇V_func(state)
+    V̇_func(state::AbstractMatrix) = mapslices(V̇_func, state, dims = [1])
+    #= # This version might actually be slower; unsure
     V̇_func(state::AbstractMatrix) = reshape(
         map(
             x -> x[1] ⋅ x[2],
@@ -206,6 +205,7 @@ function NumericalNeuralLyapunovFunctions(
         ),
         (1, :),
     )
+    =#
 
     return V_func, V̇_func, ∇V_func
 end
