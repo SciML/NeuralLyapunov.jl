@@ -4,14 +4,15 @@ using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NeuralLyapunov
 
-# Define dynamics
+############################### Define dynamics ###############################
+
 "Simple Harmonic Oscillator Dynamics"
-function SHO_dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where {T<:Number}
+function dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where {T<:Number}
     pos = transpose(state[1, :])
     vel = transpose(state[2, :])
     vcat(vel, -vel - pos)
 end
-function SHO_dynamics(state::AbstractVector{T})::AbstractVector{T} where {T<:Number}
+function dynamics(state::AbstractVector{T})::AbstractVector{T} where {T<:Number}
     pos = state[1]
     vel = state[2]
     vcat(vel, -vel - pos)
@@ -19,20 +20,12 @@ end
 lb = [-2 * pi, -10.0];
 ub = [2 * pi, 10.0];
 
-# Make log version
-dim_output = 2
-κ = 20.0
-pde_system_log, lyapunov_func = NeuralLyapunovPDESystem(
-    SHO_dynamics,
-    lb,
-    ub,
-    dim_output,
-    relu = (t) -> log(1.0 + exp(κ * t)) / κ,
-)
+####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
 dim_state = length(lb)
 dim_hidden = 15
+dim_output = 2
 chain = [
     Lux.Chain(
         Dense(dim_state, dim_hidden, tanh),
@@ -45,7 +38,39 @@ chain = [
 strategy = GridTraining(0.1)
 discretization = PhysicsInformedNN(chain, strategy)
 
-# Build optimization problem
+# Define neural Lyapunov structure
+structure = NonnegativeNeuralLyapunov(
+        dim_output; 
+        δ = 1e-6
+        #grad_pos_def = (state, fixed_point) -> transpose(state - fixed_point) ./ (1.0 + (state - fixed_point) ⋅ (state - fixed_point))
+        )
+minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+
+# Define Lyapunov decrease condition
+κ = 20.0
+decrease_condition_log = AsymptoticDecrease(
+    strict = true, 
+    relu = (t) -> log(1.0 + exp(κ * t)) / κ
+    )
+
+# Construct neural Lyapunov specification
+spec_log = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition_log,
+    )
+
+############################# Construct PDESystem #############################
+
+pde_system_log, network_func = NeuralLyapunovPDESystem(
+    dynamics,
+    lb,
+    ub,
+    spec_log;
+)
+
+######################## Construct OptimizationProblem ########################
+
 prob_log = discretize(pde_system_log, discretization)
 sym_prob_log = symbolic_discretize(pde_system_log, discretization)
 
@@ -54,25 +79,50 @@ callback = function (p, l)
     return false
 end
 
+########################## Solve OptimizationProblem ##########################
+
 # Optimize with stricter log version
 res = Optimization.solve(prob_log, Adam(); callback = callback, maxiters = 300)
 
-# Rebuild with weaker ReLU version
-pde_system_relu, _ = NeuralLyapunovPDESystem(SHO_dynamics, lb, ub, dim_output)
+######################### Rebuild OptimizationProblem #########################
+
+println("Switching from log(1 + κ exp(V̇))/κ to max(0,V̇)");
+
+# Set up new decrease condition
+decrease_condition_relu = AsymptoticDecrease(strict = true)
+spec_relu = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition_relu,
+    )
+
+# Build and discretize new PDESystem
+pde_system_relu, _ = NeuralLyapunovPDESystem(dynamics, lb, ub, spec_relu)
 prob_relu = discretize(pde_system_relu, discretization)
 sym_prob_relu = symbolic_discretize(pde_system_relu, discretization)
+
+# Rebuild problem with weaker ReLU version
 prob_relu = Optimization.remake(prob_relu, u0 = res.u);
-println("Switching from log(1 + κ exp(V̇))/κ to max(0,V̇)");
+
+######################## Solve new OptimizationProblem ########################
+
 res = Optimization.solve(prob_relu, Adam(); callback = callback, maxiters = 300)
 prob_relu = Optimization.remake(prob_relu, u0 = res.u);
+
 println("Switching from Adam to BFGS");
 res = Optimization.solve(prob_relu, BFGS(); callback = callback, maxiters = 300)
 
-# Get numerical numerical functions
-V_func, V̇_func =
-    NumericalNeuralLyapunovFunctions(discretization.phi, res, lyapunov_func, SHO_dynamics)
+###################### Get numerical numerical functions ######################
+V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+    discretization.phi, 
+    res, 
+    network_func, 
+    structure.V,
+    dynamics,
+    zeros(2)
+    )
 
-# Simulate
+################################## Simulate ###################################
 xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
