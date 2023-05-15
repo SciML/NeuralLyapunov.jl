@@ -278,6 +278,8 @@ LyapunovDecreaseCondition(decrease, strength, check_fixed_point)
 
 Specifies the form of the Lyapunov conditions to be used; training will enforce
     decrease(V, dVdt) ≤ strength(state, fixed_point)
+The inequality will be approximated by the equation
+    relu(decrease(V, dVdt) - strength(state, fixed_point)) = 0.0
 If check_fixed_point is false, then training assumes dVdt(fixed_point) = 0, but
 if check_fixed_point is true, then training will enforce dVdt(fixed_point) = 0.
 
