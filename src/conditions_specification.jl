@@ -169,7 +169,7 @@ end
 
 function get_minimization_condition(cond::LyapunovMinimizationCondition)
     if cond.check_nonnegativity
-        return (V, x, fixed_point) -> cond.relu(V(x) - cond.strength(x, fixed_point))
+        return (V, x, fixed_point) -> cond.relu(cond.strength(x, fixed_point) - V(x))
     else
         return nothing
     end
