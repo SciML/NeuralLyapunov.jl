@@ -4,15 +4,10 @@ using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NeuralLyapunov
 
-############################### Define dynamics ###############################
+######################### Define dynamics and domain ##########################
 
 "Simple Harmonic Oscillator Dynamics"
-function dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where {T<:Number}
-    pos = transpose(state[1, :])
-    vel = transpose(state[2, :])
-    vcat(vel, -vel - pos)
-end
-function dynamics(state::AbstractVector{T})::AbstractVector{T} where {T<:Number}
+function dynamics(state, p, t)
     pos = state[1]
     vel = state[2]
     vcat(vel, -vel - pos)
