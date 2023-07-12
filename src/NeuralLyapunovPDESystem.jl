@@ -126,8 +126,9 @@ function NeuralLyapunovPDESystem(
         bcs, 
         domains, 
         state, 
-        u(state), 
-        defaults
+        u(state),
+        params; 
+        defaults = defaults
         )
 
     ################### Return PDESystem and neural network ###################
