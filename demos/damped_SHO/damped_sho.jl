@@ -7,7 +7,7 @@ using NeuralLyapunov
 ######################### Define dynamics and domain ##########################
 
 "Simple Harmonic Oscillator Dynamics"
-function dynamics(state, p, t)
+function f(state, p, t)
     ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
@@ -16,6 +16,7 @@ end
 lb = [-2 * pi, -10.0];
 ub = [2 * pi, 10.0];
 p = [0.5, 1.0]
+dynamics = ODEFunction(f; syms = [:x, :v], paramsyms = [:ζ, :ω_0])
 
 ####################### Specify neural Lyapunov problem #######################
 
