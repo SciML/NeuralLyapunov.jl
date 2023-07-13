@@ -4,21 +4,19 @@ using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NeuralLyapunov
 
-############################### Define dynamics ###############################
+######################### Define dynamics and domain ##########################
 
 "Simple Harmonic Oscillator Dynamics"
-function dynamics(state::AbstractMatrix{T})::AbstractMatrix{T} where {T<:Number}
-    pos = transpose(state[1, :])
-    vel = transpose(state[2, :])
-    vcat(vel, -vel - pos)
-end
-function dynamics(state::AbstractVector{T})::AbstractVector{T} where {T<:Number}
+function f(state, p, t)
+    ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
-    vcat(vel, -vel - pos)
+    vcat(vel, -2ζ * vel - ω_0^2 * pos)
 end
 lb = [-2 * pi, -10.0];
 ub = [2 * pi, 10.0];
+p = [0.5, 1.0]
+dynamics = ODEFunction(f; syms = [:x, :v], paramsyms = [:ζ, :ω_0])
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -67,6 +65,7 @@ pde_system_log, network_func = NeuralLyapunovPDESystem(
     lb,
     ub,
     spec_log;
+    p = p
 )
 
 ######################## Construct OptimizationProblem ########################
@@ -97,7 +96,7 @@ spec_relu = NeuralLyapunovSpecification(
     )
 
 # Build and discretize new PDESystem
-pde_system_relu, _ = NeuralLyapunovPDESystem(dynamics, lb, ub, spec_relu)
+pde_system_relu, _ = NeuralLyapunovPDESystem(dynamics, lb, ub, spec_relu; p = p)
 prob_relu = discretize(pde_system_relu, discretization)
 sym_prob_relu = symbolic_discretize(pde_system_relu, discretization)
 
@@ -119,7 +118,8 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     network_func, 
     structure.V,
     dynamics,
-    zeros(2)
+    zeros(2);
+    p = p
     )
 
 ################################## Simulate ###################################
