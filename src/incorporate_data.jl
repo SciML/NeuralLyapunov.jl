@@ -48,7 +48,7 @@ function additional_loss_from_data(
                     # Conditions expect the dynamics to be a function of the 
                     # state, so we define a new V̇ for each x with dynamics 
                     # that always returns ẋ
-                    V̇_func = (_x) -> structure.V̇(
+                    V̇ = (_x) -> structure.V̇(
                         _net_func, 
                         _J_net, 
                         y -> ẋ, 
@@ -56,8 +56,8 @@ function additional_loss_from_data(
                         fixed_point
                         )
 
-                    min_loss = min_cond(V, x, fixed_point)
-                    decrease_loss = decrease_cond(V, V̇, x, fixed_point)
+                    min_loss = min_cond(V, x, fixed_point)^2
+                    decrease_loss = decrease_cond(V, V̇, x, fixed_point)^2
                     
                     return [min_loss, decrease_loss]
                 end,
@@ -74,7 +74,7 @@ function additional_loss_from_data(
 
             return λ_minimization * sum(
                     function (data_point)
-                        return min_cond(V, first(data_point), fixed_point)
+                        return min_cond(V, first(data_point), fixed_point)^2
                     end,
                     data
                 ) / length(data)
@@ -95,7 +95,7 @@ function additional_loss_from_data(
                     # Conditions expect the dynamics to be a function of the 
                     # state, so we define a new V̇ for each x with dynamics 
                     # that always returns ẋ
-                    V̇_func = (_x) -> structure.V̇(
+                    V̇ = (_x) -> structure.V̇(
                         _net_func, 
                         _J_net, 
                         y -> ẋ, 
@@ -103,7 +103,7 @@ function additional_loss_from_data(
                         fixed_point
                         )
 
-                    return decrease_cond(V, V̇, x, fixed_point)
+                    return decrease_cond(V, V̇, x, fixed_point)^2
                 end,
                 data
             ) / length(data)
