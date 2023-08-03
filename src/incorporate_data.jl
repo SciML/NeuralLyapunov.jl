@@ -41,7 +41,7 @@ function additional_loss_from_data(
             _J_net = (x) -> J_net(phi, θ, x)
             V = (x) -> structure.V(_net_func, x, fixed_point)
 
-            return [λ_minimization, λ_decrease] ⋅ sum(
+            return sum(
                 function (data_point)
                     x, ẋ = data_point
 
@@ -59,7 +59,7 @@ function additional_loss_from_data(
                     min_loss = min_cond(V, x, fixed_point)^2
                     decrease_loss = decrease_cond(V, V̇, x, fixed_point)^2
                     
-                    return [min_loss, decrease_loss]
+                    return λ_minimization * min_loss + λ_decrease * decrease_loss
                 end,
                 data
             ) / length(data)
