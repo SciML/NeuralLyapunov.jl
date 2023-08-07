@@ -16,6 +16,7 @@ export NeuralLyapunovPDESystem, NumericalNeuralLyapunovFunctions
 export local_Lyapunov
 export NeuralLyapunovSpecification, NeuralLyapunovStructure, 
     UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov, 
+    PositiveSemiDefiniteStructure,
     LyapunovMinimizationCondition, StrictlyPositiveDefinite, 
     PositiveSemiDefinite, DontCheckNonnegativity, LyapunovDecreaseCondition,
     AsymptoticDecrease, ExponentialDecrease, DontCheckDecrease,

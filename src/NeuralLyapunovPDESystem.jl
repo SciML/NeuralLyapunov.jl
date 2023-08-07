@@ -119,6 +119,15 @@ function NeuralLyapunovPDESystem(
     if isempty(eqs) && isempty(bcs)
         error("No training conditions specified.")
     end
+    
+    # NeuralPDE requires an equation and a boundary condition, even if they are
+    # trivial like 0.0 == 0.0
+    if isempty(eqs)
+        push!(eqs, 0.0 ~ 0.0)
+    end
+    if isempty(bcs)
+        push!(bcs, 0.0 ~ 0.0)
+    end
 
     ########################### Construct PDESystem ###########################
     @named lyapunov_pde_system = PDESystem(

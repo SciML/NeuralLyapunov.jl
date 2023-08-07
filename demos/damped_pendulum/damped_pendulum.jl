@@ -45,11 +45,15 @@ strategy = GridTraining(0.1)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
-structure = NonnegativeNeuralLyapunov(
-        dim_output; 
-        δ = 1e-6
-        )
-minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+structure = PositiveSemiDefiniteStructure(
+        dim_output;
+        pos_def = function (state, fixed_point)
+            θ, ω = state
+            θ_eq, ω_eq = fixed_point
+            log(1.0 + (sin(θ)-sin(θ_eq))^2 + (cos(θ)-cos(θ_eq))^2 + (ω-ω_eq)^2)
+        end
+    )
+minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
 decrease_condition = AsymptoticDecrease(strict = true)
@@ -131,51 +135,51 @@ println(
 # Plot results
 
 p1 = plot(
-    xs, 
+    xs/pi, 
     ys, 
     V_predict, 
     linetype = 
     :contourf, 
     title = "V", 
-    xlabel = "θ", 
+    xlabel = "θ/π", 
     ylabel = "ω",
     c = :bone_1
     );
-p1 = scatter!([-2*pi, 0, 2*pi], [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p1 = scatter!([-pi, pi], [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x);
+p1 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
+p1 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x);
 p2 = plot(
-    xs,
+    xs/pi,
     ys,
     dVdt_predict,
     linetype = :contourf,
     title = "dV/dt",
-    xlabel = "θ",
+    xlabel = "θ/π",
     ylabel = "ω",
     c = :binary
 );
-p2 = scatter!([-2*pi, 0, 2*pi], [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p2 = scatter!([-pi, pi], [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
+p2 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
+p2 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
 p3 = plot(
-    xs,
+    xs/pi,
     ys,
     V_predict .< ρ,
     linetype = :contourf,
     title = "Estimated RoA",
-    xlabel = "θ",
+    xlabel = "θ/π",
     ylabel = "ω",
     colorbar = false,
 );
 p4 = plot(
-    xs,
+    xs/pi,
     ys,
     dVdt_predict .< 0,
     linetype = :contourf,
     title = "dV/dt < 0",
-    xlabel = "θ",
+    xlabel = "θ/π",
     ylabel = "ω",
     colorbar = false,
     linewidth = 0
 );
-p4 = scatter!([-2*pi, 0, 2*pi], [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p4 = scatter!([-pi, pi], [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
+p4 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
+p4 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
 plot(p1, p2, p4)
