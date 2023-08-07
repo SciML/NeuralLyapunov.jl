@@ -114,11 +114,6 @@ states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
 
-# Get RoA Estimate
-data = reshape(V_predict, (length(xs), length(ys)));
-data = vcat(data[1, :], data[end, :], data[:, 1], data[:, end]);
-ρ = minimum(data)
-
 # Print statistics
 println("V(0.,0.) = ", V_func([0.0, 0.0]))
 println("V ∋ [", min(V_func([0.0, 0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
@@ -160,16 +155,6 @@ p2 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, m
 p3 = plot(
     xs/pi,
     ys,
-    V_predict .< ρ,
-    linetype = :contourf,
-    title = "Estimated RoA",
-    xlabel = "θ/π",
-    ylabel = "ω",
-    colorbar = false,
-);
-p4 = plot(
-    xs/pi,
-    ys,
     dVdt_predict .< 0,
     linetype = :contourf,
     title = "dV/dt < 0",
@@ -178,6 +163,6 @@ p4 = plot(
     colorbar = false,
     linewidth = 0
 );
-p4 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p4 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
-plot(p1, p2, p4)
+p3 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
+p3 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
+plot(p1, p2, p3)
