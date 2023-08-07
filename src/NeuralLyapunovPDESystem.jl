@@ -16,8 +16,8 @@ of the neural Lyapunov function are specified through spec, which is a
 NeuralLyapunovSpecification.
 
 The returned neural network function takes three inputs: the neural network 
-structure phi, the trained parameters res, and a matrix of inputs to operate on
-columnwise.
+structure phi, the trained network parameters, and a matrix of inputs to 
+operate on columnwise.
 
 If dynamics requires parameters, their values can be supplied through the 
 Vector p, or through dynamics.p if dynamics isa ODEProblem (in which case, let
@@ -142,9 +142,9 @@ function NeuralLyapunovPDESystem(
 
     ################### Return PDESystem and neural network ###################
     # u_func is the numerical form of neural network output
-    u_func(phi, res, x) = reduce(
+    u_func(phi, θ, x) = reduce(
         vcat, 
-        Array(phi[i](x, res.u.depvar[net_syms[i]])) for i = 1:output_dim
+        Array(phi[i](x, θ.depvar[net_syms[i]])) for i = 1:output_dim
         )
 
     return lyapunov_pde_system, u_func
@@ -199,35 +199,35 @@ function NeuralLyapunovPDESystem(
 end
 
 """
-    NumericalNeuralLyapunovFunctions(phi, result, network_func, structure, dynamics, fixed_point; jac, J_net)
+    NumericalNeuralLyapunovFunctions(phi, θ, network_func, structure, dynamics, fixed_point; jac, J_net)
 
 Returns the Lyapunov function, its time derivative, and its gradient: V(state), 
 V̇(state), and ∇V(state)
 
 These functions can operate on a state vector or columnwise on a matrix of state
-vectors. phi is the neural network with parameters in result. 
-network_func(phi, res, state) is an output of NeuralLyapunovPDESystem, which 
-evaluates the neural network represented phi with parameters res at state.
+vectors. phi is the neural network with parameters θ. network_func(phi, θ, state) 
+is an output of NeuralLyapunovPDESystem, which evaluates the neural network 
+represented phi with parameters θ at state.
 
 The Lyapunov function structure is specified in structure, which is a 
 NeuralLyapunovStructure. The Jacobian of the network is either specified via
-J_net(_phi, _result, state) or calculated using jac, which defaults to 
+J_net(_phi, _θ, state) or calculated using jac, which defaults to 
 ForwardDiff.jacobian
 """
 function NumericalNeuralLyapunovFunctions(
     phi,
-    result,
+    θ, 
     network_func::Function,
     structure::NeuralLyapunovStructure,
     dynamics::Function,
     fixed_point;
     p,
     jac = ForwardDiff.jacobian,
-    J_net = (_phi, _res, x) -> jac((y) -> network_func(_phi, _res, y), x)
+    J_net = (_phi, _θ, x) -> jac((y) -> network_func(_phi, _θ, y), x)
 )::Tuple{Function, Function, Function}
     # Make Network function
-    _net_func = (x) -> network_func(phi, result, x)
-    _J_net = (x) -> J_net(phi, result, x)
+    _net_func = (x) -> network_func(phi, θ, x)
+    _J_net = (x) -> J_net(phi, θ, x)
 
     # Numerical form of Lyapunov function
     V_func(state::AbstractVector) = structure.V(_net_func, state, fixed_point)
@@ -256,14 +256,14 @@ function NumericalNeuralLyapunovFunctions(
 end
 
 """
-    NumericalNeuralLyapunovFunctions(phi, result, network_func, V_structure, dynamics, fixed_point, grad)
+    NumericalNeuralLyapunovFunctions(phi, θ, network_func, V_structure, dynamics, fixed_point, grad)
 
 Returns the Lyapunov function, its time derivative, and its gradient: V(state), 
 V̇(state), and ∇V(state)
 
 These functions can operate on a state vector or columnwise on a matrix of state
-vectors. phi is the neural network with parameters in result. network_func is 
-an output of NeuralLyapunovPDESystem.
+vectors. phi is the neural network with parameters θ. network_func is an output
+of NeuralLyapunovPDESystem.
 
 The Lyapunov function structure is defined by 
     V_structure(_network_func, state, fixed_point)
@@ -271,7 +271,7 @@ Its gradient is calculated using grad, which defaults to ForwardDiff.gradient.
 """
 function NumericalNeuralLyapunovFunctions(
     phi,
-    result,
+    θ,
     network_func::Function,
     V_structure::Function,
     dynamics::Function,
@@ -280,7 +280,7 @@ function NumericalNeuralLyapunovFunctions(
     grad = ForwardDiff.gradient,
 )::Tuple{Function, Function, Function}
     # Make network function
-    _net_func = (x) -> network_func(phi, result, x)
+    _net_func = (x) -> network_func(phi, θ, x)
 
     # Numerical form of Lyapunov function
     V_func(state::AbstractVector) = V_structure(_net_func, state, fixed_point)

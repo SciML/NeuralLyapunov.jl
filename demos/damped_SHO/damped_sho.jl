@@ -40,7 +40,6 @@ discretization = PhysicsInformedNN(chain, strategy)
 structure = NonnegativeNeuralLyapunov(
         dim_output; 
         δ = 1e-6
-        #grad_pos_def = (state, fixed_point) -> transpose(state - fixed_point) ./ (1.0 + (state - fixed_point) ⋅ (state - fixed_point))
         )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
@@ -114,7 +113,7 @@ res = Optimization.solve(prob_relu, BFGS(); callback = callback, maxiters = 300)
 ###################### Get numerical numerical functions ######################
 V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi, 
-    res, 
+    res.u, 
     network_func, 
     structure.V,
     dynamics,
@@ -127,8 +126,6 @@ xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
-# V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
-# dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Get RoA Estimate
 data = reshape(V_predict, (length(xs), length(ys)));
