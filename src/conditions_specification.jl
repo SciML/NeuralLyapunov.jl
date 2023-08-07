@@ -121,13 +121,15 @@ function PositiveSemiDefiniteStructure(
         grad_non_neg = nothing,
         grad = ForwardDiff.gradient,
     )
+    _grad(f::Function, x::AbstractArray{T}) where T<:Num = Symbolics.gradient(f(x), x)
+    _grad(f::Function, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)
-        (state, fixed_point) -> grad((x) -> pos_def(x, fixed_point), state)
+        (state, fixed_point) -> _grad((x) -> pos_def(x, fixed_point), state)
     else
         grad_pos_def
     end
     grad_non_neg = if isnothing(grad_non_neg)
-        (net, J_net, state, fixed_point) -> grad((x) -> non_neg(net, x, fixed_point), state)
+        (net, J_net, state, fixed_point) -> _grad((x) -> non_neg(net, x, fixed_point), state)
     else
         grad_non_neg
     end
