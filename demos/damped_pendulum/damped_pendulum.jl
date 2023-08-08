@@ -99,7 +99,7 @@ res = Optimization.solve(prob, BFGS(); callback = callback, maxiters = 300)
 ###################### Get numerical numerical functions ######################
 V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi, 
-    res, 
+    res.u, 
     network_func, 
     structure.V,
     dynamics,
@@ -113,8 +113,6 @@ ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
-# V_predict = [V_func([x0,y0]) for y0 in ys for x0 in xs]
-# dVdt_predict  = [V̇_func([x0,y0]) for y0 in ys for x0 in xs]
 
 # Get RoA Estimate
 data = reshape(V_predict, (length(xs), length(ys)));
