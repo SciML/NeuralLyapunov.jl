@@ -45,27 +45,13 @@ strategy = GridTraining(0.1)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
-function _pos_def(state::AbstractVector, fixed_point)
-    θ, ω = state
-    θ_eq, ω_eq = fixed_point
-    log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-end
-function _pos_def(state::AbstractMatrix, fixed_point)
-    θ = state[1,:]
-    s = sin.(θ)
-    c = cos.(θ)
-    ω = state[2,:]
-
-    θ_eq = fixed_point[1,:]
-    s_eq = sin.(θ_eq)
-    c_eq = cos.(θ_eq)
-    ω_eq = fixed_point[2,:]
-
-    return @. log(1.0 + (s - s_eq)^2 + (c - c_eq)^2 + (ω - ω_eq)^2)
-end
 structure = PositiveSemiDefiniteStructure(
         dim_output;
-        pos_def = _pos_def
+        pos_def = function (state, fixed_point)
+            θ, ω = state
+            θ_eq, ω_eq = fixed_point
+            log(1.0 + (sin(θ)-sin(θ_eq))^2 + (cos(θ)-cos(θ_eq))^2 + (ω-ω_eq)^2)
+        end
     )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
