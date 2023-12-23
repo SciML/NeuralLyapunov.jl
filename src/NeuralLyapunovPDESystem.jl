@@ -249,7 +249,6 @@ function NumericalNeuralLyapunovFunctions(
     jac = ForwardDiff.jacobian,
     J_net = (_phi, _θ, x) -> jac((y) -> network_func(_phi, _θ, y), x)
 )::Tuple{Function, Function, Function}
-    θ = result.u
     # Make Network function
     _net_func = (x) -> network_func(phi, θ, x)
     _J_net = (x) -> J_net(phi, θ, x)
@@ -304,8 +303,6 @@ function NumericalNeuralLyapunovFunctions(
     p = SciMLBase.NullParameters,
     grad = ForwardDiff.gradient,
 )::Tuple{Function, Function, Function}
-    θ = result.u
-
     # Make network function
     _net_func = (x) -> network_func(phi, θ, x)
 
