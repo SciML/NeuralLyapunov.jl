@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+NeuralLyapunov = "cd4a8e8b-619b-4aae-a588-5abc17671921"
