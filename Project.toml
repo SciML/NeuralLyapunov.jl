@@ -13,6 +13,9 @@ NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
 OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
 
+[compat]
+JuMP = "1"
+
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
