@@ -5,7 +5,7 @@ using ModelingToolkit
 using LinearAlgebra
 using Optimization
 import OptimizationOptimJL
-import Hypatia, JuMP
+import JuMP
 
 include("conditions_specification.jl")
 include("NeuralLyapunovPDESystem.jl")
