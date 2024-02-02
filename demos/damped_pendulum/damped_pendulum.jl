@@ -96,7 +96,7 @@ end
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(); callback = callback, maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); callback = callback, maxiters = 300)
 
 println("Switching from Adam to BFGS");
 prob = Optimization.remake(prob, u0 = res.u);
