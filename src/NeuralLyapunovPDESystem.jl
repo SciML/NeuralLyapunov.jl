@@ -45,7 +45,7 @@ function NeuralLyapunovPDESystem(
     state_dim = length(lb)
 
     # Define state symbols, if not already defined
-    state_syms = if isnothing(dynamics.syms)
+    state_syms = if !hasfield(typeof(dynamics), :syms) || isnothing(dynamics.syms)
         [Symbol(:state, i) for i = 1:state_dim]  
     else
         dynamics.syms
@@ -60,7 +60,7 @@ function NeuralLyapunovPDESystem(
     param_syms = if p == SciMLBase.NullParameters()
         []
     else
-        if isnothing(dynamics.paramsyms)
+        if !hasfield(typeof(dynamics), :paramsyms) || isnothing(dynamics.paramsyms)
             [Symbol(:param, i) for i = 1:length(p)]
         else
             dynamics.paramsyms
