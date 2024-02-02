@@ -3,6 +3,8 @@ module NeuralLyapunov
 import ForwardDiff
 using ModelingToolkit
 using LinearAlgebra
+using Optimization
+import OptimizationOptimJL
 import JuMP
 
 include("conditions_specification.jl")

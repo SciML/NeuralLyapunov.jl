@@ -80,7 +80,7 @@ end
 ########################## Solve OptimizationProblem ##########################
 
 # Optimize with stricter log version
-res = Optimization.solve(prob_log, Adam(); callback = callback, maxiters = 300)
+res = Optimization.solve(prob_log, OptimizationOptimisers.Adam(); callback = callback, maxiters = 300)
 
 ######################### Rebuild OptimizationProblem #########################
 
@@ -104,7 +104,7 @@ prob_relu = Optimization.remake(prob_relu, u0 = res.u);
 
 ######################## Solve new OptimizationProblem ########################
 
-res = Optimization.solve(prob_relu, Adam(); callback = callback, maxiters = 300)
+res = Optimization.solve(prob_relu, OptimizationOptimisers.Adam(); callback = callback, maxiters = 300)
 prob_relu = Optimization.remake(prob_relu, u0 = res.u);
 
 println("Switching from Adam to BFGS");
@@ -116,7 +116,7 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     res.u, 
     network_func, 
     structure.V,
-    dynamics,
+    ODEFunction(dynamics),
     zeros(2);
     p = p
     )
