@@ -3,6 +3,9 @@ using NeuralPDE, Lux, ModelingToolkit
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
 using Plots
 using NeuralLyapunov
+using Random
+
+Random.seed!(200)
 
 ######################### Define dynamics and domain ##########################
 
@@ -16,7 +19,7 @@ end
 lb = [-2 * pi, -10.0];
 ub = [2 * pi, 10.0];
 p = [0.5, 1.0]
-dynamics = ODEFunction(f; syms = [:x, :v], paramsyms = [:ζ, :ω_0])
+dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 ####################### Specify neural Lyapunov problem #######################
 
