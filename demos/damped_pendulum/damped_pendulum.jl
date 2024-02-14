@@ -28,7 +28,7 @@ dynamics = structural_simplify(dynamics)
 
 lb = [-pi, -10.0];
 ub = [pi, 10.0];
-p = [dynamics.defaults[param] for param in dynamics.ps]
+p = [dynamics.defaults[param] for param in parameters(dynamics)]
 
 ####################### Specify neural Lyapunov problem #######################
 
