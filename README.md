@@ -2,8 +2,8 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://SciML.github.io/NeuralLyapunov.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://SciML.github.io/NeuralLyapunov.jl/dev/)
-[![Build Status](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml?query=branch%3Amaster)
-[![Coverage](https://codecov.io/gh/SciML/NeuralLyapunov.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/NeuralLyapunov.jl)
+[![Build Status](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml/badge.svg?branch=revive)](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml?query=branch%3Arevive)
+[![Coverage](https://codecov.io/gh/SciML/NeuralLyapunov.jl/branch/revive/graph/badge.svg)](https://codecov.io/gh/SciML/NeuralLyapunov.jl)
 
 A library for searching for neural Lyapunov functions in Julia.
 
