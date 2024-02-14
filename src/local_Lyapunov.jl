@@ -10,7 +10,7 @@ ForwardDiff. Other allowable forms are a function which takes in the state and
 outputs the jacobian of dynamics or an AbstractMatrix representing the Jacobian
 at fixed_point. If fixed_point is not specified, it defaults to the origin.
 """
-function local_Lyapunov(dynamics::Function, state_dim; fixed_point = zeros(state_dim), dynamics_jac = nothing)
+function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory; fixed_point = zeros(state_dim), dynamics_jac = nothing)
     # Linearize the dynamics
     A = if isnothing(dynamics_jac)
             ForwardDiff.jacobian(dynamics, fixed_point)
@@ -24,7 +24,7 @@ function local_Lyapunov(dynamics::Function, state_dim; fixed_point = zeros(state
     
     # Use quadratic semidefinite programming to calculate a Lyapunov function
     # for the linearized system
-    model = JuMP.Model(Hypatia.Optimizer)
+    model = JuMP.Model(optimizer_factory)
     JuMP.set_silent(model)
     JuMP.@variable(model, P[1:state_dim, 1:state_dim], PSD)
     JuMP.@variable(model, Q[1:state_dim, 1:state_dim], PSD)
