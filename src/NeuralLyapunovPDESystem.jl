@@ -33,46 +33,177 @@ function NeuralLyapunovPDESystem(
     p = SciMLBase.NullParameters(),
 )::Tuple{PDESystem,Function}
     if dynamics.mass_matrix !== I
-        throw(ErrorException("DAEs are not supported at this time"))
+        throw(ErrorException("DAEs are not supported at this time."))
     end
 
-    ########################## Unpack specifications ##########################
-    structure = spec.structure
-    minimzation_condition = spec.minimzation_condition
-    decrease_condition = spec.decrease_condition
+    if dynamics.sys isa ODESystem
+        return NeuralLyapunovPDESystem(
+                dynamics.sys, 
+                lb, 
+                ub, 
+                spec; 
+                fixed_point = fixed_point, 
+                p = p
+            )
+    end
 
     ########################## Define state symbols ###########################
     state_dim = length(lb)
 
     # Define state symbols, if not already defined
-    state_syms = if isnothing(dynamics.syms)
+    state_syms = SciMLBase.variable_symbols(dynamics.sys)
+    state_syms = if isempty(state_syms)
         [Symbol(:state, i) for i = 1:state_dim]  
     else
-        dynamics.syms
+        state_syms
     end
     state = [first(@parameters $s) for s in state_syms]
-
-    # Define domains
-    domains = [state[i] ∈ (lb[i], ub[i]) for i = 1:state_dim]
 
     ######################## Define parameter symbols #########################
     # Define parameter symbols, if not already defined
     param_syms = if p == SciMLBase.NullParameters()
         []
     else
-        if isnothing(dynamics.paramsyms)
+        if isnothing(dynamics.sys.parameters)
             [Symbol(:param, i) for i = 1:length(p)]
         else
-            dynamics.paramsyms
+            dynamics.sys.parameters
         end
     end
     
     params = [first(@parameters $s) for s in param_syms]
+
+    ##################### Define default parameter values #####################
     defaults = if p == SciMLBase.NullParameters()
         Dict()
     else
         Dict([param => param_val for (param, param_val) in zip(params, p)])
     end
+
+    ########################### Construct PDESystem ###########################
+    return _NeuralLyapunovPDESystem(
+        dynamics,
+        lb,
+        ub,
+        spec,
+        fixed_point,
+        state,
+        params,
+        defaults
+    )
+end
+
+function NeuralLyapunovPDESystem(
+    dynamics::Function,
+    lb,
+    ub,
+    spec::NeuralLyapunovSpecification;
+    fixed_point = zeros(length(lb)),
+    p = SciMLBase.NullParameters(),
+)::Tuple{PDESystem,Function}
+    return NeuralLyapunovPDESystem(
+            ODEFunction(dynamics),
+            lb,
+            ub,
+            spec;
+            fixed_point = fixed_point,
+            p = p
+        )      
+end
+
+function NeuralLyapunovPDESystem(
+    dynamics::ODEProblem,
+    lb,
+    ub,
+    spec::NeuralLyapunovSpecification;
+    fixed_point = zeros(length(lb)),
+    p = SciMLBase.NullParameters(),
+)::Tuple{PDESystem,Function}
+    f = dynamics.f
+    
+    p = if dynamics.p == SciMLBase.NullParameters()
+        p
+    elseif p == SciMLBase.NullParameters()
+        dynamics.p
+    elseif dynamics.p == p
+        p
+    else
+        throw(ErrorException("Conflicting parameter definitions. Please define parameters only through p or dynamics.p; the other should be SciMLBase.NullParameters()"))
+    end
+
+    return NeuralLyapunovPDESystem(
+            f, 
+            lb, 
+            ub, 
+            spec; 
+            fixed_point = fixed_point, 
+            p = p
+        )
+end
+
+function NeuralLyapunovPDESystem(
+    dynamics::ODESystem,
+    lb,
+    ub,
+    spec::NeuralLyapunovSpecification;
+    fixed_point = zeros(length(lb)),
+    p = SciMLBase.NullParameters(),
+)::Tuple{PDESystem,Function}
+    ########################## Define state symbols ###########################
+    state = states(dynamics)
+    # States should all be functions of time, but we just want the symbol
+    # e.g., if the state is ω(t), we just want ω
+    state = map(st -> istree(st) ? operation(st) : st, state)
+    state_syms = Symbol.(state)
+    state = [first(@parameters $s) for s in state_syms]
+    
+    ######################## Define parameter symbols #########################
+    params = parameters(dynamics)
+    p = if p == SciMLBase.NullParameters() && !isempty(params)
+        [dynamics.defaults[param] for param in params]
+    else
+        p
+    end
+    params = Num.(params)
+ 
+    ##################### Define default parameter values #####################
+    defaults = if p == SciMLBase.NullParameters()
+        Dict()
+    else
+        Dict([param => param_val for (param, param_val) in zip(params, p)])
+    end
+
+    ########################### Construct PDESystem ###########################
+    _NeuralLyapunovPDESystem(
+        ODEFunction(dynamics),
+        lb,
+        ub,
+        spec,
+        fixed_point,
+        state,
+        params,
+        defaults
+    )
+end
+
+function _NeuralLyapunovPDESystem(
+    dynamics::Function,
+    lb,
+    ub,
+    spec::NeuralLyapunovSpecification,
+    fixed_point,
+    state,
+    params,
+    defaults
+)::Tuple{PDESystem,Function}
+    ########################## Unpack specifications ##########################
+    structure = spec.structure
+    minimzation_condition = spec.minimzation_condition
+    decrease_condition = spec.decrease_condition
+
+    ############################# Define domains ##############################
+    state_dim = length(lb)
+    domains = [state[i] ∈ (lb[i], ub[i]) for i = 1:state_dim]
 
     ################## Define Lyapunov function & derivative ##################
     output_dim = structure.network_dim
@@ -148,78 +279,6 @@ function NeuralLyapunovPDESystem(
         )
 
     return lyapunov_pde_system, u_func
-end
-
-function NeuralLyapunovPDESystem(
-    dynamics::Function,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
-    return NeuralLyapunovPDESystem(
-            ODEFunction(dynamics),
-            lb,
-            ub,
-            spec;
-            fixed_point = fixed_point,
-            p = p
-        )      
-end
-
-function NeuralLyapunovPDESystem(
-    dynamics::ODEProblem,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
-    f = dynamics.f
-    
-    p = if dynamics.p == SciMLBase.NullParameters()
-        p
-    elseif p == SciMLBase.NullParameters()
-        dynamics.p
-    elseif dynamics.p == p
-        p
-    else
-        throw(ErrorException("Conflicting parameter definitions. Please define parameters only through p or dynamics.p; the other should be SciMLBase.NullParameters()"))
-    end
-
-    return NeuralLyapunovPDESystem(
-            f, 
-            lb, 
-            ub, 
-            spec; 
-            fixed_point = fixed_point, 
-            p = p
-        )
-end
-
-function NeuralLyapunovPDESystem(
-    dynamics::ODESystem,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
-    p = if p == SciMLBase.NullParameters() && !isempty(dynamics.ps)
-        [dynamics.defaults[param] for param in dynamics.ps]
-    else
-        p
-    end
-    
-    NeuralLyapunovPDESystem(
-        ODEFunction(dynamics),
-        lb,
-        ub,
-        spec;
-        fixed_point = fixed_point,
-        p = p
-    )
 end
 
 """
