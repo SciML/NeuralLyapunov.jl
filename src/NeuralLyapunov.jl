@@ -1,11 +1,10 @@
-module NeuralLyapunov 
+module NeuralLyapunov
 
 import ForwardDiff
-using ModelingToolkit
-using LinearAlgebra
-using Optimization
-import OptimizationOptimJL
 import JuMP
+using LinearAlgebra
+using ModelingToolkit
+import SciMLBase
 
 include("conditions_specification.jl")
 include("NeuralLyapunovPDESystem.jl")
@@ -14,10 +13,10 @@ include("local_Lyapunov.jl")
 
 export NeuralLyapunovPDESystem, NumericalNeuralLyapunovFunctions
 export local_Lyapunov
-export NeuralLyapunovSpecification, NeuralLyapunovStructure, 
-    UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov, 
+export NeuralLyapunovSpecification, NeuralLyapunovStructure,
+    UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov,
     PositiveSemiDefiniteStructure,
-    LyapunovMinimizationCondition, StrictlyPositiveDefinite, 
+    LyapunovMinimizationCondition, StrictlyPositiveDefinite,
     PositiveSemiDefinite, DontCheckNonnegativity, LyapunovDecreaseCondition,
     AsymptoticDecrease, ExponentialDecrease, DontCheckDecrease
 
