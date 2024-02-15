@@ -12,6 +12,8 @@ println("Damped Pendulum")
 ######################### Define dynamics and domain ##########################
 
 @parameters ζ ω_0
+defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+
 @variables t θ(t)
 Dt = Differential(t)
 DDt = Dt^2
@@ -23,14 +25,14 @@ eqs = [DDt(θ) + 2ζ*Dt(θ) + ω_0^2*sin(θ) ~ 0.0]
         t,
         [θ],
         [ζ, ω_0];
-        defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+        defaults = defaults
     )
 
 dynamics = structural_simplify(dynamics)
 
 lb = [-pi, -10.0];
 ub = [pi, 10.0];
-p = [dynamics.defaults[param] for param in parameters(dynamics)]
+p = [defaults[param] for param in parameters(dynamics)]
 
 ####################### Specify neural Lyapunov problem #######################
 
