@@ -29,13 +29,11 @@ dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 dim_state = length(lb)
 dim_hidden = 15
 dim_output = 2
-chain = [
-    Lux.Chain(
-        Dense(dim_state, dim_hidden, tanh),
-        Dense(dim_hidden, dim_hidden, tanh),
-        Dense(dim_hidden, 1, use_bias = false),
-    ) for _ = 1:dim_output
-]
+chain = [Lux.Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
 
 # Define neural network discretization
 strategy = GridTraining(0.1)
@@ -43,9 +41,9 @@ discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
 structure = NonnegativeNeuralLyapunov(
-        dim_output;
-        δ = 1e-6
-        )
+    dim_output;
+    δ = 1e-6
+)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
@@ -53,14 +51,14 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 decrease_condition = AsymptoticDecrease(
     strict = true,
     relu = (t) -> log(1.0 + exp(κ * t)) / κ
-    )
+)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
     structure,
     minimization_condition,
-    decrease_condition,
-    )
+    decrease_condition
+)
 
 ############################# Construct PDESystem #############################
 
@@ -92,7 +90,7 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     ODEFunction(dynamics),
     zeros(2);
     p = p
-    )
+)
 
 ################################## Simulate ###################################
 xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
@@ -106,7 +104,7 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 @test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
 
 # Trained for V's minimum to be at the fixed point
-@test V_func([0.0, 0.0]) ≈ minimum(V_predict) atol=1e-4
+@test V_func([0.0, 0.0])≈minimum(V_predict) atol=1e-4
 @test V_func([0.0, 0.0]) < 1e-4
 
 # Dynamics should result in a fixed point at the origin

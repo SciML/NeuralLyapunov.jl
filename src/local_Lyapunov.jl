@@ -10,25 +10,26 @@ ForwardDiff. Other allowable forms are a function which takes in the state and
 outputs the jacobian of dynamics or an AbstractMatrix representing the Jacobian
 at fixed_point. If fixed_point is not specified, it defaults to the origin.
 """
-function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory; fixed_point = zeros(state_dim), dynamics_jac = nothing)
+function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory;
+        fixed_point = zeros(state_dim), dynamics_jac = nothing)
     # Linearize the dynamics
     A = if isnothing(dynamics_jac)
-            ForwardDiff.jacobian(dynamics, fixed_point)
-        elseif dynamics_jac isa AbstractMatrix
-            dynamics_jac
-        elseif dynamics_jac isa Function
-            dynamics_jac(fixed_point)
-        else
-            throw(ErrorException("Unable to calculate Jacobian from dynamics_jac."))
-        end
-    
+        ForwardDiff.jacobian(dynamics, fixed_point)
+    elseif dynamics_jac isa AbstractMatrix
+        dynamics_jac
+    elseif dynamics_jac isa Function
+        dynamics_jac(fixed_point)
+    else
+        throw(ErrorException("Unable to calculate Jacobian from dynamics_jac."))
+    end
+
     # Use quadratic semidefinite programming to calculate a Lyapunov function
     # for the linearized system
     model = JuMP.Model(optimizer_factory)
     JuMP.set_silent(model)
     JuMP.@variable(model, P[1:state_dim, 1:state_dim], PSD)
     JuMP.@variable(model, Q[1:state_dim, 1:state_dim], PSD)
-    JuMP.@constraint(model, P * A + transpose(A) * P .== -Q)
+    JuMP.@constraint(model, P * A + transpose(A) * P.==-Q)
     JuMP.optimize!(model)
     Psol = JuMP.value.(P)
 
@@ -42,16 +43,18 @@ function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory; fixed_
 
     # Numerical time derivative of Lyapunov function
     V̇(state::AbstractVector) = dynamics(state) ⋅ ∇V(state)
-    V̇(states::AbstractMatrix) = reshape(
-        map(
-            x -> x[1] ⋅ x[2],
-            zip(
-                eachslice(dynamics(states), dims = 2),
-                eachslice(∇V(states), dims = 2),
+    function V̇(states::AbstractMatrix)
+        reshape(
+            map(
+                x -> x[1] ⋅ x[2],
+                zip(
+                    eachslice(dynamics(states), dims = 2),
+                    eachslice(∇V(states), dims = 2)
+                )
             ),
-        ),
-        (1, :),
-    )
+            (1, :)
+        )
+    end
 
     return V, V̇, ∇V
 end

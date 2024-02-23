@@ -18,15 +18,15 @@ defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 Dt = Differential(t)
 DDt = Dt^2
 
-eqs = [DDt(θ) + 2ζ*Dt(θ) + ω_0^2*sin(θ) ~ 0.0]
+eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 
 @named dynamics = ODESystem(
-        eqs,
-        t,
-        [θ],
-        [ζ, ω_0];
-        defaults = defaults
-    )
+    eqs,
+    t,
+    [θ],
+    [ζ, ω_0];
+    defaults = defaults
+)
 
 dynamics = structural_simplify(dynamics)
 
@@ -41,18 +41,16 @@ p = [defaults[param] for param in parameters(dynamics)]
 dim_state = length(lb)
 dim_hidden = 15
 dim_output = 2
-chain = [
-    Lux.Chain(
-        Lux.WrappedFunction(x -> vcat(
-            transpose(sin.(x[1,:])),
-            transpose(cos.(x[1,:])),
-            transpose(x[2,:])
-            )),
-        Dense(3, dim_hidden, tanh),
-        Dense(dim_hidden, dim_hidden, tanh),
-        Dense(dim_hidden, 1, use_bias = false),
-    ) for _ = 1:dim_output
-]
+chain = [Lux.Chain(
+             Lux.WrappedFunction(x -> vcat(
+                 transpose(sin.(x[1, :])),
+                 transpose(cos.(x[1, :])),
+                 transpose(x[2, :])
+             )),
+             Dense(3, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
 
 # Define neural network discretization
 strategy = GridTraining(0.1)
@@ -60,13 +58,13 @@ discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(
-        dim_output;
-        pos_def = function (state, fixed_point)
-            θ, ω = state
-            θ_eq, ω_eq = fixed_point
-            log(1.0 + (sin(θ)-sin(θ_eq))^2 + (cos(θ)-cos(θ_eq))^2 + (ω-ω_eq)^2)
-        end
-    )
+    dim_output;
+    pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
+    end
+)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
@@ -76,8 +74,8 @@ decrease_condition = AsymptoticDecrease(strict = true)
 spec = NeuralLyapunovSpecification(
     structure,
     minimization_condition,
-    decrease_condition,
-    )
+    decrease_condition
+)
 
 ############################# Construct PDESystem #############################
 
@@ -109,11 +107,11 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     ODEFunction(dynamics),
     zeros(length(lb));
     p = p
-    )
+)
 
 ################################## Simulate ###################################
 
-xs = 2*lb[1]:0.02:2*ub[1]
+xs = (2 * lb[1]):0.02:(2 * ub[1])
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
@@ -126,8 +124,8 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 @test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
 
 # Network structure should enforce periodicity in θ
-x0 = (ub .- lb) .* rand(2,100) .+ lb
-@test all(isapprox.(V_func(x0), V_func(x0 .+ [2π, 0.0]); rtol=1e-3))
+x0 = (ub .- lb) .* rand(2, 100) .+ lb
+@test all(isapprox.(V_func(x0), V_func(x0 .+ [2π, 0.0]); rtol = 1e-3))
 
 # Dynamics should result in a fixed point at the origin
 @test V̇_func([0.0, 0.0]) == 0.0
