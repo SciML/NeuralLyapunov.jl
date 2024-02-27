@@ -7,6 +7,9 @@ using ModelingToolkit
 import SciMLBase
 
 include("conditions_specification.jl")
+include("structure_specification.jl")
+include("minimization_conditions.jl")
+include("decrease_conditions.jl")
 include("NeuralLyapunovPDESystem.jl")
 include("local_Lyapunov.jl")
 
