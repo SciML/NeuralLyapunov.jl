@@ -3,15 +3,15 @@
 
 Specifies the structure of the neural Lyapunov function and its derivative.
 
-Allows the user to define the Lyapunov in terms of the neural network to
-structurally enforce Lyapunov conditions.
-network_dim is the dimension of the output of the neural network.
-V(phi::Function, state, fixed_point) takes in the neural network, the state,
-and the fixed_point, and outputs the value of the Lyapunov function at state
-V̇(phi::Function, J_phi::Function, f::Function, state, fixed_point) takes in the
-neural network, the jacobian of the neural network, the dynamics (as a function
-of the state alone), the state, and the fixed_point, and outputs the time
-derivative of the Lyapunov function at state.
+Allows the user to define the Lyapunov in terms of the neural network to structurally
+enforce Lyapunov conditions.
+`network_dim` is the dimension of the output of the neural network.
+`V(phi::Function, state, fixed_point)` takes in the neural network, the state, and the fixed
+point, and outputs the value of the Lyapunov function at `state`.
+`V̇(phi::Function, J_phi::Function, f::Function, state, fixed_point)` takes in the neural
+network, the jacobian of the neural network, the dynamics (as a function of the state
+alone), the state, and the fixed point, and outputs the time derivative of the Lyapunov
+function at `state`.
 """
 struct NeuralLyapunovStructure
     V::Function
@@ -54,60 +54,65 @@ end
 """
 check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)
 
-True if cond specifies training to meet the Lyapunov minimization condition,
-false if cond specifies no training to meet this condition.
+`true` if `cond` specifies training to meet the Lyapunov minimization condition, `false` if
+`cond` specifies no training to meet this condition.
 """
 function check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)::Bool
-    error("check_nonnegativity not implemented for AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+    error("check_nonnegativity not implemented for AbstractLyapunovMinimizationCondition " *
+          "of type $(typeof(cond))")
 end
 
 """
     check_fixed_point(cond::AbstractLyapunovMinimizationCondition)
 
-True if cond specifies training for the Lyapunov function to equal zero at the
-fixed point, false if cond specifies no training to meet this condition.
+`true` if `cond` specifies training for the Lyapunov function to equal zero at the
+fixed point, `false` if `cond` specifies no training to meet this condition.
 """
 function check_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
-    error("check_fixed_point not implemented for AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+    error("check_fixed_point not implemented for AbstractLyapunovMinimizationCondition of" *
+          " type $(typeof(cond))")
 end
 
 """
     get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
 
-Returns a function of V, state, and fixed_point that equals zero when the
-Lyapunov minimization condition is met and greater than zero when it's violated
+Returns a function of `V`, `state`, and `fixed_point` that equals zero when the
+Lyapunov minimization condition is met and greater than zero when it's violated.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
-    error("get_condition not implemented for AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+    error("get_condition not implemented for AbstractLyapunovMinimizationCondition of " *
+          "type $(typeof(cond))")
 end
 
 """
     check_decrease(cond::AbstractLyapunovDecreaseCondition)
 
-True if cond specifies training to meet the Lyapunov decrease condition, false
-if cond specifies no training to meet this condition.
+`true` if `cond` specifies training to meet the Lyapunov decrease condition, `false`
+if `cond` specifies no training to meet this condition.
 """
 function check_decrease(cond::AbstractLyapunovDecreaseCondition)::Bool
-    error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type $(typeof(cond))")
+    error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type " *
+          string(typeof(cond)))
 end
 
 """
     check_stationary_fixed_point(cond::AbstractLyapunovDecreaseCondition)
 
-True if cond specifies training for the Lyapunov function not to change at the
-fixed point, false if cond specifies no training to meet this condition.
+`true` if `cond` specifies training for the Lyapunov function not to change at the
+fixed point, `false` if `cond` specifies no training to meet this condition.
 """
 function check_stationary_fixed_point(cond::AbstractLyapunovDecreaseCondition)::Bool
-    error("check_fixed_point not implemented for AbstractLyapunovDecreaseCondition of type $(typeof(cond))")
+    error("check_fixed_point not implemented for AbstractLyapunovDecreaseCondition of " *
+          "type $(typeof(cond))")
 end
 
 """
     get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
 
-Returns a function of V, dVdt, state, and fixed_point that is equal to zero
-when the Lyapunov decrease condition is met and greater than zero when it is
-violated
+Returns a function of `V`, `dVdt`, `state`, and `fixed_point` that is equal to zero
+when the Lyapunov decrease condition is met and greater than zero when it is violated.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
-    error("get_condition not implemented for AbstractLyapunovDecreaseCondition of type $(typeof(cond))")
+    error("get_condition not implemented for AbstractLyapunovDecreaseCondition of type " *
+          string((typeof(cond))))
 end

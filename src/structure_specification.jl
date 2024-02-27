@@ -1,9 +1,8 @@
 """
     UnstructuredNeuralLyapunov()
 
-Creates a NeuralLyapunovStructure where the Lyapunov function is the neural
-network evaluated at state. This does not structurally enforce any Lyapunov
-conditions.
+Creates a `NeuralLyapunovStructure` where the Lyapunov function is the neural network
+evaluated at the state. This does not structurally enforce any Lyapunov conditions.
 """
 function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
@@ -17,22 +16,22 @@ end
 """
     NonnegativeNeuralLyapunov(network_dim, δ, pos_def; grad_pos_def, grad)
 
-Creates a NeuralLyapunovStructure where the Lyapunov function is the L2 norm of
-the neural network output plus a constant δ times a function pos_def.
+Creates a `NeuralLyapunovStructure` where the Lyapunov function is the L2 norm of the neural
+network output plus a constant δ times a function `pos_def`.
 
-The condition that the Lyapunov function must be minimized uniquely at the
-fixed point can be represented as V(fixed_point) = 0, V(state) > 0 when
-state != fixed_point. This structure ensures V(state) ≥ 0. Further, if δ > 0
-and pos_def(fixed_point, fixed_point) = 0, but pos_def(state, fixed_point) > 0
-when state != fixed_point, this ensures that V(state) > 0 when
-state != fixed_point. This does not enforce V(fixed_point) = 0, so that
-condition must included in the neural Lyapunov loss function.
+The condition that the Lyapunov function must be minimized uniquely at the fixed point can
+be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
+structure ensures `V(state) ≥ 0`. Further, if `δ > 0` and
+`pos_def(fixed_point, fixed_point) = 0`, but `pos_def(state, fixed_point) > 0` when
+`state ≠ fixed_point`, this ensures that `V(state) > 0` when `state != fixed_point`. This
+does not enforce `V(fixed_point) = 0`, so that condition must included in the neural
+Lyapunov loss function.
 
-grad_pos_def(state, fixed_point) should be the gradient of pos_def with respect
-to state at state. If grad_pos_def is not defined, it is evaluated using grad,
-which defaults to ForwardDiff.gradient.
+`grad_pos_def(state, fixed_point)` should be the gradient of `pos_def` with respect to
+`state` at `state`. If `grad_pos_def` is not defined, it is evaluated using `grad`, which
+defaults to `ForwardDiff.gradient`.
 
-The neural network output has dimension network_dim.
+The neural network output has dimension `network_dim`.
 """
 function NonnegativeNeuralLyapunov(
         network_dim::Integer;
@@ -75,25 +74,24 @@ end
 """
     PositiveSemiDefiniteStructure(network_dim; pos_def, non_neg, grad_pos_def, grad_non_neg, grad)
 
-Creates a NeuralLyapunovStructure where the Lyapunov function is the product of
-a positive (semi-)definite function pos_def which does not depend on the
-network and a nonnegative function non_neg which does depend the network.
+Creates a `NeuralLyapunovStructure` where the Lyapunov function is the product of a positive
+(semi-)definite function `pos_def` which does not depend on the network and a nonnegative
+function non_neg which does depend the network.
 
-The condition that the Lyapunov function must be minimized uniquely at the
-fixed point can be represented as V(fixed_point) = 0, V(state) > 0 when
-state != fixed_point. This structure ensures V(state) ≥ 0. Further, if pos_def
-is 0 only at fixed_point (and positive elsewhere) and if non_neg is strictly
-positive away from fixed_point (as is the case for the default values of pos_def
-and non_neg), then this structure ensures V(fixed_point) = 0 and V(state) > 0
-when state != fixed_point.
+The condition that the Lyapunov function must be minimized uniquely at the fixed point can
+be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
+structure ensures `V(state) ≥ 0`. Further, if `pos_def` is `0` only at `fixed_point` (and
+positive elsewhere) and if `non_neg` is strictly positive away from `fixed_point` (as is the
+case for the default values of `pos_def` and `non_neg`), then this structure ensures
+`V(fixed_point) = 0` and `V(state) > 0` when `state ≠ fixed_point`.
 
-grad_pos_def(state, fixed_point) should be the gradient of pos_def with respect
-to state at state. Similarly, grad_non_neg(net, J_net, state, fixed_point)
-should be the gradient of non_neg(net, state, fixed_point) with respect to
-state at state. If grad_pos_def or grad_non_neg is not defined, it is evaluated
-using grad, which defaults to ForwardDiff.gradient.
+`grad_pos_def(state, fixed_point)` should be the gradient of `pos_def` with respect to
+`state` at `state`. Similarly, `grad_non_neg(net, J_net, state, fixed_point)` should be the
+gradient of `non_neg(net, state, fixed_point)` with respect to `state` at `state`. If
+`grad_pos_def` or `grad_non_neg` is not defined, it is evaluated using `grad`, which
+defaults to `ForwardDiff.gradient`.
 
-The neural network output has dimension network_dim.
+The neural network output has dimension `network_dim`.
 """
 function PositiveSemiDefiniteStructure(
         network_dim::Integer;

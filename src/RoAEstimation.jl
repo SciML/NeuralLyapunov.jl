@@ -2,13 +2,14 @@
     get_RoA_estimate(V, dVdt, lb, ub; fixed_point, ∇V)
 
 Finds the level of the largest sublevelset comletely in the domain in which the
-Lyapunov conditions are met. Specifically finds the largest ρ such that
-    V(x) < ρ => lb .< x .< ub && (dVdt(x) < 0 || x = fixed_point)
+Lyapunov conditions are met. Specifically finds the largest `ρ` such that
+    `V(x) < ρ => lb .< x .< ub && (dVdt(x) < 0 || x = fixed_point)`
 
-The fixed point defaults to the origin, with dimension inferred from lb. If ∇V
-is not specified, it is calculated using ForwardDiff.
+The fixed point defaults to the origin, with dimension inferred from `lb`. If `∇V`
+is not specified, it is calculated using `ForwardDiff`.
 """
-function get_RoA_estimate(V, dVdt, lb, ub; reltol = 1e-3, abstol = 1e-4, fixed_point = zeros(length(lb)), ∇V = nothing)
+function get_RoA_estimate(V, dVdt, lb, ub; reltol = 1e-3, abstol = 1e-4,
+                          fixed_point = zeros(length(lb)), ∇V = nothing)
     state_dim = length(lb)
     if isnothing(∇V)
         ∇V_func(state::AbstractVector) = ForwardDiff.gradient(V, state)
@@ -24,12 +25,12 @@ function _get_RoA_estimate(V, dVdt, state_dim, lb, ub, fixed_point, ∇V, reltol
     ρ_max, x_opt, i_bd = find_min_on_bounding_box(V, state_dim, lb, ub, ∇V)
 
     # Move x_opt just off the boundary
-    x_opt[i_bd] -= √eps(typeof(x_opt[i_bd])) * sign(x_opt[i_bd] - fixed_point[i_bd]) 
+    x_opt[i_bd] -= √eps(typeof(x_opt[i_bd])) * sign(x_opt[i_bd] - fixed_point[i_bd])
 
     # Initialzie search for max ρ : ( (max V̇(x) : V(x) < ρ) < 0)
     # We cannot verify V(x) > ρ_max, since some such x are outside the domain
     # We have verified V(x) ≤ 0, since the only such x is fixed_point
-    # So, our search is for ρ ∈ [ρ_min, ρ_max] and we begin by attempting to 
+    # So, our search is for ρ ∈ [ρ_min, ρ_max] and we begin by attempting to
     # validate the whole set {x : V(x) < ρ_max}
     ρ_min = 0.0
     ρ = ρ_max
@@ -53,7 +54,7 @@ function _get_RoA_estimate(V, dVdt, state_dim, lb, ub, fixed_point, ∇V, reltol
     while abs(ρ_max - ρ_min) > max(abstol, reltol*ρ_max)
         # Find a point just interior of the boundary to start optimization
         guess = initialize_guess(V_param, lb, ub, ρ_min, ρ, x_opt; ∇V = ∇V_param)
-        
+
         # Find max V̇(x) : ρ_min ≤ V(x) < ρ
         # We've already verified V(x) < ρ_min, so don't need to check there
         prob = OptimizationProblem{true}(
@@ -86,7 +87,7 @@ end
 
 """
     initialize_guess(V, lb, ub, ρ_min, ρ, x_opt; ∇V = nothing)
-Finds a point x of the same shape as x_opt such that ρ_min < V(x) < ρ
+Finds a point `x` of the same shape as `x_opt` such that `ρ_min < V(x) < ρ`.
 """
 function initialize_guess(V, lb, ub, ρ_min, ρ, x_opt; ∇V = nothing)
     f = OptimizationFunction{true}(
@@ -116,11 +117,12 @@ end
 Finds a point x of the same shape as x_start such that `ρ_min < V(x) < ρ` and
 `cons(x)[2] > boundary_val`.
 
-Assumes cons(⋅)[1] == V(⋅), V(x_start) > ρ, cons(x_start)[2] > boundary_val. 
-Also, V should actually be V(x,p) and cons should be cons(x,p) where p are 
+Assumes `cons(⋅)[1] == V(⋅), V(x_start) > ρ, cons(x_start)[2] > boundary_val`.
+Also, `V` should actually be `V(x,p)` and `cons` should be `cons(x,p)` where `p` are
 unused parameters.
 """
-function initialize_guess_aided(V, cons, boundary_val, lb, ub, ρ_min, ρ, x_start, ∇V, cons_j)
+function initialize_guess_aided(V, cons, boundary_val, lb, ub, ρ_min, ρ, x_start, ∇V,
+                                cons_j)
     if ρ_min < V(x_start, nothing) < ρ && cons(x_start, nothing)[2] > boundary_val
         return x_start
     end
@@ -168,11 +170,11 @@ end
 """
     find_min_on_boundary(V, state_dim, lb, ub, ∇V)
 
-Finds the minimum value of V on the bounding box given by 
-    any(x .== lb) || any(x .== ub)
+Finds the minimum value of `V` on the bounding box given by
+    `any(x .== lb) || any(x .== ub)`
 
-Returns (V_min, x_min, i_bd) such that V(x_min) = V_min is the minimum value of
-V on the boundary and x_min[i_bd] == lb[i_bd] || x_min[i_bd] == ub[i_bd].
+Returns `(V_min, x_min, i_bd)` such that `V(x_min) = V_min` is the minimum value of
+`V` on the boundary and `x_min[i_bd] == lb[i_bd] || x_min[i_bd] == ub[i_bd]`.
 """
 function find_min_on_bounding_box(V, state_dim, lb, ub, ∇V)
     # TODO: @view to speed up?
@@ -203,7 +205,7 @@ function find_min_on_bounding_box(V, state_dim, lb, ub, ∇V)
     # Find a point just interior of the boundary to start optimization
     i_bd = (j_opt - 1) % state_dim + 1
     x_min = candidates[j_opt]
-    
+
     return (V_min, x_min, i_bd)
 end
 
@@ -228,17 +230,20 @@ function make_paramerized_vector_func(f)
 end
 
 """
-    get_RoA_estimate_aided(V, dVdt, lb, ub, V_certified, ρ_certified; fixed_point, ∇V, ∇V_certified)
+    get_RoA_estimate_aided(V, dVdt, lb, ub, V_certified, ρ_certified; fixed_point, ∇V,
+                           ∇V_certified)
 
 Finds the level of the largest sublevelset comletely in the domain in which the
-Lyapunov conditions are met, ignoring points x where V_certified(x) < ρ_certified.
+Lyapunov conditions are met, ignoring points `x` where `V_certified(x) < ρ_certified`.
 
-Specifically, finds the largest ρ such that
-    V(x) < ρ => lb .< x .< ub && (dVdt(x) < 0 || V_certified(x) < ρ_certified)
-If ∇V is not specified, it is calculated using ForwardDiff. If fixed_point is
-not specified, it defaults to the origin, with dimension inferred from lb.
+Specifically, finds the largest `ρ` such that
+    `V(x) < ρ => lb .< x .< ub && (dVdt(x) < 0 || V_certified(x) < ρ_certified)`
+If `∇V` is not specified, it is calculated using `ForwardDiff`. If `fixed_point` is
+not specified, it defaults to the origin, with dimension inferred from `lb`.
 """
-function get_RoA_estimate_aided(V, dVdt, lb, ub, V_certified, ρ_certified; reltol = 1e-3, abstol = 1e-4, fixed_point = zeros(length(lb)), ∇V = nothing, ∇V_certified = nothing)
+function get_RoA_estimate_aided(V, dVdt, lb, ub, V_certified, ρ_certified; reltol = 1e-3,
+                                abstol = 1e-4, fixed_point = zeros(length(lb)),
+                                ∇V = nothing, ∇V_certified = nothing)
     state_dim = length(lb)
     if isnothing(∇V)
         ∇V_func(state::AbstractVector) = ForwardDiff.gradient(V, state)
@@ -252,20 +257,23 @@ function get_RoA_estimate_aided(V, dVdt, lb, ub, V_certified, ρ_certified; relt
     else
         ∇V_certified_func = ∇V_certified
     end
-    _get_RoA_estimate_aided(V, dVdt, state_dim, lb, ub, V_certified, ρ_certified, fixed_point, ∇V_func, ∇V_certified_func, reltol, abstol)
+    _get_RoA_estimate_aided(V, dVdt, state_dim, lb, ub, V_certified, ρ_certified,
+                            fixed_point, ∇V_func, ∇V_certified_func, reltol, abstol)
 end
 
-function _get_RoA_estimate_aided(V, dVdt, state_dim, lb, ub, V_certified, ρ_certified, fixed_point, ∇V, ∇V_certified, reltol, abstol)
+function _get_RoA_estimate_aided(V, dVdt, state_dim, lb, ub, V_certified, ρ_certified,
+                                 fixed_point, ∇V, ∇V_certified, reltol, abstol)
     # Let ρ_max = minimum value of V on the boundary
     ρ_max, x_opt, i_bd = find_min_on_bounding_box(V, state_dim, lb, ub, ∇V)
 
     # Move x_opt just off the boundary
-    x_opt[i_bd] -= √eps(typeof(x_opt[i_bd])) * sign(x_opt[i_bd] - fixed_point[i_bd]) 
+    x_opt[i_bd] -= √eps(typeof(x_opt[i_bd])) * sign(x_opt[i_bd] - fixed_point[i_bd])
 
     # Set up paramerized versions of functions for optimization
     negV̇_param = make_paramerized_scalar_func(x -> -dVdt(x))
     cons = make_paramerized_vector_func(x -> vcat(V(x), V_certified(x)))
-    cons_j = make_paramerized_vector_func(x -> vcat(reshape(∇V(x), (1,length(x))), reshape(∇V_certified(x), (1,length(x)))))
+    cons_j = make_paramerized_vector_func(x -> vcat(reshape(∇V(x), (1,length(x))),
+                                                    reshape(∇V_certified(x), (1,length(x)))))
     V_param = make_paramerized_scalar_func(V)
     ∇V_param = make_paramerized_vector_func(∇V)
     V_cert_param = make_paramerized_scalar_func(V_certified)
@@ -275,28 +283,28 @@ function _get_RoA_estimate_aided(V, dVdt, state_dim, lb, ub, V_certified, ρ_cer
     #   max ρ : ( (max V̇(x) : (V(x) < ρ && V_certified > ρ_certified)) < 0)
     # We cannot verify V(x) > ρ_max, since some such x are outside the domain
     # We have also (by assumption) verified {x : V_certified(x) < ρ_certified},
-    # so we have also verified {x : V(x) < ρ_min}, where 
+    # so we have also verified {x : V(x) < ρ_min}, where
     #   ρ_min = min V(x) : V_certified(x) ≥ ρ_certified
     # since V(x) < ρ_min => V_certified(x) < ρ_certified
     ρ_min, x_min = find_min_on_region_boundary(
-        V_param, 
-        V_cert_param, 
-        ρ_certified, 
-        lb, 
-        ub, 
-        ∇V_param, 
+        V_param,
+        V_cert_param,
+        ρ_certified,
+        lb,
+        ub,
+        ∇V_param,
         ∇V_cert_param
     )
-    
-    if ρ_min > ρ_max 
+
+    if ρ_min > ρ_max
         @show ρ_min, ρ_max, x_min
         throw("Something wen't wrong")
     end
 
-    # Our search is for ρ ∈ [ρ_min, ρ_max] and we begin by attempting to 
+    # Our search is for ρ ∈ [ρ_min, ρ_max] and we begin by attempting to
     # validate the whole set {x : V(x) < ρ_max}
     ρ = ρ_max
-    
+
     # Set up OptimizationFunction
     f = OptimizationFunction{true}(
         negV̇_param,
@@ -314,18 +322,18 @@ function _get_RoA_estimate_aided(V, dVdt, state_dim, lb, ub, V_certified, ρ_cer
         @show count
         # Find a point just interior of the boundary to start optimization
         guess = initialize_guess_aided(
-            V_param, 
-            cons, 
-            ρ_certified, 
-            lb, 
-            ub, 
+            V_param,
+            cons,
+            ρ_certified,
+            lb,
+            ub,
             (ρ_min + ρ) / 2, # addresses trouble with V(guess) < ρ_min
-            ρ, 
-            x_opt, 
-            ∇V_param, 
+            ρ,
+            x_opt,
+            ∇V_param,
             cons_j
         )
-        
+
         # Find max V̇(x) : ρ_min ≤ V(x) < ρ, V_certified(x) > ρ_certified
         # We've already verified {x : V(x) < ρ_min || V_certified(x) < ρ_certified}
         # so don't need to check there
@@ -363,7 +371,8 @@ end
 
 Finds min V(x) : boundary_func(x) ≥ boundary_val && lb .< x .< ub
 """
-function find_min_on_region_boundary(V, boundary_func, boundary_val, lb, ub, ∇V, ∇boundary_func)
+function find_min_on_region_boundary(V, boundary_func, boundary_val, lb, ub, ∇V,
+                                     ∇boundary_func)
     function neg_bf(x, p)
         -boundary_func(x,p)
     end
@@ -378,7 +387,7 @@ function find_min_on_region_boundary(V, boundary_func, boundary_val, lb, ub, ∇
     end
 
     # Initialize guess by finding x : boundary_func(x) ≥ boundary_val
-    # We do so by solving max boundary_func(x) = min -boundary_func(x) and 
+    # We do so by solving max boundary_func(x) = min -boundary_func(x) and
     # stopping early if boundary_func(x) ≥ boundary_val + ϵ
     f_guess = OptimizationFunction{true}(
         neg_bf,
