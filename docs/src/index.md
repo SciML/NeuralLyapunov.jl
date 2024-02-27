@@ -4,7 +4,7 @@ CurrentModule = NeuralLyapunov
 
 # NeuralLyapunov
 
-Documentation for [NeuralLyapunov](https://github.com/nicholaskl97/NeuralLyapunov.jl).
+Documentation for [NeuralLyapunov](https://github.com/SciML/NeuralLyapunov.jl).
 
 ```@index
 ```

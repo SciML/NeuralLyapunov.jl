@@ -9,8 +9,8 @@ makedocs(;
     authors = "Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com> and contributors",
     sitename = "NeuralLyapunov.jl",
     format = Documenter.HTML(;
-        canonical = "https://nicholaskl97.github.io/NeuralLyapunov.jl",
-        edit_link = "main",
+        canonical = "https://SciML.github.io/NeuralLyapunov.jl",
+        edit_link = "master",
         assets = String[]
     ),
     pages = [
@@ -19,6 +19,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo = "github.com/nicholaskl97/NeuralLyapunov.jl",
-    devbranch = "main"
+    repo = "github.com/SciML/NeuralLyapunov.jl",
+    devbranch = "master"
 )
