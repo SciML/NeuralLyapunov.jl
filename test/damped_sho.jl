@@ -1,8 +1,13 @@
 using LinearAlgebra
 using NeuralPDE, Lux, ModelingToolkit
 using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
-using Plots
 using NeuralLyapunov
+using Random
+using Test
+
+Random.seed!(200)
+
+println("Damped Simple Harmonic Oscillator")
 
 ######################### Define dynamics and domain ##########################
 
@@ -16,7 +21,7 @@ end
 lb = [-2 * pi, -10.0];
 ub = [2 * pi, 10.0];
 p = [0.5, 1.0]
-dynamics = ODEFunction(f; syms = [:x, :v], paramsyms = [:ζ, :ω_0])
+dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -24,13 +29,11 @@ dynamics = ODEFunction(f; syms = [:x, :v], paramsyms = [:ζ, :ω_0])
 dim_state = length(lb)
 dim_hidden = 15
 dim_output = 2
-chain = [
-    Lux.Chain(
-        Dense(dim_state, dim_hidden, tanh),
-        Dense(dim_hidden, dim_hidden, tanh),
-        Dense(dim_hidden, 1, use_bias = false),
-    ) for _ = 1:dim_output
-]
+chain = [Lux.Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
 
 # Define neural network discretization
 strategy = GridTraining(0.1)
@@ -38,88 +41,56 @@ discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
 structure = NonnegativeNeuralLyapunov(
-        dim_output; 
-        δ = 1e-6
-        )
+    dim_output;
+    δ = 1e-6
+)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
 κ = 20.0
-decrease_condition_log = AsymptoticDecrease(
-    strict = true, 
+decrease_condition = AsymptoticDecrease(
+    strict = true,
     relu = (t) -> log(1.0 + exp(κ * t)) / κ
-    )
+)
 
 # Construct neural Lyapunov specification
-spec_log = NeuralLyapunovSpecification(
+spec = NeuralLyapunovSpecification(
     structure,
     minimization_condition,
-    decrease_condition_log,
-    )
+    decrease_condition
+)
 
 ############################# Construct PDESystem #############################
 
-pde_system_log, network_func = NeuralLyapunovPDESystem(
+pde_system, network_func = NeuralLyapunovPDESystem(
     dynamics,
     lb,
     ub,
-    spec_log;
+    spec;
     p = p
 )
 
 ######################## Construct OptimizationProblem ########################
 
-prob_log = discretize(pde_system_log, discretization)
-sym_prob_log = symbolic_discretize(pde_system_log, discretization)
-
-callback = function (p, l)
-    println("loss: ", l)
-    return false
-end
+prob = discretize(pde_system, discretization)
+sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-# Optimize with stricter log version
-res = Optimization.solve(prob_log, Adam(); callback = callback, maxiters = 300)
-
-######################### Rebuild OptimizationProblem #########################
-
-println("Switching from log(1 + κ exp(V̇))/κ to max(0,V̇)");
-
-# Set up new decrease condition
-decrease_condition_relu = AsymptoticDecrease(strict = true)
-spec_relu = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition_relu,
-    )
-
-# Build and discretize new PDESystem
-pde_system_relu, _ = NeuralLyapunovPDESystem(dynamics, lb, ub, spec_relu; p = p)
-prob_relu = discretize(pde_system_relu, discretization)
-sym_prob_relu = symbolic_discretize(pde_system_relu, discretization)
-
-# Rebuild problem with weaker ReLU version
-prob_relu = Optimization.remake(prob_relu, u0 = res.u);
-
-######################## Solve new OptimizationProblem ########################
-
-res = Optimization.solve(prob_relu, Adam(); callback = callback, maxiters = 300)
-prob_relu = Optimization.remake(prob_relu, u0 = res.u);
-
-println("Switching from Adam to BFGS");
-res = Optimization.solve(prob_relu, BFGS(); callback = callback, maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+prob = Optimization.remake(prob, u0 = res.u)
+res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
-    discretization.phi, 
-    res.u, 
-    network_func, 
+    discretization.phi,
+    res.u,
+    network_func,
     structure.V,
-    dynamics,
+    ODEFunction(dynamics),
     zeros(2);
     p = p
-    )
+)
 
 ################################## Simulate ###################################
 xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
@@ -127,6 +98,22 @@ states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
 
+#################################### Tests ####################################
+
+# Network structure should enforce nonegativeness of V
+@test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
+
+# Trained for V's minimum to be at the fixed point
+@test V_func([0.0, 0.0])≈minimum(V_predict) atol=1e-4
+@test V_func([0.0, 0.0]) < 1e-4
+
+# Dynamics should result in a fixed point at the origin
+@test V̇_func([0.0, 0.0]) == 0.0
+
+# V̇ should be negative almost everywhere
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-4
+
+#=
 # Get RoA Estimate
 data = reshape(V_predict, (length(xs), length(ys)));
 data = vcat(data[1, :], data[end, :], data[:, 1], data[:, end]);
@@ -179,3 +166,4 @@ p4 = plot(
 );
 p4 = scatter!([0], [0], label = "Equilibrium");
 plot(p1, p2, p3, p4)
+=#

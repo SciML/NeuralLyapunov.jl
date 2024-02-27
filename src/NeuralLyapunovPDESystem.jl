@@ -8,75 +8,189 @@ operates columnwise.
 
 The neural Lyapunov function will only be trained for { x : lb .≤ x .≤ ub }.
 The Lyapunov function will be for the dynamical system represented by dynamics
-If dynamics is an ODEProblem or ODEFunction, then the corresponding ODE; if 
-dynamics is a function, then the ODE is ẋ = dynamics(x, p, t). This ODE should 
-not depend on t (time t=0.0 alone will be used) and should have a fixed point 
+If dynamics is an ODEProblem or ODEFunction, then the corresponding ODE; if
+dynamics is a function, then the ODE is ẋ = dynamics(x, p, t). This ODE should
+not depend on t (time t=0.0 alone will be used) and should have a fixed point
 at x = fixed_point. The particular Lyapunov conditions to be used and structure
-of the neural Lyapunov function are specified through spec, which is a 
+of the neural Lyapunov function are specified through spec, which is a
 NeuralLyapunovSpecification.
 
-The returned neural network function takes three inputs: the neural network 
-structure phi, the trained network parameters, and a matrix of inputs to 
+The returned neural network function takes three inputs: the neural network
+structure phi, the trained network parameters, and a matrix of inputs to
 operate on columnwise.
 
-If dynamics requires parameters, their values can be supplied through the 
+If dynamics requires parameters, their values can be supplied through the
 Vector p, or through dynamics.p if dynamics isa ODEProblem (in which case, let
-the other be SciMLBase.NullParameters()). If dynamics is an ODEFunction and 
+the other be SciMLBase.NullParameters()). If dynamics is an ODEFunction and
 dynamics.paramsyms is defined, then p should have the same order.
 """
 function NeuralLyapunovPDESystem(
-    dynamics::ODEFunction,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
+        dynamics::ODEFunction,
+        lb,
+        ub,
+        spec::NeuralLyapunovSpecification;
+        fixed_point = zeros(length(lb)),
+        p = SciMLBase.NullParameters()
+)::Tuple{PDESystem, Function}
     if dynamics.mass_matrix !== I
-        throw(ErrorException("DAEs are not supported at this time"))
+        throw(ErrorException("DAEs are not supported at this time."))
     end
 
-    ########################## Unpack specifications ##########################
-    structure = spec.structure
-    minimzation_condition = spec.minimzation_condition
-    decrease_condition = spec.decrease_condition
+    if dynamics.sys isa ODESystem
+        return NeuralLyapunovPDESystem(
+            dynamics.sys,
+            lb,
+            ub,
+            spec;
+            fixed_point = fixed_point,
+            p = p
+        )
+    end
 
     ########################## Define state symbols ###########################
     state_dim = length(lb)
 
     # Define state symbols, if not already defined
-    state_syms = if isnothing(dynamics.syms)
-        [Symbol(:state, i) for i = 1:state_dim]  
+    state_syms = SciMLBase.variable_symbols(dynamics.sys)
+    state_syms = if isempty(state_syms)
+        [Symbol(:state, i) for i in 1:state_dim]
     else
-        dynamics.syms
+        state_syms
     end
     state = [first(@parameters $s) for s in state_syms]
-
-    # Define domains
-    domains = [state[i] ∈ (lb[i], ub[i]) for i = 1:state_dim]
 
     ######################## Define parameter symbols #########################
     # Define parameter symbols, if not already defined
     param_syms = if p == SciMLBase.NullParameters()
         []
     else
-        if isnothing(dynamics.paramsyms)
-            [Symbol(:param, i) for i = 1:length(p)]
+        if isnothing(dynamics.sys.parameters)
+            [Symbol(:param, i) for i in 1:length(p)]
         else
-            dynamics.paramsyms
+            dynamics.sys.parameters
         end
     end
-    
+
     params = [first(@parameters $s) for s in param_syms]
+
+    ##################### Define default parameter values #####################
     defaults = if p == SciMLBase.NullParameters()
         Dict()
     else
         Dict([param => param_val for (param, param_val) in zip(params, p)])
     end
 
+    ########################### Construct PDESystem ###########################
+    return _NeuralLyapunovPDESystem(
+        dynamics,
+        lb,
+        ub,
+        spec,
+        fixed_point,
+        state,
+        params,
+        defaults
+    )
+end
+
+function NeuralLyapunovPDESystem(
+        dynamics::Function,
+        lb,
+        ub,
+        spec::NeuralLyapunovSpecification;
+        fixed_point = zeros(length(lb)),
+        p = SciMLBase.NullParameters()
+)::Tuple{PDESystem, Function}
+    return NeuralLyapunovPDESystem(
+        ODEFunction(dynamics),
+        lb,
+        ub,
+        spec;
+        fixed_point = fixed_point,
+        p = p
+    )
+end
+
+function NeuralLyapunovPDESystem(
+        dynamics::ODEProblem,
+        lb,
+        ub,
+        spec::NeuralLyapunovSpecification;
+        fixed_point = zeros(length(lb)),
+        p = SciMLBase.NullParameters()
+)::Tuple{PDESystem, Function}
+    f = dynamics.f
+
+    p = if dynamics.p == SciMLBase.NullParameters()
+        p
+    elseif p == SciMLBase.NullParameters()
+        dynamics.p
+    elseif dynamics.p == p
+        p
+    else
+        throw(ErrorException("Conflicting parameter definitions. Please define parameters only through p or dynamics.p; the other should be SciMLBase.NullParameters()"))
+    end
+
+    return NeuralLyapunovPDESystem(
+        f,
+        lb,
+        ub,
+        spec;
+        fixed_point = fixed_point,
+        p = p
+    )
+end
+
+function NeuralLyapunovPDESystem(
+        dynamics::ODESystem,
+        lb,
+        ub,
+        spec::NeuralLyapunovSpecification;
+        fixed_point = zeros(length(lb))
+)::Tuple{PDESystem, Function}
+    ########################## Define state symbols ###########################
+    state = states(dynamics)
+    # States should all be functions of time, but we just want the symbol
+    # e.g., if the state is ω(t), we just want ω
+    state = map(st -> istree(st) ? operation(st) : st, state)
+    state_syms = Symbol.(state)
+    state = [first(@parameters $s) for s in state_syms]
+
+    ########################### Construct PDESystem ###########################
+    _NeuralLyapunovPDESystem(
+        ODEFunction(dynamics),
+        lb,
+        ub,
+        spec,
+        fixed_point,
+        state,
+        Num.(parameters(dynamics)),
+        ModelingToolkit.get_defaults(dynamics)
+    )
+end
+
+function _NeuralLyapunovPDESystem(
+        dynamics::Function,
+        lb,
+        ub,
+        spec::NeuralLyapunovSpecification,
+        fixed_point,
+        state,
+        params,
+        defaults
+)::Tuple{PDESystem, Function}
+    ########################## Unpack specifications ##########################
+    structure = spec.structure
+    minimzation_condition = spec.minimzation_condition
+    decrease_condition = spec.decrease_condition
+
+    ############################# Define domains ##############################
+    state_dim = length(lb)
+    domains = [state[i] ∈ (lb[i], ub[i]) for i in 1:state_dim]
+
     ################## Define Lyapunov function & derivative ##################
     output_dim = structure.network_dim
-    net_syms = [Symbol(:u, i) for i = 1:output_dim]
+    net_syms = [Symbol(:u, i) for i in 1:output_dim]
     net = [first(@variables $s(..)) for s in net_syms]
 
     # u(x) is the symbolic form of neural network output
@@ -86,13 +200,15 @@ function NeuralLyapunovPDESystem(
     V_sym(x) = structure.V(u, x, fixed_point)
 
     # V̇_sym(x) is the symbolic time derivative of the Lyapunov function
-    V̇_sym(x) = structure.V̇(
-        u, 
-        y -> Symbolics.jacobian(u(y), y), 
-        y -> dynamics(y, params, 0.0), 
-        x, 
-        fixed_point
+    function V̇_sym(x)
+        structure.V̇(
+            u,
+            y -> Symbolics.jacobian(u(y), y),
+            y -> dynamics(y, params, 0.0),
+            x,
+            fixed_point
         )
+    end
 
     ################ Define equations and boundary conditions #################
     eqs = []
@@ -107,8 +223,8 @@ function NeuralLyapunovPDESystem(
         push!(eqs, cond(V_sym, V̇_sym, state, fixed_point) ~ 0.0)
     end
 
-    bcs = [] 
-    
+    bcs = []
+
     if check_fixed_point(minimzation_condition)
         push!(bcs, V_sym(fixed_point) ~ 0.0)
     end
@@ -119,7 +235,7 @@ function NeuralLyapunovPDESystem(
     if isempty(eqs) && isempty(bcs)
         error("No training conditions specified.")
     end
-    
+
     # NeuralPDE requires an equation and a boundary condition, even if they are
     # trivial like 0.0 == 0.0
     if isempty(eqs)
@@ -131,123 +247,53 @@ function NeuralLyapunovPDESystem(
 
     ########################### Construct PDESystem ###########################
     @named lyapunov_pde_system = PDESystem(
-        eqs, 
-        bcs, 
-        domains, 
-        state, 
+        eqs,
+        bcs,
+        domains,
+        state,
         u(state),
-        params; 
+        params;
         defaults = defaults
-        )
+    )
 
     ################### Return PDESystem and neural network ###################
     # u_func is the numerical form of neural network output
-    u_func(phi, θ, x) = reduce(
-        vcat, 
-        Array(phi[i](x, θ.depvar[net_syms[i]])) for i = 1:output_dim
+    function u_func(phi, θ, x)
+        reduce(
+            vcat,
+            Array(phi[i](x, θ.depvar[net_syms[i]])) for i in 1:output_dim
         )
+    end
 
     return lyapunov_pde_system, u_func
-end
-
-function NeuralLyapunovPDESystem(
-    dynamics::Function,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
-    return NeuralLyapunovPDESystem(
-            ODEFunction(dynamics),
-            lb,
-            ub,
-            spec;
-            fixed_point = fixed_point,
-            p = p
-        )      
-end
-
-function NeuralLyapunovPDESystem(
-    dynamics::ODEProblem,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
-    f = dynamics.f
-    
-    p = if dynamics.p == SciMLBase.NullParameters()
-        p
-    elseif p == SciMLBase.NullParameters()
-        dynamics.p
-    elseif dynamics.p == p
-        p
-    else
-        throw(ErrorException("Conflicting parameter definitions. Please define parameters only through p or dynamics.p; the other should be SciMLBase.NullParameters()"))
-    end
-
-    return NeuralLyapunovPDESystem(
-            f, 
-            lb, 
-            ub, 
-            spec; 
-            fixed_point = fixed_point, 
-            p = p
-        )
-end
-
-function NeuralLyapunovPDESystem(
-    dynamics::ODESystem,
-    lb,
-    ub,
-    spec::NeuralLyapunovSpecification;
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-)::Tuple{PDESystem,Function}
-    p = if p == SciMLBase.NullParameters() && !isempty(dynamics.ps)
-        [dynamics.defaults[param] for param in dynamics.ps]
-    else
-        p
-    end
-    
-    NeuralLyapunovPDESystem(
-        ODEFunction(dynamics),
-        lb,
-        ub,
-        spec;
-        fixed_point = fixed_point,
-        p = p
-    )
 end
 
 """
     NumericalNeuralLyapunovFunctions(phi, θ, network_func, structure, dynamics, fixed_point; jac, J_net)
 
-Returns the Lyapunov function, its time derivative, and its gradient: V(state), 
+Returns the Lyapunov function, its time derivative, and its gradient: V(state),
 V̇(state), and ∇V(state)
 
 These functions can operate on a state vector or columnwise on a matrix of state
-vectors. phi is the neural network with parameters θ. network_func(phi, θ, state) 
-is an output of NeuralLyapunovPDESystem, which evaluates the neural network 
+vectors. phi is the neural network with parameters θ. network_func(phi, θ, state)
+is an output of NeuralLyapunovPDESystem, which evaluates the neural network
 represented phi with parameters θ at state.
 
-The Lyapunov function structure is specified in structure, which is a 
+The Lyapunov function structure is specified in structure, which is a
 NeuralLyapunovStructure. The Jacobian of the network is either specified via
-J_net(_phi, _θ, state) or calculated using jac, which defaults to 
+J_net(_phi, _θ, state) or calculated using jac, which defaults to
 ForwardDiff.jacobian
 """
 function NumericalNeuralLyapunovFunctions(
-    phi,
-    θ, 
-    network_func::Function,
-    structure::NeuralLyapunovStructure,
-    dynamics::Function,
-    fixed_point;
-    p,
-    jac = ForwardDiff.jacobian,
-    J_net = (_phi, _θ, x) -> jac((y) -> network_func(_phi, _θ, y), x)
+        phi,
+        θ,
+        network_func::Function,
+        structure::NeuralLyapunovStructure,
+        dynamics::Function,
+        fixed_point;
+        p,
+        jac = ForwardDiff.jacobian,
+        J_net = (_phi, _θ, x) -> jac((y) -> network_func(_phi, _θ, y), x)
 )::Tuple{Function, Function, Function}
     # Make Network function
     _net_func = (x) -> network_func(phi, θ, x)
@@ -259,21 +305,23 @@ function NumericalNeuralLyapunovFunctions(
 
     # Numerical gradient of Lyapunov function
     ∇V_func(state::AbstractVector) = structure.∇V(
-        _net_func, 
-        _J_net, 
-        state, 
+        _net_func,
+        _J_net,
+        state,
         fixed_point
-        )
+    )
     ∇V_func(state::AbstractMatrix) = mapslices(∇V_func, state, dims = [1])
 
     # Numerical time derivative of Lyapunov function
-    V̇_func(state::AbstractVector) = structure.V̇(
-        _net_func, 
-        _J_net, 
-        y -> dynamics(y, p, 0.0), 
-        state, 
-        fixed_point
+    function V̇_func(state::AbstractVector)
+        structure.V̇(
+            _net_func,
+            _J_net,
+            y -> dynamics(y, p, 0.0),
+            state,
+            fixed_point
         )
+    end
     V̇_func(state::AbstractMatrix) = mapslices(V̇_func, state, dims = [1])
 
     return V_func, V̇_func, ∇V_func
@@ -282,26 +330,26 @@ end
 """
     NumericalNeuralLyapunovFunctions(phi, θ, network_func, V_structure, dynamics, fixed_point, grad)
 
-Returns the Lyapunov function, its time derivative, and its gradient: V(state), 
+Returns the Lyapunov function, its time derivative, and its gradient: V(state),
 V̇(state), and ∇V(state)
 
 These functions can operate on a state vector or columnwise on a matrix of state
 vectors. phi is the neural network with parameters θ. network_func is an output
 of NeuralLyapunovPDESystem.
 
-The Lyapunov function structure is defined by 
+The Lyapunov function structure is defined by
     V_structure(_network_func, state, fixed_point)
-Its gradient is calculated using grad, which defaults to ForwardDiff.gradient. 
+Its gradient is calculated using grad, which defaults to ForwardDiff.gradient.
 """
 function NumericalNeuralLyapunovFunctions(
-    phi,
-    θ,
-    network_func::Function,
-    V_structure::Function,
-    dynamics::Function,
-    fixed_point;
-    p = SciMLBase.NullParameters,
-    grad = ForwardDiff.gradient,
+        phi,
+        θ,
+        network_func::Function,
+        V_structure::Function,
+        dynamics::Function,
+        fixed_point;
+        p = SciMLBase.NullParameters,
+        grad = ForwardDiff.gradient
 )::Tuple{Function, Function, Function}
     # Make network function
     _net_func = (x) -> network_func(phi, θ, x)
