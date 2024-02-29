@@ -10,6 +10,7 @@ include("conditions_specification.jl")
 include("structure_specification.jl")
 include("minimization_conditions.jl")
 include("decrease_conditions.jl")
+include("decrease_conditions_RoA_aware.jl")
 include("NeuralLyapunovPDESystem.jl")
 include("local_Lyapunov.jl")
 
@@ -19,6 +20,6 @@ export NeuralLyapunovSpecification, NeuralLyapunovStructure, UnstructuredNeuralL
        NonnegativeNeuralLyapunov, PositiveSemiDefiniteStructure,
        LyapunovMinimizationCondition, StrictlyPositiveDefinite, PositiveSemiDefinite,
        DontCheckNonnegativity, LyapunovDecreaseCondition, AsymptoticDecrease,
-       ExponentialDecrease, DontCheckDecrease
+       ExponentialDecrease, DontCheckDecrease, RoAAwareDecreaseCondition, make_RoA_aware
 
 end
