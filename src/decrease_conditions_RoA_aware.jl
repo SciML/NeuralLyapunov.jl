@@ -60,13 +60,13 @@ end
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
     if cond.check_decrease
         return  function (V, dVdt, x, fixed_point)
-                    if V(x) ≤ cond.ρ
+                    IfElse.ifelse( 
+                        V(x) ≤ cond.ρ,
                         cond.relu(
                             cond.decrease(V(x), dVdt(x)) - cond.strength(x, fixed_point)
-                        )
-                    else
-                        cond.out_of_RoA_penalty(V(x), dVdt(x), x, fixed_point, ρ)
-                    end
+                        ),
+                        cond.out_of_RoA_penalty(V(x), dVdt(x), x, fixed_point, cond.ρ)
+                    )
                 end
     else
         return nothing

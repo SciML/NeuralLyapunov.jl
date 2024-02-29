@@ -5,6 +5,7 @@ import JuMP
 using LinearAlgebra
 using ModelingToolkit
 import SciMLBase
+import IfElse
 
 include("conditions_specification.jl")
 include("structure_specification.jl")

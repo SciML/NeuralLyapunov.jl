@@ -36,9 +36,9 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition =  NeuralLyapunov.make_RoA_aware(
+decrease_condition =  make_RoA_aware(
     AsymptoticDecrease(strict = true);
-    out_of_RoA_penalty = (_, _, x, x0, _) -> inv(abs(x - x0))
+    out_of_RoA_penalty = (_, _, x, x0, _) -> inv(sum((x - x0).^2))
 )
 
 # Construct neural Lyapunov specification
