@@ -36,10 +36,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition =  make_RoA_aware(
-    AsymptoticDecrease(strict = true);
-    out_of_RoA_penalty = (_, _, x, x0, _) -> inv(sum((x - x0).^2))
-)
+decrease_condition =  make_RoA_aware(AsymptoticDecrease(strict = true))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -74,82 +71,61 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     res.u,
     network_func,
     structure.V,
-    ODEFunction(dynamics),
+    ODEFunction(f),
     zeros(length(lb))
 )
 
 ################################## Simulate ###################################
-states = first(lb):0.02:first(ub)
+states = first(lb):0.001:first(ub)
 V_predict = vec(V_func(states'))
 dVdt_predict = vec(V̇_func(states'))
 
-#################################### Tests ####################################
-#=
-# Network structure should enforce nonegativeness of V
-@test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
+# Calculated RoA estimate
+ρ = decrease_condition.ρ
+RoA_states = states[vec(V_func(transpose(states))) .≤ ρ]
+RoA = (first(RoA_states), last(RoA_states))
 
-# Trained for V's minimum to be at the fixed point
-@test V_func([0.0, 0.0])≈minimum(V_predict) atol=1e-4
-@test V_func([0.0, 0.0]) < 1e-4
+#################################### Tests ####################################
+
+# Network structure should enforce positive definiteness of V
+@test min(V_func([0.0]), minimum(V_predict)) ≥ 0.0
+@test V_func([0.0]) == 0.0
 
 # Dynamics should result in a fixed point at the origin
-@test V̇_func([0.0, 0.0]) == 0.0
+@test V̇_func([0.0]) == 0.0
 
-# V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-4
-=#
+# V̇ should be negative everywhere in the region of attraction except the fixed point
+@test all(V̇_func(transpose(RoA_states[RoA_states .!= 0.0])) .< 0)
 
-# Get RoA Estimate
-data = reshape(V_predict, (length(xs), length(ys)));
-data = vcat(data[1, :], data[end, :], data[:, 1], data[:, end]);
-ρ = minimum(data)
+# The estimated region of attraction should be a subset of the real region of attraction
+@test first(RoA) ≥ -1.0 && last(RoA) ≤ 1.0
 
+#=
 # Print statistics
-println("V(0.,0.) = ", V_func([0.0, 0.0]))
-println("V ∋ [", min(V_func([0.0, 0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V(0.,0.) = ", V_func([0.0]))
+println("V ∋ [", min(V_func([0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
 println(
     "V̇ ∋ [",
     minimum(dVdt_predict),
     ", ",
-    max(V̇_func([0.0, 0.0]), maximum(dVdt_predict)),
+    max(V̇_func([0.0]), maximum(dVdt_predict)),
     "]",
 )
+println("True region of attraction: (-1, 1)")
+println("Estimated region of attraction: ", RoA)
 
 # Plot results
+using Plots
 
-p1 = plot(xs, ys, V_predict, linetype = :contourf, title = "V", xlabel = "x", ylabel = "ẋ");
-p1 = scatter!([0], [0], label = "Equilibrium");
-p2 = plot(
-    xs,
-    ys,
-    dVdt_predict,
-    linetype = :contourf,
-    title = "dV/dt",
-    xlabel = "x",
-    ylabel = "ẋ",
-);
-p2 = scatter!([0], [0], label = "Equilibrium");
-p3 = plot(
-    xs,
-    ys,
-    V_predict .< ρ,
-    linetype = :contourf,
-    title = "Estimated RoA",
-    xlabel = "x",
-    ylabel = "ẋ",
-    colorbar = false,
-);
-p4 = plot(
-    xs,
-    ys,
-    dVdt_predict .< 0,
-    linetype = :contourf,
-    title = "dV/dt < 0",
-    xlabel = "x",
-    ylabel = "ẋ",
-    colorbar = false,
-);
-p4 = scatter!([0], [0], label = "Equilibrium");
-plot(p1, p2, p3, p4)
+p_V = plot(states, V_predict, label = "V", xlabel = "x", linewidth=2);
+p_V = hline!([ρ], label = "V = ρ", legend = :top);
+p_V = vspan!(collect(RoA); label = "Estimated Region of Attraction", color = :gray, fillstyle = :/);
+p_V = vspan!([-1, 1]; label = "True Region of Attraction", opacity = 0.2, color = :green);
 
-@test true
+p_V̇ = plot(states, dVdt_predict, label = "dV/dt", xlabel = "x", linewidth=2);
+p_V̇ = hline!([0.0], label = "dV/dt = 0", legend = :top);
+p_V̇ = vspan!(collect(RoA); label = "Estimated Region of Attraction", color = :gray, fillstyle = :/);
+p_V̇ = vspan!([-1, 1]; label = "True Region of Attraction", opacity = 0.2, color = :green);
+
+plt = plot(p_V, p_V̇)
+=#
