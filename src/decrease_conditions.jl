@@ -68,18 +68,18 @@ function AsymptoticDecrease(;
         relu = (t) -> max(0.0, t)
 )::LyapunovDecreaseCondition
     strength = if strict
-            (x, x0) -> -C * (x - x0) ⋅ (x - x0)
+        (x, x0) -> -C * (x - x0) ⋅ (x - x0)
     else
-            (x, x0) -> 0.0
+        (x, x0) -> 0.0
     end
 
     return LyapunovDecreaseCondition(
-            true,
-            (V, dVdt) -> dVdt,
-            strength,
-            relu,
-            check_fixed_point
-        )
+        true,
+        (V, dVdt) -> dVdt,
+        strength,
+        relu,
+        check_fixed_point
+    )
 end
 
 """
@@ -106,12 +106,12 @@ function ExponentialDecrease(
     end
 
     return LyapunovDecreaseCondition(
-            true,
-            (V, dVdt) -> dVdt + k * V,
-            strength,
-            relu,
-            check_fixed_point
-        )
+        true,
+        (V, dVdt) -> dVdt + k * V,
+        strength,
+        relu,
+        check_fixed_point
+    )
 end
 
 """

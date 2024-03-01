@@ -11,7 +11,7 @@ println("Region of Attraction Estimation")
 
 ######################### Define dynamics and domain ##########################
 
-f(x, p, t) = -x .+ x.^3
+f(x, p, t) = -x .+ x .^ 3
 lb = [-2];
 ub = [2];
 
@@ -36,7 +36,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition =  make_RoA_aware(AsymptoticDecrease(strict = true))
+decrease_condition = make_RoA_aware(AsymptoticDecrease(strict = true))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
