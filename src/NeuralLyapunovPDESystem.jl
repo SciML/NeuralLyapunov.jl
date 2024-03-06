@@ -1,28 +1,26 @@
 """
     NeuralLyapunovPDESystem(dynamics, lb, ub, spec; fixed_point, ps)
 
-Constructs a ModelingToolkit PDESystem to train a neural Lyapunov function
+Constructs a ModelingToolkit `PDESystem` to train a neural Lyapunov function
 
-Returns the PDESystem and a function representing the neural network, which
-operates columnwise.
+Returns the `PDESystem` and a function representing the neural network, which operates
+columnwise.
 
-The neural Lyapunov function will only be trained for { x : lb .≤ x .≤ ub }.
-The Lyapunov function will be for the dynamical system represented by dynamics
-If dynamics is an ODEProblem or ODEFunction, then the corresponding ODE; if
-dynamics is a function, then the ODE is ẋ = dynamics(x, p, t). This ODE should
-not depend on t (time t=0.0 alone will be used) and should have a fixed point
-at x = fixed_point. The particular Lyapunov conditions to be used and structure
-of the neural Lyapunov function are specified through spec, which is a
-NeuralLyapunovSpecification.
+The neural Lyapunov function will only be trained for `{ x : lb .≤ x .≤ ub }`. The Lyapunov
+function will be for the dynamical system represented by `dynamics`. If `dynamics` is an
+`ODEProblem` or `ODEFunction`, then the corresponding ODE; if `dynamics` is a function, then
+the ODE is `ẋ = dynamics(x, p, t)`. This ODE should not depend on `t` (time `t=0.0` alone
+will be used) and should have a fixed point at `x = fixed_point`. The particular Lyapunov
+conditions to be used and structure of the neural Lyapunov function are specified through
+`spec`, which is a `NeuralLyapunovSpecification`.
 
-The returned neural network function takes three inputs: the neural network
-structure phi, the trained network parameters, and a matrix of inputs to
-operate on columnwise.
+The returned neural network function takes three inputs: the neural network structure `phi`,
+the trained network parameters, and a matrix of inputs to operate on columnwise.
 
-If dynamics requires parameters, their values can be supplied through the
-Vector p, or through dynamics.p if dynamics isa ODEProblem (in which case, let
-the other be SciMLBase.NullParameters()). If dynamics is an ODEFunction and
-dynamics.paramsyms is defined, then p should have the same order.
+If `dynamics` requires parameters, their values can be supplied through the Vector `p`, or
+through the parameters of `dynamics` if `dynamics isa ODEProblem` (in which case, let
+the other be `SciMLBase.NullParameters()`). If `dynamics` is an `ODEFunction` and
+`dynamics.paramsyms` is defined, then `p` should have the same order.
 """
 function NeuralLyapunovPDESystem(
         dynamics::ODEFunction,
@@ -128,7 +126,9 @@ function NeuralLyapunovPDESystem(
     elseif dynamics.p == p
         p
     else
-        throw(ErrorException("Conflicting parameter definitions. Please define parameters only through p or dynamics.p; the other should be SciMLBase.NullParameters()"))
+        throw(ErrorException("Conflicting parameter definitions. Please define parameters" *
+                             " only through p or dynamics.p; the other should be " *
+                             "SciMLBase.NullParameters()"))
     end
 
     return NeuralLyapunovPDESystem(
@@ -269,20 +269,21 @@ function _NeuralLyapunovPDESystem(
 end
 
 """
-    NumericalNeuralLyapunovFunctions(phi, θ, network_func, structure, dynamics, fixed_point; jac, J_net)
+    NumericalNeuralLyapunovFunctions(phi, θ, network_func, structure, dynamics, fixed_point;
+                                     jac, J_net)
 
-Returns the Lyapunov function, its time derivative, and its gradient: V(state),
-V̇(state), and ∇V(state)
+Returns the Lyapunov function, its time derivative, and its gradient: `V(state)`,
+`V̇(state)`, and `∇V(state)`
 
-These functions can operate on a state vector or columnwise on a matrix of state
-vectors. phi is the neural network with parameters θ. network_func(phi, θ, state)
-is an output of NeuralLyapunovPDESystem, which evaluates the neural network
-represented phi with parameters θ at state.
+These functions can operate on a state vector or columnwise on a matrix of state vectors.
+`phi` is the neural network with parameters `θ`. `network_func(phi, θ, state)` is an output
+of `NeuralLyapunovPDESystem`, which evaluates the neural network represented by `phi` with
+parameters `θ` at `state`.
 
 The Lyapunov function structure is specified in structure, which is a
-NeuralLyapunovStructure. The Jacobian of the network is either specified via
-J_net(_phi, _θ, state) or calculated using jac, which defaults to
-ForwardDiff.jacobian
+`NeuralLyapunovStructure`. The Jacobian of the network is either specified via
+`J_net(_phi, _θ, state)` or calculated using `jac`, which defaults to
+`ForwardDiff.jacobian`.
 """
 function NumericalNeuralLyapunovFunctions(
         phi,
@@ -328,18 +329,19 @@ function NumericalNeuralLyapunovFunctions(
 end
 
 """
-    NumericalNeuralLyapunovFunctions(phi, θ, network_func, V_structure, dynamics, fixed_point, grad)
+    NumericalNeuralLyapunovFunctions(phi, θ, network_func, V_structure, dynamics,
+                                     fixed_point, grad)
 
-Returns the Lyapunov function, its time derivative, and its gradient: V(state),
-V̇(state), and ∇V(state)
+Returns the Lyapunov function, its time derivative, and its gradient: `V(state)`,
+`V̇(state)`, and `∇V(state)`.
 
-These functions can operate on a state vector or columnwise on a matrix of state
-vectors. phi is the neural network with parameters θ. network_func is an output
-of NeuralLyapunovPDESystem.
+These functions can operate on a state vector or columnwise on a matrix of state vectors.
+`phi` is the neural network with parameters `θ`. `network_func` is an output of
+`NeuralLyapunovPDESystem`.
 
 The Lyapunov function structure is defined by
-    V_structure(_network_func, state, fixed_point)
-Its gradient is calculated using grad, which defaults to ForwardDiff.gradient.
+    `V_structure(_network_func, state, fixed_point)`
+Its gradient is calculated using `grad`, which defaults to `ForwardDiff.gradient`.
 """
 function NumericalNeuralLyapunovFunctions(
         phi,
