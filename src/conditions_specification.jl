@@ -8,10 +8,10 @@ enforce Lyapunov conditions.
 `network_dim` is the dimension of the output of the neural network.
 `V(phi::Function, state, fixed_point)` takes in the neural network, the state, and the fixed
 point, and outputs the value of the Lyapunov function at `state`.
-`V̇(phi::Function, J_phi::Function, f::Function, state, fixed_point)` takes in the neural
-network, the jacobian of the neural network, the dynamics (as a function of the state
-alone), the state, and the fixed point, and outputs the time derivative of the Lyapunov
-function at `state`.
+`V̇(phi::Function, J_phi::Function, f::Function, state, params, t, fixed_point)` takes in the
+neural network, jacobian of the neural network, dynamics, state, parameters and time (for
+calling the dynamics, when relevant), and fixed point, and outputs the time derivative of
+the Lyapunov function at `state`.
 """
 struct NeuralLyapunovStructure
     V::Function

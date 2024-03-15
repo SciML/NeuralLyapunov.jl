@@ -204,8 +204,10 @@ function _NeuralLyapunovPDESystem(
         structure.V̇(
             u,
             y -> Symbolics.jacobian(u(y), y),
-            y -> dynamics(y, params, 0.0),
+            dynamics,
             x,
+            params,
+            0.0,
             fixed_point
         )
     end
