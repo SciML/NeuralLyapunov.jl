@@ -7,4 +7,7 @@ using SafeTestsets
     @time @safetestset "Damped pendulum" begin
         include("damped_pendulum.jl")
     end
+    @time @safetestset "Region of attraction estimation" begin
+        include("roa_estimation.jl")
+    end
 end
