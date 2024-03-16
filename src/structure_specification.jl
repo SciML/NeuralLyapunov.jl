@@ -3,6 +3,9 @@
 
 Creates a `NeuralLyapunovStructure` where the Lyapunov function is the neural network
 evaluated at the state. This does not structurally enforce any Lyapunov conditions.
+
+Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
+`f(state, input, p, t)`, consider using `add_policy_search`.
 """
 function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
@@ -10,6 +13,7 @@ function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
         (net, grad_net, state, fixed_point) -> grad_net(state),
         (net, grad_net, f, state, params, t, fixed_point) -> grad_net(state) ⋅
                                                              f(state, params, t),
+        (f, net, state, p, t) -> f(state, p, t),
         1
     )
 end
@@ -33,6 +37,9 @@ Lyapunov loss function.
 defaults to `ForwardDiff.gradient`.
 
 The neural network output has dimension `network_dim`.
+
+Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
+`f(state, input, p, t)`, consider using `add_policy_search`.
 """
 function NonnegativeNeuralLyapunov(
         network_dim::Integer;
@@ -50,6 +57,7 @@ function NonnegativeNeuralLyapunov(
             (net, J_net, f, state, params, t, fixed_point) -> 2 *
                                                               dot(
                 net(state), J_net(state), f(state, params, t)),
+            (f, net, state, p, t) -> f(state, p, t),
             network_dim
         )
     else
@@ -68,6 +76,7 @@ function NonnegativeNeuralLyapunov(
                 J_net(state),
                 f(state, params, t)
             ) + δ * grad_pos_def(state, fixed_point) ⋅ f(state, params, t),
+            (f, net, state, p, t) -> f(state, p, t),
             network_dim
         )
     end
@@ -94,6 +103,9 @@ gradient of `non_neg(net, state, fixed_point)` with respect to `state` at `state
 defaults to `ForwardDiff.gradient`.
 
 The neural network output has dimension `network_dim`.
+
+Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
+`f(state, input, p, t)`, consider using `add_policy_search`.
 """
 function PositiveSemiDefiniteStructure(
         network_dim::Integer;
@@ -133,6 +145,7 @@ function PositiveSemiDefiniteStructure(
                                                           (f(state, params, t) ⋅
                                                            grad_non_neg(
             net, J_net, state, fixed_point)),
+        (f, net, state, p, t) -> f(state, p, t),
         network_dim
     )
 end

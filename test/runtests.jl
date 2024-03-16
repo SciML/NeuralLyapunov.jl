@@ -10,4 +10,7 @@ using SafeTestsets
     @time @safetestset "Region of attraction estimation" begin
         include("roa_estimation.jl")
     end
+    @time @safetestset "Policy search - inverted pendulum" begin
+        include("inverted_pendulum.jl")
+    end
 end

@@ -35,7 +35,8 @@ function NeuralLyapunovPDESystem(
         fixed_point = zeros(length(lb)),
         p = SciMLBase.NullParameters(),
         state_syms = [],
-        parameter_syms = []
+        parameter_syms = [],
+        policy_search::Bool = false
 )::Tuple{PDESystem, Function}
     ########################## Define state symbols ###########################
     state_dim = length(lb)
@@ -78,7 +79,8 @@ function NeuralLyapunovPDESystem(
         fixed_point,
         state,
         params,
-        defaults
+        defaults,
+        policy_search
     )
 end
 
@@ -119,7 +121,8 @@ function NeuralLyapunovPDESystem(
         fixed_point = fixed_point,
         p = p,
         state_syms = SciMLBase.variable_symbols(dynamics.sys),
-        parameter_syms = p_syms
+        parameter_syms = p_syms,
+        policy_search = false
     )
 end
 
@@ -179,7 +182,8 @@ function NeuralLyapunovPDESystem(
         fixed_point,
         state,
         Num.(parameters(dynamics)),
-        ModelingToolkit.get_defaults(dynamics)
+        ModelingToolkit.get_defaults(dynamics),
+        false
     )
 end
 
@@ -191,12 +195,14 @@ function _NeuralLyapunovPDESystem(
         fixed_point,
         state,
         params,
-        defaults
+        defaults,
+        policy_search::Bool
 )::Tuple{PDESystem, Function}
     ########################## Unpack specifications ##########################
     structure = spec.structure
     minimzation_condition = spec.minimzation_condition
     decrease_condition = spec.decrease_condition
+    f_call = structure.f_call
 
     ############################# Define domains ##############################
     state_dim = length(lb)
@@ -243,6 +249,10 @@ function _NeuralLyapunovPDESystem(
 
     if check_minimal_fixed_point(minimzation_condition)
         push!(bcs, V_sym(fixed_point) ~ 0.0)
+    end
+
+    if policy_search
+        append!(bcs, f_call(dynamics, φ, fixed_point, params, 0.0) .~ zeros(state_dim))
     end
 
     if isempty(eqs) && isempty(bcs)
