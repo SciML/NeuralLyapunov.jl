@@ -244,9 +244,6 @@ function _NeuralLyapunovPDESystem(
     if check_minimal_fixed_point(minimzation_condition)
         push!(bcs, V_sym(fixed_point) ~ 0.0)
     end
-    if check_stationary_fixed_point(decrease_condition)
-        push!(bcs, V̇_sym(fixed_point) ~ 0.0)
-    end
 
     if isempty(eqs) && isempty(bcs)
         error("No training conditions specified.")

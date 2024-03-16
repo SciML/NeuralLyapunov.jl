@@ -36,7 +36,7 @@ abstract type AbstractLyapunovMinimizationCondition end
 Represents the decrease condition in a neural Lyapunov problem
 
 All concrete `AbstractLyapunovDecreaseCondition` subtypes should define the
-`check_decrease`, `check_stationary_fixed_point`, and `get_decrease_condition` functions.
+`check_decrease` and `get_decrease_condition` functions.
 """
 abstract type AbstractLyapunovDecreaseCondition end
 
@@ -93,17 +93,6 @@ if `cond` specifies no training to meet this condition.
 function check_decrease(cond::AbstractLyapunovDecreaseCondition)::Bool
     error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type " *
           string(typeof(cond)))
-end
-
-"""
-    check_stationary_fixed_point(cond::AbstractLyapunovDecreaseCondition)
-
-`true` if `cond` specifies training for the Lyapunov function not to change at the
-fixed point, `false` if `cond` specifies no training to meet this condition.
-"""
-function check_stationary_fixed_point(cond::AbstractLyapunovDecreaseCondition)::Bool
-    error("check_fixed_point not implemented for AbstractLyapunovDecreaseCondition of " *
-          "type $(typeof(cond))")
 end
 
 """
