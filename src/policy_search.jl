@@ -48,15 +48,28 @@ function add_policy_search(
     end
 end
 
+"""
+    get_policy(phi, θ, network_func, dim; control_structure)
+
+Returns the control policy as a function of the state
+
+The returned function can operate on a state vector or columnwise on a matrix of state
+vectors.
+
+`phi` is the neural network with parameters `θ`. `network_func` is an output of
+`NeuralLyapunovPDESystem`.
+The control policy is `control_structure` composed with the last `dim` outputs of the
+neural network, as set up by `add_policy_search`.
+"""
 function get_policy(
         phi,
         θ,
         network_func::Function,
-        dim_u::Integer;
-        u_func::Function = identity
+        dim::Integer;
+        control_structure::Function = identity
 )
     function policy(state::AbstractVector)
-        u_func(network_func(phi, θ, state)[(end - dim_u + 1):end])
+        control_structure(network_func(phi, θ, state)[(end - dim + 1):end])
     end
 
     policy(state::AbstractMatrix) = mapslices(policy, state, dims = [1])
