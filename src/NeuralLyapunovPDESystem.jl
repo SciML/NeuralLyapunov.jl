@@ -204,20 +204,20 @@ function _NeuralLyapunovPDESystem(
 
     ################## Define Lyapunov function & derivative ##################
     output_dim = structure.network_dim
-    net_syms = [Symbol(:u, i) for i in 1:output_dim]
+    net_syms = [Symbol(:φ, i) for i in 1:output_dim]
     net = [first(@variables $s(..)) for s in net_syms]
 
-    # u(x) is the symbolic form of neural network output
-    u(x) = Num.([ui(x...) for ui in net])
+    # φ(x) is the symbolic form of neural network output
+    φ(x) = Num.([φi(x...) for φi in net])
 
     # V_sym(x) is the symobolic form of the Lyapunov function
-    V_sym(x) = structure.V(u, x, fixed_point)
+    V_sym(x) = structure.V(φ, x, fixed_point)
 
     # V̇_sym(x) is the symbolic time derivative of the Lyapunov function
     function V̇_sym(x)
         structure.V̇(
-            u,
-            y -> Symbolics.jacobian(u(y), y),
+            φ,
+            y -> Symbolics.jacobian(φ(y), y),
             dynamics,
             x,
             params,
@@ -267,21 +267,21 @@ function _NeuralLyapunovPDESystem(
         bcs,
         domains,
         state,
-        u(state),
+        φ(state),
         params;
         defaults = defaults
     )
 
     ################### Return PDESystem and neural network ###################
-    # u_func is the numerical form of neural network output
-    function u_func(phi, θ, x)
+    # φ_func is the numerical form of neural network output
+    function φ_func(phi, θ, x)
         reduce(
             vcat,
             Array(phi[i](x, θ.depvar[net_syms[i]])) for i in 1:output_dim
         )
     end
 
-    return lyapunov_pde_system, u_func
+    return lyapunov_pde_system, φ_func
 end
 
 """
