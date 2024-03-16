@@ -38,7 +38,7 @@ function check_nonnegativity(cond::LyapunovMinimizationCondition)::Bool
     cond.check_nonnegativity
 end
 
-function check_fixed_point(cond::LyapunovMinimizationCondition)::Bool
+function check_minimal_fixed_point(cond::LyapunovMinimizationCondition)::Bool
     cond.check_fixed_point
 end
 

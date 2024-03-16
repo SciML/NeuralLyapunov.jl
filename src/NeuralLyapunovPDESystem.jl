@@ -241,7 +241,7 @@ function _NeuralLyapunovPDESystem(
 
     bcs = []
 
-    if check_fixed_point(minimzation_condition)
+    if check_minimal_fixed_point(minimzation_condition)
         push!(bcs, V_sym(fixed_point) ~ 0.0)
     end
     if check_stationary_fixed_point(decrease_condition)
