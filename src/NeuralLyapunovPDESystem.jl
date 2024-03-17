@@ -9,11 +9,13 @@ columnwise.
 The neural Lyapunov function will only be trained for `{ x : lb .≤ x .≤ ub }`. The Lyapunov
 function will be for the dynamical system represented by `dynamics`. If `dynamics` is an
 `ODEProblem` or `ODEFunction`, then the corresponding ODE; if `dynamics` is a function, then
-the ODE is typically `ẋ = dynamics(x, p, t)`, but `spec` may specify a different form. This
-ODE should not depend on `t` (time `t=0.0` alone will be used) and should have a fixed point
-at `x = fixed_point`. The particular Lyapunov conditions to be used and structure of the
-neural Lyapunov function are specified through `spec`, which is a
-`NeuralLyapunovSpecification`.
+the ODE is typically `ẋ = dynamics(x, p, t)`, but `spec` may specify a different form. In
+particular, if `policy_search`, then the ODE should have a control input:
+`ẋ = dynamics(x, input, p, t)`. In that case, the loss function will include a term
+penalizing nonzero `ẋ` at the fixed point. Otherwise, the ODE should have a fixed point
+at `x = fixed_point`. Additionally, the ODE should not depend on `t` (time `t=0.0` alone
+will be used). The particular Lyapunov conditions to be used and structure of the neural
+Lyapunov function are specified through `spec`, which is a `NeuralLyapunovSpecification`.
 
 The returned neural network function takes three inputs: the neural network structure `phi`,
 the trained network parameters, and a matrix of inputs to operate on columnwise.
