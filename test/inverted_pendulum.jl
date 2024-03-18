@@ -11,7 +11,7 @@ println("Inverted Pendulum - Policy Search")
 
 ######################### Define dynamics and domain ##########################
 
-function controlled_pendulum_dynamics(x, u, p, t)
+function open_loop_pendulum_dynamics(x, u, p, t)
     θ, ω = x
     ζ, ω_0 = p
     τ = u[]
@@ -78,7 +78,7 @@ spec = NeuralLyapunovSpecification(
 ############################# Construct PDESystem #############################
 
 pde_system, network_func = NeuralLyapunovPDESystem(
-    controlled_pendulum_dynamics,
+    open_loop_pendulum_dynamics,
     lb,
     ub,
     spec;
@@ -107,7 +107,7 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     res.u,
     network_func,
     structure,
-    controlled_pendulum_dynamics,
+    open_loop_pendulum_dynamics,
     upright_equilibrium;
     p = p
 )
@@ -134,7 +134,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 
 # Training should result in a fixed point at the upright equilibrium
 @test all(isapprox.(
-    controlled_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
+    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
     0.0; atol = 1e-8))
 @test V̇_func(upright_equilibrium) == 0.0
 
@@ -146,7 +146,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 using DifferentialEquations
 
 closed_loop_dynamics = ODEFunction(
-    (x, p, t) -> controlled_pendulum_dynamics(x, u(x), p, t);
+    (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
     sys = SciMLBase.SymbolCache(state_syms, parameter_syms)
 )
 
@@ -177,7 +177,7 @@ x_end, y_end = sin(θ_end), -cos(θ_end)
 println("V(π, 0) = ", V_func(upright_equilibrium))
 println(
     "f([π, 0], u([π, 0])) = ",
-    controlled_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
+    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
 )
 println(
     "V ∋ [",
