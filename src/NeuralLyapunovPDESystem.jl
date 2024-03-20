@@ -167,25 +167,32 @@ function NeuralLyapunovPDESystem(
         spec::NeuralLyapunovSpecification;
         fixed_point = zeros(length(lb))
 )::Tuple{PDESystem, Function}
+    ######################### Check for policy search #########################
+    f, x, p, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
+        (ODEFunction(dynamics), states(dynamics), parameters(dynamics), false)
+    else
+        (f, _), x, p = ModelingToolkit.generate_control_function(dynamics; simplify = true)
+        (f, x, p, true)
+    end
+
     ########################## Define state symbols ###########################
-    state = states(dynamics)
     # States should all be functions of time, but we just want the symbol
     # e.g., if the state is ω(t), we just want ω
-    state = map(st -> istree(st) ? operation(st) : st, state)
+    state = map(st -> istree(st) ? operation(st) : st, x)
     state_syms = Symbol.(state)
     state = [first(@parameters $s) for s in state_syms]
 
     ########################### Construct PDESystem ###########################
     _NeuralLyapunovPDESystem(
-        ODEFunction(dynamics),
+        f,
         lb,
         ub,
         spec,
         fixed_point,
         state,
-        Num.(parameters(dynamics)),
+        Num.(p),
         ModelingToolkit.get_defaults(dynamics),
-        false
+        policy_search
     )
 end
 
@@ -262,7 +269,11 @@ function _NeuralLyapunovPDESystem(
     end
 
     # NeuralPDE requires an equation and a boundary condition, even if they are
-    # trivial like 0.0 == 0.0
+    # trivial like 0.0 == 0.0, so we remove those trivial equations when they showed up
+    # naturally alongside other equations and them in we're left with no other DifferentialEquations
+    eqs = filter(eq -> eq != (0.0 ~ 0.0), eqs)
+    bcs = filter(eq -> eq != (0.0 ~ 0.0), bcs)
+
     if isempty(eqs)
         push!(eqs, 0.0 ~ 0.0)
     end

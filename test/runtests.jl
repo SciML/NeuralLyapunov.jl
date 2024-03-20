@@ -13,4 +13,7 @@ using SafeTestsets
     @time @safetestset "Policy search - inverted pendulum" begin
         include("inverted_pendulum.jl")
     end
+    @time @safetestset "Policy search - inverted pendulum 2" begin
+        include("inverted_pendulum_ODESystem.jl")
+    end
 end
