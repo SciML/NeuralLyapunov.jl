@@ -29,16 +29,16 @@ eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 )
 
 dynamics = structural_simplify(dynamics)
-
-lb = [-pi, -10.0];
-ub = [pi, 10.0];
-p = [defaults[param] for param in parameters(dynamics)]
+bounds = [
+    θ ∈ (-π, π),
+    Dt(θ) ∈ (-10.0, 10.0)
+]
 
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
-dim_state = length(lb)
+dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
 chain = [Lux.Chain(
@@ -81,8 +81,7 @@ spec = NeuralLyapunovSpecification(
 
 pde_system, network_func = NeuralLyapunovPDESystem(
     dynamics,
-    lb,
-    ub,
+    bounds,
     spec
 )
 
@@ -99,18 +98,21 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
+p = [defaults[param] for param in parameters(dynamics)]
 V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res.u,
     network_func,
     structure.V,
     ODEFunction(dynamics),
-    zeros(length(lb));
+    zeros(length(bounds));
     p = p
 )
 
 ################################## Simulate ###################################
 
+lb = [-pi, -10.0];
+ub = [pi, 10.0];
 xs = (2 * lb[1]):0.02:(2 * ub[1])
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))

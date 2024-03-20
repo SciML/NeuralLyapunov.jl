@@ -28,19 +28,22 @@ eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
     defaults = defaults
 )
 
+bounds = [
+    θ ∈ (0, 2π),
+    Dt(θ) ∈ (-10.0, 10.0)
+]
+
 (open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
     driven_pendulum; simplify = true)
 
 upright_equilibrium = [π, 0.0]
-lb = [0.0, -10.0];
-ub = [2π, 10.0];
 p = [defaults[param] for param in p_order]
 
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
-dim_state = length(lb)
+dim_state = length(bounds)
 dim_hidden = 15
 dim_phi = 2
 dim_u = 1
@@ -89,8 +92,7 @@ spec = NeuralLyapunovSpecification(
 
 pde_system, network_func = NeuralLyapunovPDESystem(
     driven_pendulum,
-    lb,
-    ub,
+    bounds,
     spec;
     fixed_point = upright_equilibrium
 )
@@ -122,8 +124,10 @@ u = get_policy(discretization.phi, res.u, network_func, dim_u)
 
 ################################## Simulate ###################################
 
-xs = (-2π):0.02:(2π)
-ys = lb[2]:0.02:ub[2]
+lb = [0.0, -10.0];
+ub = [2π, 10.0];
+xs = (-2π):0.1:(2π)
+ys = lb[2]:0.1:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
 dVdt_predict = vec(V̇_func(hcat(states...)))
