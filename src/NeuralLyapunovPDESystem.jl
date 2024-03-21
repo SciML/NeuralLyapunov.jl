@@ -156,7 +156,7 @@ function NeuralLyapunovPDESystem(
     ########################## Define state symbols ###########################
     # States should all be functions of time, but we just want the symbol
     # e.g., if the state is ω(t), we just want ω
-    _state = map(st -> istree(st) ? operation(st) : st, x)
+    _state = operation.(x)
     state_syms = Symbol.(_state)
     state = [first(@parameters $s) for s in state_syms]
 
@@ -178,7 +178,7 @@ function NeuralLyapunovPDESystem(
         spec,
         fixed_point,
         state,
-        Num.(p),
+        p,
         ModelingToolkit.get_defaults(dynamics),
         policy_search
     )
