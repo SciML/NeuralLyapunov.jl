@@ -106,25 +106,24 @@ function NeuralLyapunovPDESystem(
         p = SciMLBase.NullParameters()
 )::Tuple{PDESystem, Function}
     if dynamics.mass_matrix !== I
-        throw(ErrorException("DAEs are not supported at this time."))
+        throw(ErrorException("DAEs are not supported at this time. Please supply dynamics" *
+                             " without a mass matrix."))
     end
 
-    if dynamics.sys isa ODESystem
-        ##### TODO: This will cause a MethodError; we need to set up bounds to make this work
-        return NeuralLyapunovPDESystem(
-            dynamics.sys,
-            lb,
-            ub,
-            spec;
-            fixed_point = fixed_point,
-            p = p
-        )
-    end
-
-    p_syms = if isnothing(dynamics.sys.parameters)
-        []
+    s_syms, p_syms = if dynamics.sys isa ODESystem
+        s_syms = Symbol.(operation.(states(dynamics.sys)))
+        p_syms = Symbol.(parameters(dynamics.sys))
+        (s_syms, p_syms)
+    elseif dynamics.sys isa SciMLBase.SymbolCache
+        s_syms = SciMLBase.variable_symbols(dynamics.sys)
+        p_syms = if isnothing(dynamics.sys.parameters)
+            []
+        else
+            dynamics.sys.parameters
+        end
+        (s_syms, p_syms)
     else
-        dynamics.sys.parameters
+        ([], [])
     end
 
     return NeuralLyapunovPDESystem(
@@ -134,7 +133,7 @@ function NeuralLyapunovPDESystem(
         spec;
         fixed_point = fixed_point,
         p = p,
-        state_syms = SciMLBase.variable_symbols(dynamics.sys),
+        state_syms = s_syms,
         parameter_syms = p_syms,
         policy_search = false
     )

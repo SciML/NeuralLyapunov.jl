@@ -33,6 +33,9 @@ bounds = [
     θ ∈ (-π, π),
     Dt(θ) ∈ (-10.0, 10.0)
 ]
+lb = [-π, -10.0];
+ub = [π, 10.0];
+p = [defaults[param] for param in parameters(dynamics)]
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -80,9 +83,11 @@ spec = NeuralLyapunovSpecification(
 ############################# Construct PDESystem #############################
 
 pde_system, network_func = NeuralLyapunovPDESystem(
-    dynamics,
-    bounds,
-    spec
+    ODEFunction(dynamics),
+    lb,
+    ub,
+    spec;
+    p = p
 )
 
 ######################## Construct OptimizationProblem ########################
@@ -98,7 +103,6 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-p = [defaults[param] for param in parameters(dynamics)]
 V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res.u,
@@ -111,8 +115,6 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
 
 ################################## Simulate ###################################
 
-lb = [-pi, -10.0];
-ub = [pi, 10.0];
 xs = (2 * lb[1]):0.02:(2 * ub[1])
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
