@@ -253,8 +253,8 @@ function _NeuralLyapunovPDESystem(
     end
 
     # NeuralPDE requires an equation and a boundary condition, even if they are
-    # trivial like 0.0 == 0.0, so we remove those trivial equations when they showed up
-    # naturally alongside other equations and them in we're left with no other DifferentialEquations
+    # trivial like 0.0 == 0.0, so we remove those trivial equations if they showed up
+    # naturally alongside other equations and add them in if we have no other equations
     eqs = filter(eq -> eq != (0.0 ~ 0.0), eqs)
     bcs = filter(eq -> eq != (0.0 ~ 0.0), bcs)
 
