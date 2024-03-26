@@ -82,7 +82,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-pde_system, network_func = NeuralLyapunovPDESystem(
+@named pde_system = NeuralLyapunovPDESystem(
     ODEFunction(dynamics),
     lb,
     ub,
@@ -103,10 +103,10 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res.u,
-    network_func,
+    dim_output,
     structure.V,
     ODEFunction(dynamics),
     zeros(length(bounds));

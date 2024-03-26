@@ -77,7 +77,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-pde_system, network_func = NeuralLyapunovPDESystem(
+@named pde_system = NeuralLyapunovPDESystem(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -102,17 +102,16 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res.u,
-    network_func,
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
     p = p
 )
 
-u = get_policy(discretization.phi, res.u, network_func, dim_u)
+u = get_policy(discretization.phi, res.u, dim_output, dim_u)
 
 ################################## Simulate ###################################
 
