@@ -1,6 +1,6 @@
 """
-    RoAAwareDecreaseCondition(check_decrease, decrease, strength, relu, check_fixed_point,
-                              ρ, out_of_RoA_penalty)
+    RoAAwareDecreaseCondition(check_decrease, decrease, strength, relu, ρ,
+                              out_of_RoA_penalty)
 
 Specifies the form of the Lyapunov conditions to be used, training for a region of
 attraction estimate of `{ x : V(x) ≤ ρ }`
@@ -12,9 +12,6 @@ and will instead apply
 
 The inequality will be approximated by the equation
     `relu(decrease(V, dVdt) - strength(state, fixed_point)) = 0.0`.
-If `check_fixed_point` is `false`, then training assumes `dVdt(fixed_point) = 0`, but
-if `check_fixed_point` is `true`, then training will attempt to enforce
-`dVdt(fixed_point) = 0`.
 
 If the dynamics truly have a fixed point at `fixed_point` and `dVdt` has been defined
 properly in terms of the dynamics, then `dVdt(fixed_point)` will be `0` and there is no need
@@ -44,17 +41,12 @@ struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
     decrease::Function
     strength::Function
     relu::Function
-    check_fixed_point::Bool
     ρ::Real
     out_of_RoA_penalty::Function
 end
 
 function check_decrease(cond::RoAAwareDecreaseCondition)::Bool
     cond.check_decrease
-end
-
-function check_stationary_fixed_point(cond::RoAAwareDecreaseCondition)::Bool
-    cond.check_fixed_point
 end
 
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
@@ -92,7 +84,6 @@ function make_RoA_aware(
         cond.decrease,
         cond.strength,
         cond.relu,
-        cond.check_fixed_point,
         ρ,
         out_of_RoA_penalty
     )

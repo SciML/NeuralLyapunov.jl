@@ -7,43 +7,34 @@ using Test
 
 Random.seed!(200)
 
-println("Damped Pendulum")
+println("Inverted Pendulum - Policy Search")
 
 ######################### Define dynamics and domain ##########################
 
-@parameters ζ ω_0
-defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+function open_loop_pendulum_dynamics(x, u, p, t)
+    θ, ω = x
+    ζ, ω_0 = p
+    τ = u[]
+    return [ω
+            -2ζ * ω - ω_0^2 * sin(θ) + τ]
+end
 
-@variables t θ(t)
-Dt = Differential(t)
-DDt = Dt^2
-
-eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
-
-@named dynamics = ODESystem(
-    eqs,
-    t,
-    [θ],
-    [ζ, ω_0];
-    defaults = defaults
-)
-
-dynamics = structural_simplify(dynamics)
-bounds = [
-    θ ∈ (-π, π),
-    Dt(θ) ∈ (-10.0, 10.0)
-]
-lb = [-π, -10.0];
-ub = [π, 10.0];
-p = [defaults[param] for param in parameters(dynamics)]
+lb = [0.0, -10.0];
+ub = [2π, 10.0];
+upright_equilibrium = [π, 0.0]
+p = [0.5, 1.0]
+state_syms = [:θ, :ω]
+parameter_syms = [:ζ, :ω_0]
 
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
-dim_state = length(bounds)
+dim_state = length(lb)
 dim_hidden = 15
-dim_output = 2
+dim_phi = 2
+dim_u = 1
+dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
              Lux.WrappedFunction(x -> vcat(
                  transpose(sin.(x[1, :])),
@@ -61,12 +52,16 @@ discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(
-    dim_output;
+    dim_phi;
     pos_def = function (state, fixed_point)
         θ, ω = state
         θ_eq, ω_eq = fixed_point
         log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
     end
+)
+structure = add_policy_search(
+    structure,
+    dim_u
 )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
@@ -83,11 +78,15 @@ spec = NeuralLyapunovSpecification(
 ############################# Construct PDESystem #############################
 
 pde_system, network_func = NeuralLyapunovPDESystem(
-    ODEFunction(dynamics),
+    open_loop_pendulum_dynamics,
     lb,
     ub,
     spec;
-    p = p
+    fixed_point = upright_equilibrium,
+    p = p,
+    state_syms = state_syms,
+    parameter_syms = parameter_syms,
+    policy_search = true
 )
 
 ######################## Construct OptimizationProblem ########################
@@ -107,15 +106,17 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res.u,
     network_func,
-    structure.V,
-    ODEFunction(dynamics),
-    zeros(length(bounds));
+    structure,
+    open_loop_pendulum_dynamics,
+    upright_equilibrium;
     p = p
 )
 
+u = get_policy(discretization.phi, res.u, network_func, dim_u)
+
 ################################## Simulate ###################################
 
-xs = (2 * lb[1]):0.02:(2 * ub[1])
+xs = (-2π):0.02:(2π)
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
 V_predict = vec(V_func(hcat(states...)))
@@ -124,35 +125,81 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 #################################### Tests ####################################
 
 # Network structure should enforce positive definiteness
-@test V_func([0.0, 0.0]) == 0.0
-@test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
+@test V_func(upright_equilibrium) == 0.0
+@test min(V_func(upright_equilibrium), minimum(V_predict)) ≥ 0.0
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(2, 100) .+ lb
 @test all(isapprox.(V_func(x0), V_func(x0 .+ [2π, 0.0]); rtol = 1e-3))
 
-# Dynamics should result in a fixed point at the origin
-@test V̇_func([0.0, 0.0]) == 0.0
+# Training should result in a fixed point at the upright equilibrium
+@test all(isapprox.(
+    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
+    0.0; atol = 1e-8))
+@test V̇_func(upright_equilibrium) == 0.0
 
 # V̇ should be negative almost everywhere
 @test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
 
+################################## Simulate ###################################
+
+using DifferentialEquations
+
+closed_loop_dynamics = ODEFunction(
+    (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
+    sys = SciMLBase.SymbolCache(state_syms, parameter_syms)
+)
+
+# Starting still at bottom
+downward_equilibrium = zeros(2)
+ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 35.0], p)
+sol = solve(ode_prob, Tsit5())
+# plot(sol)
+
+# Should make it to the top
+θ_end, ω_end = sol.u[end]
+x_end, y_end = sin(θ_end), -cos(θ_end)
+@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+
+# Starting at a random point
+x0 = lb .+ rand(2) .* (ub .- lb)
+ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 20.0], p)
+sol = solve(ode_prob, Tsit5())
+# plot(sol)
+
+# Should make it to the top
+θ_end, ω_end = sol.u[end]
+x_end, y_end = sin(θ_end), -cos(θ_end)
+@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+
 #=
 # Print statistics
-println("V(0.,0.) = ", V_func([0.0, 0.0]))
-println("V ∋ [", min(V_func([0.0, 0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V(π, 0) = ", V_func(upright_equilibrium))
+println(
+    "f([π, 0], u([π, 0])) = ",
+    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
+)
+println(
+    "V ∋ [",
+    min(V_func(upright_equilibrium),
+    minimum(V_predict)),
+    ", ",
+    maximum(V_predict),
+    "]"
+)
 println(
     "V̇ ∋ [",
     minimum(dVdt_predict),
     ", ",
-    max(V̇_func([0.0, 0.0]), maximum(dVdt_predict)),
-    "]",
+    max(V̇_func(upright_equilibrium), maximum(dVdt_predict)),
+    "]"
 )
 
 # Plot results
+using Plots
 
 p1 = plot(
-    xs/pi,
+    xs / pi,
     ys,
     V_predict,
     linetype =
@@ -161,11 +208,13 @@ p1 = plot(
     xlabel = "θ/π",
     ylabel = "ω",
     c = :bone_1
-    );
-p1 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p1 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x);
+);
+p1 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
+    label = "Downward Equilibria", color = :green, markershape = :+);
+p1 = scatter!(
+    [-pi, pi] / pi, [0, 0], label = "Upward Equilibria", color = :red, markershape = :x);
 p2 = plot(
-    xs/pi,
+    xs / pi,
     ys,
     dVdt_predict,
     linetype = :contourf,
@@ -174,10 +223,12 @@ p2 = plot(
     ylabel = "ω",
     c = :binary
 );
-p2 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p2 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
+p2 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
+    label = "Downward Equilibria", color = :green, markershape = :+);
+p2 = scatter!([-pi, pi] / pi, [0, 0], label = "Upward Equilibria",
+    color = :red, markershape = :x, legend = false);
 p3 = plot(
-    xs/pi,
+    xs / pi,
     ys,
     dVdt_predict .< 0,
     linetype = :contourf,
@@ -187,7 +238,9 @@ p3 = plot(
     colorbar = false,
     linewidth = 0
 );
-p3 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
-p3 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
+p3 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
+    label = "Downward Equilibria", color = :green, markershape = :+);
+p3 = scatter!([-pi, pi] / pi, [0, 0], label = "Upward Equilibria",
+    color = :red, markershape = :x, legend = false);
 plot(p1, p2, p3)
 =#

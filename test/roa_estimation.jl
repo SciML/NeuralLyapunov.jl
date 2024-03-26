@@ -70,8 +70,8 @@ V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
     discretization.phi,
     res.u,
     network_func,
-    structure.V,
-    ODEFunction(f),
+    structure,
+    f,
     zeros(length(lb))
 )
 
