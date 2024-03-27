@@ -1,20 +1,21 @@
 """
     get_local_Lyapunov(dynamics, state_dim; fixed_point, dynamics_jac)
 
-Uses semidefinite programming to derive a quadratic Lyapunov function for the
-linearization of dynamics around fixed_point.
-Returns (V, dV/dt, ∇V).
+Use semidefinite programming to derive a quadratic Lyapunov function for the
+linearization of `dynamics` around `fixed_point`.
+Return `(V, dV/dt, ∇V)`.
 
-If dynamics_jac is nothing, the Jacobian of the dynamics is calculated using 
-ForwardDiff. Other allowable forms are a function which takes in the state and
-outputs the jacobian of dynamics or an AbstractMatrix representing the Jacobian
-at fixed_point. If fixed_point is not specified, it defaults to the origin.
+If `isnothing(dynamics_jac)`, the Jacobian of the `dynamics(x, p, t)` with respect to `x` is
+calculated using `ForwardDiff`. Other allowable forms are a function which takes in the
+state and outputs the jacobian of `dynamics` or an `AbstractMatrix` representing the
+Jacobian at `fixed_point`. If `fixed_point` is not specified, it defaults to the origin.
 """
 function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory;
-        fixed_point = zeros(state_dim), dynamics_jac = nothing)
+        fixed_point = zeros(state_dim), dynamics_jac = nothing,
+        p = SciMLBase.NullParameters())
     # Linearize the dynamics
     A = if isnothing(dynamics_jac)
-        ForwardDiff.jacobian(dynamics, fixed_point)
+        ForwardDiff.jacobian(x -> dynamics(x, p, 0.0), fixed_point)
     elseif dynamics_jac isa AbstractMatrix
         dynamics_jac
     elseif dynamics_jac isa Function
@@ -38,23 +39,12 @@ function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory;
     V(states::AbstractMatrix) = mapslices(V, states, dims = [1])
 
     # Numerical gradient of Lyapunov function
-    ∇V(state::AbstractVector) = 2 * Psol * (state - fixed_point)
+    ∇V(state::AbstractVector) = 2 * ( Psol * (state - fixed_point) )
     ∇V(states::AbstractMatrix) = mapslices(∇V, states, dims = [1])
 
     # Numerical time derivative of Lyapunov function
-    V̇(state::AbstractVector) = dynamics(state) ⋅ ∇V(state)
-    function V̇(states::AbstractMatrix)
-        reshape(
-            map(
-                x -> x[1] ⋅ x[2],
-                zip(
-                    eachslice(dynamics(states), dims = 2),
-                    eachslice(∇V(states), dims = 2)
-                )
-            ),
-            (1, :)
-        )
-    end
+    V̇(state::AbstractVector) = 2 * dot(dynamics(state, p, 0.0), Psol, state - fixed_point)
+    V̇(states::AbstractMatrix) = mapslices(V̇, states, dims = [1])
 
     return V, V̇, ∇V
 end
