@@ -6,7 +6,7 @@ Specifies the form of the Lyapunov conditions to be used.
 If `check_nonnegativity` is `true`, training will attempt to enforce
     `V(state) ≥ strength(state, fixed_point)`.
 The inequality will be approximated by the equation
-    `relu(strength(state, fixed_point) - V(state)) = 0.0`.
+    `rectifier(strength(state, fixed_point) - V(state)) = 0.0`.
 If `check_fixed_point` is `true`, then training will also attempt to enforce
     `V(fixed_point) = 0`.
 
@@ -24,13 +24,13 @@ that must be enforced in training for the Lyapunov function to be uniquely minim
 `fixed_point`. So, in that case, we would use
     `check_nonnegativity = false;  check_fixed_point = true`.
 
-In either case, `relu = (t) -> max(0.0, t)` exactly represents the inequality, but
-approximations of this function are allowed.
+In either case, `rectifier = (t) -> max(0.0, t)` exactly represents the inequality, but
+differentiable approximations of this function may be employed.
 """
 struct LyapunovMinimizationCondition <: AbstractLyapunovMinimizationCondition
     check_nonnegativity::Bool
     strength::Function
-    relu::Function
+    rectifier::Function
     check_fixed_point::Bool
 end
 
@@ -44,31 +44,31 @@ end
 
 function get_minimization_condition(cond::LyapunovMinimizationCondition)
     if cond.check_nonnegativity
-        return (V, x, fixed_point) -> cond.relu(cond.strength(x, fixed_point) - V(x))
+        return (V, x, fixed_point) -> cond.rectifier(cond.strength(x, fixed_point) - V(x))
     else
         return nothing
     end
 end
 
 """
-    StrictlyPositiveDefinite(C; check_fixed_point, relu)
+    StrictlyPositiveDefinite(C; check_fixed_point, rectifier)
 
-Constructs a `LyapunovMinimizationCondition` representing
+Construct a `LyapunovMinimizationCondition` representing
     `V(state) ≥ C * ||state - fixed_point||^2`.
 If `check_fixed_point` is `true`, then training will also attempt to enforce
     `V(fixed_point) = 0`.
 
-The inequality is represented by `a ≥ b` <==> `relu(b-a) = 0.0`.
+The inequality is represented by `a ≥ b` <==> `rectifier(b-a) = 0.0`.
 """
 function StrictlyPositiveDefinite(;
         check_fixed_point = true,
         C::Real = 1e-6,
-        relu = (t) -> max(0.0, t)
+        rectifier = (t) -> max(zero(t), t)
 )::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         true,
         (state, fixed_point) -> C * (state - fixed_point) ⋅ (state - fixed_point),
-        relu,
+        rectifier,
         check_fixed_point
     )
 end
@@ -76,21 +76,21 @@ end
 """
     PositiveSemiDefinite(check_fixed_point)
 
-Constructs a `LyapunovMinimizationCondition` representing
+Construct a `LyapunovMinimizationCondition` representing
     `V(state) ≥ 0`.
 If `check_fixed_point` is `true`, then training will also attempt to enforce
     `V(fixed_point) = 0`.
 
-The inequality is represented by `a ≥ b` <==> `relu(b-a) = 0.0`.
+The inequality is represented by `a ≥ b` <==> `rectifier(b-a) = 0.0`.
 """
 function PositiveSemiDefinite(;
         check_fixed_point = true,
-        relu = (t) -> max(0.0, t)
+        rectifier = (t) -> max(zero(t), t)
 )::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         true,
         (state, fixed_point) -> 0.0,
-        relu,
+        rectifier,
         check_fixed_point
     )
 end
@@ -98,7 +98,7 @@ end
 """
     DontCheckNonnegativity(check_fixed_point)
 
-Constructs a `LyapunovMinimizationCondition` which represents not checking for nonnegativity
+Construct a `LyapunovMinimizationCondition` which represents not checking for nonnegativity
 of the Lyapunov function. This is appropriate in cases where this condition has been
 structurally enforced.
 
@@ -110,7 +110,7 @@ function DontCheckNonnegativity(; check_fixed_point = false)::LyapunovMinimizati
     LyapunovMinimizationCondition(
         false,
         (state, fixed_point) -> 0.0,
-        (t) -> 0.0,
+        (t) -> zero(t),
         check_fixed_point
     )
 end
