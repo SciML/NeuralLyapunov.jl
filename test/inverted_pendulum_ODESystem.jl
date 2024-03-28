@@ -110,7 +110,7 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
     res.u,
     structure,

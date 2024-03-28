@@ -50,7 +50,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 κ = 20.0
 decrease_condition = AsymptoticDecrease(
     strict = true,
-    relu = (t) -> log(1.0 + exp(κ * t)) / κ
+    rectifier = (t) -> log(1.0 + exp(κ * t)) / κ
 )
 
 # Construct neural Lyapunov specification
@@ -82,14 +82,14 @@ prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
-V_func, V̇_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
     res.u,
-    dim_output,
-    structure.V,
-    ODEFunction(dynamics),
+    structure,
+    f,
     zeros(2);
-    p = p
+    p = p,
+    use_V̇_structure = true
 )
 
 ################################## Simulate ###################################

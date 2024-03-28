@@ -12,16 +12,31 @@ include("minimization_conditions.jl")
 include("decrease_conditions.jl")
 include("decrease_conditions_RoA_aware.jl")
 include("NeuralLyapunovPDESystem.jl")
-include("local_Lyapunov.jl")
+include("numerical_lyapunov_functions.jl")
+include("local_lyapunov.jl")
 include("policy_search.jl")
 
-export NeuralLyapunovPDESystem, NumericalNeuralLyapunovFunctions
-export local_Lyapunov
-export NeuralLyapunovSpecification, NeuralLyapunovStructure, UnstructuredNeuralLyapunov,
-       NonnegativeNeuralLyapunov, PositiveSemiDefiniteStructure,
-       LyapunovMinimizationCondition, StrictlyPositiveDefinite, PositiveSemiDefinite,
-       DontCheckNonnegativity, LyapunovDecreaseCondition, AsymptoticDecrease,
-       ExponentialDecrease, DontCheckDecrease, RoAAwareDecreaseCondition, make_RoA_aware,
-       add_policy_search, get_policy
+# Lyapunov function structures
+export NeuralLyapunovStructure, UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov,
+       PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
+
+# Minimization conditions
+export LyapunovMinimizationCondition, StrictlyPositiveDefinite, PositiveSemiDefinite,
+       DontCheckNonnegativity
+
+# Decrease conditions
+export LyapunovDecreaseCondition, AsymptoticDecrease, ExponentialDecrease, DontCheckDecrease
+
+# Setting up the PDESystem for NeuralPDE
+export NeuralLyapunovSpecification, NeuralLyapunovPDESystem
+
+# Region of attraction handling
+export RoAAwareDecreaseCondition, make_RoA_aware
+
+# Policy search
+export add_policy_search, get_policy
+
+# Local Lyapunov analysis
+export local_lyapunov
 
 end

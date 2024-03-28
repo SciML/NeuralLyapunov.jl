@@ -2,12 +2,7 @@
     NeuralLyapunovPDESystem(dynamics::ODESystem, bounds, spec; <keyword_arguments>)
     NeuralLyapunovPDESystem(dynamics::Function, lb, ub, spec; <keyword_arguments>)
 
-Construct and return a `PDESystem` representing the specified neural Lyapunov problem, along
-with a function representing the neural network.
-
-The returned neural network function takes three inputs: the neural network structure `phi`,
-the trained network parameters, and a matrix of inputs, then operates columnwise on the
-inputs.
+Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapunov problem.
 
 # Arguments
 - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
@@ -178,7 +173,7 @@ function NeuralLyapunovPDESystem(
     end
 
     ########################### Construct PDESystem ###########################
-    _NeuralLyapunovPDESystem(
+    return _NeuralLyapunovPDESystem(
         f,
         domains,
         spec,
@@ -274,7 +269,7 @@ function _NeuralLyapunovPDESystem(
     end
 
     ########################### Construct PDESystem ###########################
-    lyapunov_pde_system = PDESystem(
+    return PDESystem(
         eqs,
         bcs,
         domains,
@@ -284,131 +279,4 @@ function _NeuralLyapunovPDESystem(
         defaults = defaults,
         name = name
     )
-
-    return lyapunov_pde_system
-end
-
-"""
-    NumericalNeuralLyapunovFunctions(phi, θ, structure, dynamics, fixed_point; jac, J_net)
-
-Returns the Lyapunov function, its time derivative, and its gradient: `V(state)`,
-`V̇(state)`, and `∇V(state)`
-
-These functions can operate on a state vector or columnwise on a matrix of state vectors.
-`phi` is the neural network with parameters `θ`.
-
-The Lyapunov function structure is specified in structure, which is a
-`NeuralLyapunovStructure`. The Jacobian of the network is either specified via
-`J_net(phi, θ, state)` or calculated using `jac`, which defaults to `ForwardDiff.jacobian`.
-"""
-function NumericalNeuralLyapunovFunctions(
-        phi,
-        θ,
-        structure::NeuralLyapunovStructure,
-        dynamics::Function,
-        fixed_point;
-        p = SciMLBase.NullParameters(),
-        jac = ForwardDiff.jacobian,
-        J_net = Nothing
-)::Tuple{Function, Function, Function}
-    # network_func is the numerical form of neural network output
-    output_dim = structure.network_dim
-    function network_func(x)
-        reduce(
-            vcat,
-            Array(phi[i](x, θ.depvar[Symbol(:φ, i)])) for i in 1:output_dim
-        )
-    end
-
-    # Make Jacobian of networkfunction
-    _J_net = if isnothing(J_net)
-        (x) -> jac(network_func, x)
-    else
-        (x) -> J_net(phi, θ, x)
-    end
-
-    # Numerical form of Lyapunov function
-    V_func(state::AbstractVector) = structure.V(network_func, state, fixed_point)
-    V_func(state::AbstractMatrix) = mapslices(V_func, state, dims = [1])
-
-    # Numerical gradient of Lyapunov function
-    ∇V_func(state::AbstractVector) = structure.∇V(
-        network_func,
-        _J_net,
-        state,
-        fixed_point
-    )
-    ∇V_func(state::AbstractMatrix) = mapslices(∇V_func, state, dims = [1])
-
-    # Numerical time derivative of Lyapunov function
-    function V̇_func(state::AbstractVector)
-        structure.V̇(
-            network_func,
-            _J_net,
-            dynamics,
-            state,
-            p,
-            0.0,
-            fixed_point
-        )
-    end
-    V̇_func(state::AbstractMatrix) = mapslices(V̇_func, state, dims = [1])
-
-    return V_func, V̇_func, ∇V_func
-end
-
-"""
-    NumericalNeuralLyapunovFunctions(phi, θ, network_dim, V_structure, dynamics,
-                                     fixed_point; p, grad, deriv)
-
-Returns the Lyapunov function, its time derivative, and its gradient: `V(state)`,
-`V̇(state)`, and `∇V(state)`.
-
-These functions can operate on a state vector or columnwise on a matrix of state vectors.
-`phi` is the neural network with parameters `θ`. `network_dim` is the output dimension of
-the neural network.
-
-The Lyapunov function structure is defined by
-    `V_structure(_network_func, state, fixed_point)`
-Its gradient is calculated using `grad`, which defaults to `ForwardDiff.gradient`.
-
-The Lyapunov function's time derivative is calculated using `deriv`, which defaults to
-`ForwardDiff.derivative`, along with `dynamics`, which should be the closed-loop dynamics
-`ẋ = dynamics(x, p, t)`; only `t = 0.0` is used. Parameters `p` can be supplied.
-"""
-function NumericalNeuralLyapunovFunctions(
-        phi,
-        θ,
-        network_dim,
-        V_structure::Function,
-        dynamics::Function,
-        fixed_point;
-        p = SciMLBase.NullParameters(),
-        grad = ForwardDiff.gradient,
-        deriv = ForwardDiff.derivative
-)::Tuple{Function, Function, Function}
-    # network_func is the numerical form of neural network output
-    function network_func(x)
-        reduce(
-            vcat,
-            Array(phi[i](x, θ.depvar[Symbol(:φ, i)])) for i in 1:network_dim
-        )
-    end
-
-    # Numerical form of Lyapunov function
-    V_func(state::AbstractVector) = V_structure(network_func, state, fixed_point)
-    V_func(state::AbstractMatrix) = mapslices(V_func, state, dims = [1])
-
-    # Numerical gradient of Lyapunov function
-    ∇V_func(state::AbstractVector) = grad(V_func, state)
-    ∇V_func(state::AbstractMatrix) = mapslices(∇V_func, state, dims = [1])
-
-    # Numerical time derivative of Lyapunov function
-    V̇_func(state::AbstractVector) = deriv(
-        (δt) -> V_func(state + δt * dynamics(state, p, 0.0)),
-        0.0
-    );
-    V̇_func(state::AbstractMatrix) = mapslices(V̇_func, state, dims = [1])
-
-    return V_func, V̇_func, ∇V_func
 end

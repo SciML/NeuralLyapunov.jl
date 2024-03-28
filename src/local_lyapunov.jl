@@ -1,5 +1,5 @@
 """
-    get_local_Lyapunov(dynamics, state_dim; fixed_point, dynamics_jac)
+    get_local_lyapunov(dynamics, state_dim; fixed_point, dynamics_jac)
 
 Use semidefinite programming to derive a quadratic Lyapunov function for the
 linearization of `dynamics` around `fixed_point`.
@@ -10,7 +10,7 @@ calculated using `ForwardDiff`. Other allowable forms are a function which takes
 state and outputs the jacobian of `dynamics` or an `AbstractMatrix` representing the
 Jacobian at `fixed_point`. If `fixed_point` is not specified, it defaults to the origin.
 """
-function local_Lyapunov(dynamics::Function, state_dim, optimizer_factory;
+function local_lyapunov(dynamics::Function, state_dim, optimizer_factory;
         fixed_point = zeros(state_dim), dynamics_jac = nothing,
         p = SciMLBase.NullParameters())
     # Linearize the dynamics
