@@ -110,7 +110,7 @@ function NeuralLyapunovPDESystem(
     end
 
     s_syms, p_syms = if dynamics.sys isa ODESystem
-        s_syms = Symbol.(operation.(states(dynamics.sys)))
+        s_syms = Symbol.(operation.(unknowns(dynamics.sys)))
         p_syms = Symbol.(parameters(dynamics.sys))
         (s_syms, p_syms)
     elseif dynamics.sys isa SciMLBase.SymbolCache
@@ -148,7 +148,7 @@ function NeuralLyapunovPDESystem(
 )::PDESystem
     ######################### Check for policy search #########################
     f, x, p, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
-        (ODEFunction(dynamics), states(dynamics), parameters(dynamics), false)
+        (ODEFunction(dynamics), unknowns(dynamics), parameters(dynamics), false)
     else
         (f, _), x, p = ModelingToolkit.generate_control_function(dynamics; simplify = true)
         (f, x, p, true)
