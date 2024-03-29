@@ -16,7 +16,7 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     ζ, ω_0 = p
     τ = u[]
     return [ω
-            -2ζ * ω - ω_0^2 * sin(θ) + τ]
+            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
 lb = [0.0, -10.0];

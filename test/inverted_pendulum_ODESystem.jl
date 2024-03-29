@@ -18,7 +18,7 @@ defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 Dt = Differential(t)
 DDt = Dt^2
 
-eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
+eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
 
 @named driven_pendulum = ODESystem(
     eqs,

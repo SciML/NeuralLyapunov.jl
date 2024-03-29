@@ -21,12 +21,12 @@ errs1 = @. abs(V1(states1) - states1 ⋅ states1)
 function f2(state::AbstractVector, p, t)
     ζ, ω_0 = p
     pos, vel = state
-    vcat(vel, -2ζ * vel - ω_0^2 * pos)
+    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
 end
 function f2(states::AbstractMatrix, p, t)
     ζ, ω_0 = p
     pos, vel = states[1,:], states[2,:]
-    vcat(transpose(vel), transpose(-2ζ * vel - ω_0^2 * pos))
+    vcat(transpose(vel), transpose(-2ζ * ω_0 * vel - ω_0^2 * pos))
 end
 p2 = [3.2, 5.1]
 
