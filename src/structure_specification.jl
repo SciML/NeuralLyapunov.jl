@@ -1,7 +1,7 @@
 """
     UnstructuredNeuralLyapunov()
 
-Creates a `NeuralLyapunovStructure` where the Lyapunov function is the neural network
+Create a `NeuralLyapunovStructure` where the Lyapunov function is the neural network
 evaluated at the state. This does not structurally enforce any Lyapunov conditions.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
@@ -21,7 +21,7 @@ end
 """
     NonnegativeNeuralLyapunov(network_dim, δ, pos_def; grad_pos_def, grad)
 
-Creates a `NeuralLyapunovStructure` where the Lyapunov function is the L2 norm of the neural
+Create a `NeuralLyapunovStructure` where the Lyapunov function is the L2 norm of the neural
 network output plus a constant δ times a function `pos_def`.
 
 The condition that the Lyapunov function must be minimized uniquely at the fixed point can
@@ -85,7 +85,7 @@ end
 """
     PositiveSemiDefiniteStructure(network_dim; pos_def, non_neg, grad_pos_def, grad_non_neg, grad)
 
-Creates a `NeuralLyapunovStructure` where the Lyapunov function is the product of a positive
+Create a `NeuralLyapunovStructure` where the Lyapunov function is the product of a positive
 (semi-)definite function `pos_def` which does not depend on the network and a nonnegative
 function non_neg which does depend the network.
 

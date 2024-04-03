@@ -18,7 +18,7 @@ defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 Dt = Differential(t)
 DDt = Dt^2
 
-eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
+eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 
 @named dynamics = ODESystem(
     eqs,
@@ -71,7 +71,11 @@ structure = PositiveSemiDefiniteStructure(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticDecrease(strict = true)
+κ = 20.0
+decrease_condition = AsymptoticDecrease(
+    strict = true,
+    rectifier = (t) -> log(1.0 + exp(κ * t)) / κ
+)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -82,7 +86,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-pde_system, network_func = NeuralLyapunovPDESystem(
+@named pde_system = NeuralLyapunovPDESystem(
     ODEFunction(dynamics),
     lb,
     ub,
@@ -103,11 +107,10 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u,
-    network_func,
-    structure.V,
+    res.u.depvar,
+    structure,
     ODEFunction(dynamics),
     zeros(length(bounds));
     p = p

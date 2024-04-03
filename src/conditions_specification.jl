@@ -57,10 +57,10 @@ struct NeuralLyapunovSpecification
 end
 
 """
-check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)
+    check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)
 
-`true` if `cond` specifies training to meet the Lyapunov minimization condition, `false` if
-`cond` specifies no training to meet this condition.
+Return `true` if `cond` specifies training to meet the Lyapunov minimization condition, and
+`false` if `cond` specifies no training to meet this condition.
 """
 function check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)::Bool
     error("check_nonnegativity not implemented for AbstractLyapunovMinimizationCondition " *
@@ -70,8 +70,8 @@ end
 """
     check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)
 
-`true` if `cond` specifies training for the Lyapunov function to equal zero at the
-fixed point, `false` if `cond` specifies no training to meet this condition.
+Return `true` if `cond` specifies training for the Lyapunov function to equal zero at the
+fixed point, and `false` if `cond` specifies no training to meet this condition.
 """
 function check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
     error("check_minimal_fixed_point not implemented for " *
@@ -81,8 +81,8 @@ end
 """
     get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
 
-Returns a function of `V`, `state`, and `fixed_point` that equals zero when the
-Lyapunov minimization condition is met and greater than zero when it's violated.
+Return a function of `V`, `state`, and `fixed_point` that equals zero when the Lyapunov
+minimization condition is met and is greater than zero when it's violated.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
     error("get_condition not implemented for AbstractLyapunovMinimizationCondition of " *
@@ -92,8 +92,8 @@ end
 """
     check_decrease(cond::AbstractLyapunovDecreaseCondition)
 
-`true` if `cond` specifies training to meet the Lyapunov decrease condition, `false`
-if `cond` specifies no training to meet this condition.
+Return `true` if `cond` specifies training to meet the Lyapunov decrease condition, and
+`false` if `cond` specifies no training to meet this condition.
 """
 function check_decrease(cond::AbstractLyapunovDecreaseCondition)::Bool
     error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type " *
@@ -103,8 +103,8 @@ end
 """
     get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
 
-Returns a function of `V`, `dVdt`, `state`, and `fixed_point` that is equal to zero
-when the Lyapunov decrease condition is met and greater than zero when it is violated.
+Return a function of `V`, `dVdt`, `state`, and `fixed_point` that is equal to zero
+when the Lyapunov decrease condition is met and is greater than zero when it is violated.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
     error("get_condition not implemented for AbstractLyapunovDecreaseCondition of type " *

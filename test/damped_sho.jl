@@ -16,10 +16,10 @@ function f(state, p, t)
     ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
-    vcat(vel, -2ζ * vel - ω_0^2 * pos)
+    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
 end
-lb = [-2 * pi, -10.0];
-ub = [2 * pi, 10.0];
+lb = [-2 * pi, -2.0];
+ub = [2 * pi, 2.0];
 p = [0.5, 1.0]
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
@@ -27,16 +27,16 @@ dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 # Define neural network discretization
 dim_state = length(lb)
-dim_hidden = 15
-dim_output = 2
+dim_hidden = 20
+dim_output = 5
 chain = [Lux.Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1, use_bias = false)
+             Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = GridTraining(0.1)
+strategy = GridTraining(0.05)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -47,11 +47,8 @@ structure = NonnegativeNeuralLyapunov(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
-κ = 20.0
-decrease_condition = AsymptoticDecrease(
-    strict = true,
-    relu = (t) -> log(1.0 + exp(κ * t)) / κ
-)
+# Damped SHO has exponential decrease at a rate of k = ζ * ω_0, so we train to certify that
+decrease_condition = ExponentialDecrease(prod(p))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -62,7 +59,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-pde_system, network_func = NeuralLyapunovPDESystem(
+@named pde_system = NeuralLyapunovPDESystem(
     dynamics,
     lb,
     ub,
@@ -77,19 +74,19 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
-V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u,
-    network_func,
-    structure.V,
-    ODEFunction(dynamics),
+    res.u.depvar,
+    structure,
+    f,
     zeros(2);
-    p = p
+    p = p,
+    use_V̇_structure = true
 )
 
 ################################## Simulate ###################################
@@ -111,7 +108,7 @@ dVdt_predict = vec(V̇_func(hcat(states...)))
 @test V̇_func([0.0, 0.0]) == 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-4
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-5
 
 #=
 # Get RoA Estimate
