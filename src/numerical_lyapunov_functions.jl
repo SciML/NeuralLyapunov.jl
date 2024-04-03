@@ -8,7 +8,11 @@ functions representing the Lyapunov function and its time derivative: ``V(x), V�
 These functions can operate on a state vector or columnwise on a matrix of state vectors.
 
 # Arguments
-- `phi`, `θ`: `phi` is the neural network with parameters `θ`.
+- `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
+        output, or a `Vector` of the same with one entry per neural network output.
+- `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the first
+        neural network output (even if there is only one), `θ[:φ2]` the parameters of the
+        second (if there are multiple), and so on.
 - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the neural
         Lyapunov function.
 - `dynamics`: the system dynamics, as a function to be used in conjunction with
@@ -39,15 +43,7 @@ function get_numerical_lyapunov_function(
         J_net = nothing
 )::Tuple{Function, Function}
     # network_func is the numerical form of neural network output
-    output_dim = structure.network_dim
-    network_func = let φ = phi, _θ = θ, dim = output_dim
-        function (x)
-            reduce(
-                vcat,
-                Array(φ[i](x, _θ.depvar[Symbol(:φ, i)])) for i in 1:dim
-            )
-        end
-    end
+    network_func = phi_to_net(phi, θ)
 
     # V is the numerical form of Lyapunov function
     V = let V_structure = structure.V, net = network_func, x0 = fixed_point
@@ -88,6 +84,38 @@ function get_numerical_lyapunov_function(
             V̇(state::AbstractMatrix) = mapslices(V̇, state, dims = [1])
 
             return _V, V̇
+        end
+    end
+end
+
+"""
+    phi_to_net(phi, θ[; idx])
+
+Return the network as a function of state alone.
+
+# Arguments
+
+- `phi`: the neural network, represented as `phi(state, θ)` if the neural network has a
+        single output, or a `Vector` of the same with one entry per neural network output.
+- `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the first
+        neural network output (even if there is only one), `θ[:φ2]` the parameters of the
+        second (if there are multiple), and so on.
+- `idx`: the neural network outputs to include in the returned function; defaults to all and
+        only applicable when `phi isa Vector`.
+"""
+function phi_to_net(phi, θ)
+    let _θ = θ, φ = phi
+        return (state) -> φ(state, _θ[:φ1])
+    end
+end
+
+function phi_to_net(phi::Vector, θ; idx = eachindex(phi))
+    let _θ = θ, φ = phi, _idx = idx
+        return function (x)
+            reduce(
+                vcat,
+                Array(φ[i](x, _θ[Symbol(:φ, i)])) for i in _idx
+            )
         end
     end
 end

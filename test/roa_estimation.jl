@@ -68,7 +68,7 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 ###################### Get numerical numerical functions ######################
 V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u,
+    res.u.depvar,
     structure,
     f,
     zeros(length(lb))

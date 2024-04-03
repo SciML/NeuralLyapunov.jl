@@ -109,7 +109,7 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u,
+    res.u.depvar,
     structure,
     ODEFunction(dynamics),
     zeros(length(bounds));

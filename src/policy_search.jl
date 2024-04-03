@@ -67,17 +67,14 @@ function get_policy(
         control_dim::Integer;
         control_structure::Function = identity
 )
-    function policy(state::AbstractVector)
-        control_structure(
-            reduce(
-                vcat,
-                Array(phi[i](state, θ.depvar[Symbol(:φ, i)]))
-                    for i in (network_dim - control_dim + 1):network_dim
-            )
-        )
-    end
+    network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
 
-    policy(state::AbstractMatrix) = mapslices(policy, state, dims = [1])
+    policy(state::AbstractVector) = control_structure(network_func(state))
+    policy(states::AbstractMatrix) = mapslices(
+            control_structure,
+            network_func(states),
+            dims = [1]
+        )
 
     return policy
 end
