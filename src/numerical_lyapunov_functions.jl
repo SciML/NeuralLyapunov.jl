@@ -48,7 +48,7 @@ function get_numerical_lyapunov_function(
     # V is the numerical form of Lyapunov function
     V = let V_structure = structure.V, net = network_func, x0 = fixed_point
         V(state::AbstractVector) = V_structure(net, state, x0)
-        V(state::AbstractMatrix) = mapslices(V, state, dims = [1])
+        V(states::AbstractMatrix) = mapslices(V, states, dims = [1])
     end
 
     if use_V̇_structure
@@ -68,7 +68,7 @@ function get_numerical_lyapunov_function(
 
             # Numerical time derivative of Lyapunov function
             V̇(state::AbstractVector) = V̇_structure(net, _J_net, f, state, params, 0.0, x0)
-            V̇(state::AbstractMatrix) = mapslices(V̇, state, dims = [1])
+            V̇(states::AbstractMatrix) = mapslices(V̇, states, dims = [1])
 
             return _V, V̇
         end
@@ -81,7 +81,7 @@ function get_numerical_lyapunov_function(
                 (δt) -> _V(state + δt * f_call(f, net, state, params, 0.0)),
                 0.0
             )
-            V̇(state::AbstractMatrix) = mapslices(V̇, state, dims = [1])
+            V̇(states::AbstractMatrix) = mapslices(V̇, states, dims = [1])
 
             return _V, V̇
         end
@@ -95,8 +95,8 @@ Return the network as a function of state alone.
 
 # Arguments
 
-- `phi`: the neural network, represented as `phi(state, θ)` if the neural network has a
-        single output, or a `Vector` of the same with one entry per neural network output.
+- `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
+        output, or a `Vector` of the same with one entry per neural network output.
 - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the first
         neural network output (even if there is only one), `θ[:φ2]` the parameters of the
         second (if there are multiple), and so on.
@@ -105,7 +105,7 @@ Return the network as a function of state alone.
 """
 function phi_to_net(phi, θ)
     let _θ = θ, φ = phi
-        return (state) -> φ(state, _θ[:φ1])
+        return (x) -> φ(x, _θ[:φ1])
     end
 end
 
