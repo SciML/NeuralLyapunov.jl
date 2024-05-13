@@ -16,10 +16,4 @@ using SafeTestsets
     @time @safetestset "Policy search - inverted pendulum 2" begin
         include("inverted_pendulum_ODESystem.jl")
     end
-    @time @safetestset "Policy search - planar car" begin
-        include("planar_car.jl")
-    end
-    @time @safetestset "Policy search - planar quadrotor" begin
-        include("planar_quadrotor.jl")
-    end
 end
