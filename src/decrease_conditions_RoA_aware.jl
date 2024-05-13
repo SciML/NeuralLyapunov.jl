@@ -1,5 +1,5 @@
 """
-    RoAAwareDecreaseCondition(check_decrease, decrease, strength, relu, ρ,
+    RoAAwareDecreaseCondition(check_decrease, decrease, strength, rectifier, ρ,
                               out_of_RoA_penalty)
 
 Specifies the form of the Lyapunov conditions to be used, training for a region of
@@ -11,7 +11,7 @@ and will instead apply
 `|out_of_RoA_penalty(V(state), dVdt(state), state, fixed_point, ρ)|^2` when `V(state) > ρ`.
 
 The inequality will be approximated by the equation
-    `relu(decrease(V, dVdt) - strength(state, fixed_point)) = 0.0`.
+    `rectifier(decrease(V(state), dVdt(state)) - strength(state, fixed_point)) = 0.0`.
 
 If the dynamics truly have a fixed point at `fixed_point` and `dVdt` has been defined
 properly in terms of the dynamics, then `dVdt(fixed_point)` will be `0` and there is no need
@@ -40,7 +40,7 @@ struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
     check_decrease::Bool
     decrease::Function
     strength::Function
-    relu::Function
+    rectifier::Function
     ρ::Real
     out_of_RoA_penalty::Function
 end
@@ -52,7 +52,7 @@ end
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
     if cond.check_decrease
         return function (V, dVdt, x, fixed_point)
-            (V(x) ≤ cond.ρ) * cond.relu(
+            (V(x) ≤ cond.ρ) * cond.rectifier(
                 cond.decrease(V(x), dVdt(x)) - cond.strength(x, fixed_point)
             ) +
             (V(x) > cond.ρ) * cond.out_of_RoA_penalty(V(x), dVdt(x), x, fixed_point,
@@ -66,7 +66,7 @@ end
 """
     make_RoA_aware(cond; ρ, out_of_RoA_penalty)
 
-Adds awareness of the region of attraction (RoA) estimation task to the supplied
+Add awareness of the region of attraction (RoA) estimation task to the supplied
 `LyapunovDecreaseCondition`
 
 `ρ` is the target level such that the RoA will be `{ x : V(x) ≤ ρ }`.
@@ -83,7 +83,7 @@ function make_RoA_aware(
         cond.check_decrease,
         cond.decrease,
         cond.strength,
-        cond.relu,
+        cond.rectifier,
         ρ,
         out_of_RoA_penalty
     )

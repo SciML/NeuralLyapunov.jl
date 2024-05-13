@@ -1,12 +1,12 @@
 """
     add_policy_search(lyapunov_structure, new_dims, control_structure)
 
-Adds dependence on the neural network to the dynamics in a `NeuralLyapunovStructure`
+Add dependence on the neural network to the dynamics in a `NeuralLyapunovStructure`.
 
-Adds `new_dims` outputs to the neural network and feeds them through `control_structure` to
-calculatethe contribution of the neural network to the dynamics.
-The existing `lyapunov_structure.network_dim` dimensions are used as in `lyapunov_structure`
-to calculate the Lyapunov function.
+Add `new_dims` outputs to the neural network and feeds them through `control_structure` to
+calculate the contribution of the neural network to the dynamics.
+Use the existing `lyapunov_structure.network_dim` dimensions as in `lyapunov_structure` to
+calculate the Lyapunov function.
 
 `lyapunov_structure` should assume in its `V̇` that the dynamics take a form `f(x, p, t)`.
 The returned `NeuralLyapunovStructure` will assume instead `f(x, u, p, t)`, where `u` is the
@@ -51,28 +51,30 @@ end
 """
     get_policy(phi, θ, network_func, dim; control_structure)
 
-Returns the control policy as a function of the state
+Generate a Julia function representing the control policy as a function of the state
 
 The returned function can operate on a state vector or columnwise on a matrix of state
 vectors.
 
-`phi` is the neural network with parameters `θ`. `network_func` is an output of
-`NeuralLyapunovPDESystem`.
-The control policy is `control_structure` composed with the last `dim` outputs of the
-neural network, as set up by `add_policy_search`.
+`phi` is the neural network with parameters `θ`. The network should have `network_dim`
+outputs, the last `control_dim` of which will be passed into `control_structure` to create
+the policy output.
 """
 function get_policy(
         phi,
         θ,
-        network_func::Function,
-        dim::Integer;
+        network_dim::Integer,
+        control_dim::Integer;
         control_structure::Function = identity
 )
-    function policy(state::AbstractVector)
-        control_structure(network_func(phi, θ, state)[(end - dim + 1):end])
-    end
+    network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
 
-    policy(state::AbstractMatrix) = mapslices(policy, state, dims = [1])
+    policy(state::AbstractVector) = control_structure(network_func(state))
+    policy(states::AbstractMatrix) = mapslices(
+            control_structure,
+            network_func(states),
+            dims = [1]
+        )
 
     return policy
 end

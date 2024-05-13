@@ -16,7 +16,7 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     ζ, ω_0 = p
     τ = u[]
     return [ω
-            -2ζ * ω - ω_0^2 * sin(θ) + τ]
+            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
 lb = [0.0, -10.0];
@@ -77,7 +77,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-pde_system, network_func = NeuralLyapunovPDESystem(
+@named pde_system = NeuralLyapunovPDESystem(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -102,17 +102,16 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u,
-    network_func,
+    res.u.depvar,
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
     p = p
 )
 
-u = get_policy(discretization.phi, res.u, network_func, dim_u)
+u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)
 
 ################################## Simulate ###################################
 

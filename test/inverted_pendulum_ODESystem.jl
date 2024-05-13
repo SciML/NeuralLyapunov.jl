@@ -18,7 +18,7 @@ defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 Dt = Differential(t)
 DDt = Dt^2
 
-eqs = [DDt(θ) + 2ζ * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
+eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
 
 @named driven_pendulum = ODESystem(
     eqs,
@@ -90,7 +90,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-pde_system, network_func = NeuralLyapunovPDESystem(
+@named pde_system = NeuralLyapunovPDESystem(
     driven_pendulum,
     bounds,
     spec;
@@ -110,17 +110,16 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func, ∇V_func = NumericalNeuralLyapunovFunctions(
+V_func, V̇_func = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u,
-    network_func,
+    res.u.depvar,
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
     p = p
 )
 
-u = get_policy(discretization.phi, res.u, network_func, dim_u)
+u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)
 
 ################################## Simulate ###################################
 
