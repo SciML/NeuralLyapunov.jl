@@ -36,11 +36,7 @@ dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
-             Lux.WrappedFunction(x -> vcat(
-                 transpose(sin.(x[1, :])),
-                 transpose(cos.(x[1, :])),
-                 transpose(x[2, :])
-             )),
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
@@ -151,7 +147,7 @@ closed_loop_dynamics = ODEFunction(
 
 # Starting still at bottom
 downward_equilibrium = zeros(2)
-ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 35.0], p)
+ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 75.0], p)
 sol = solve(ode_prob, Tsit5())
 # plot(sol)
 
@@ -162,7 +158,7 @@ x_end, y_end = sin(θ_end), -cos(θ_end)
 
 # Starting at a random point
 x0 = lb .+ rand(2) .* (ub .- lb)
-ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 20.0], p)
+ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 75.0], p)
 sol = solve(ode_prob, Tsit5())
 # plot(sol)
 

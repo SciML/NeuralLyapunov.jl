@@ -13,7 +13,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 [compat]
 ForwardDiff = "0.10"
 JuMP = "1"
-Lux = "0.5"
+Lux = "0.5.45"
 ModelingToolkit = "8, 9"
 NLopt = "1"
 NeuralPDE = "5.10"

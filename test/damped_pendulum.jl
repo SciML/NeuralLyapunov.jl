@@ -45,11 +45,7 @@ dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
 chain = [Lux.Chain(
-             Lux.WrappedFunction(x -> vcat(
-                 transpose(sin.(x[1, :])),
-                 transpose(cos.(x[1, :])),
-                 transpose(x[2, :])
-             )),
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
