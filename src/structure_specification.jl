@@ -12,7 +12,6 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
         (net, state, fixed_point) -> net(state),
-        (net, grad_net, state, fixed_point) -> grad_net(state),
         (net, grad_net, f, state, params, t, fixed_point) -> grad_net(state) ⋅
                                                              f(state, params, t),
         (f, net, state, p, t) -> f(state, p, t),
@@ -66,7 +65,6 @@ function NonnegativeNeuralLyapunov(
     if δ == 0.0
         NeuralLyapunovStructure(
             (net, state, fixed_point) -> net(state) ⋅ net(state),
-            (net, J_net, state, fixed_point) -> 2 * transpose(net(state)) * J_net(state),
             (net, J_net, f, state, params, t, fixed_point) -> 2 *
                                                               dot(
                 net(state), J_net(state), f(state, params, t)),
@@ -82,8 +80,6 @@ function NonnegativeNeuralLyapunov(
         NeuralLyapunovStructure(
             (net, state, fixed_point) -> net(state) ⋅ net(state) +
                                          δ * pos_def(state, fixed_point),
-            (net, J_net, state, fixed_point) -> 2 * transpose(net(state)) * J_net(state) +
-                                                δ * grad_pos_def(state, fixed_point),
             (net, J_net, f, state, params, t, fixed_point) -> 2 * dot(
                 net(state),
                 J_net(state),
@@ -161,10 +157,6 @@ function PositiveSemiDefiniteStructure(
     NeuralLyapunovStructure(
         (net, state, fixed_point) -> pos_def(state, fixed_point) *
                                      non_neg(net, state, fixed_point),
-        (net, J_net, state, fixed_point) -> grad_pos_def(state, fixed_point) *
-                                            non_neg(net, state, fixed_point) +
-                                            pos_def(state, fixed_point) *
-                                            grad_non_neg(net, J_net, state, fixed_point),
         (net, J_net, f, state, params, t, fixed_point) -> (f(state, params, t) ⋅
                                                            grad_pos_def(
             state, fixed_point)) *
