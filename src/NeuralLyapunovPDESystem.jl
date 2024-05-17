@@ -32,9 +32,9 @@ Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapun
     here and cannot be inferred, `[:param1, :param2, ...]` will be used.
   - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
     actually be a fixed point; defaults to `false`; only used when `dynamics isa Function &&
-    !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`, `policy_search` must be
-    `false`, so should not be supplied; when `dynamics isa ODESystem`, value inferred by the
-    presence of unbound inputs.
+    !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`, `policy_search` should
+    not be supplied (as it must be false); when `dynamics isa ODESystem`, value inferred by
+    the presence of unbound inputs.
   - `name`: the name of the constructed `PDESystem`
 """
 function NeuralLyapunovPDESystem(
