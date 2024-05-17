@@ -14,7 +14,21 @@ makedocs(;
         assets = String[]
     ),
     pages = [
-        "Home" => "index.md"
+        "Home" => "index.md",
+        "Manual" => [
+            "man.md",
+            "man/pdesystem.md",
+            "man/structure.md",
+            "man/minimization.md",
+            "man/decrease.md",
+            "man/roa.md",
+            "man/policy_search.md",
+            "man/local_lyapunov.md",
+            hide("man/internals.md")
+        ],
+        "Demonstrations" => [
+            "demos/damped_SHO.md"
+        ]
     ]
 )
 

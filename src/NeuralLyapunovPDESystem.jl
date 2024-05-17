@@ -4,35 +4,38 @@
 
 Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapunov problem.
 
-# Arguments
-- `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
-        function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend
-        on time and only `t = 0.0` will be used
-- `bounds`: an array of domains, defining the training domain by bounding the states (and
-        derivatives, when applicable) of `dynamics`; only used when `dynamics isa
-        ODESystem`, otherwise use `lb` and `ub`.
-- `lb` and `ub`: the training domain will be ``[lb_1, ub_1]×[lb_2, ub_2]×...``; not used
-        when `dynamics isa ODESystem`, then use `bounds`.
-- `spec::NeuralLyapunovSpecification`: defines the Lyapunov function structure, as well as
-        the minimization and decrease conditions.
-- `fixed_point`: the equilibrium being analyzed; defaults to the origin.
-- `p`: the values of the parameters of the dynamical system being analyzed; defaults to
-        `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
-        default parameter values of `dynamics`.
-- `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
-        isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa
-        ODEFunction`, symbols stored there are used, unless overridden here; if not provided
-        here and cannot be inferred, `[:state1, :state2, ...]` will be used.
-- `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
-        `dynamics isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics
-        isa ODEFunction`, symbols stored there are used, unless overridden here; if not
-        provided here and cannot be inferred, `[:param1, :param2, ...]` will be used.
-- `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-        actually be a fixed point; defaults to `false`; only used when `dynamics isa
-        Function && !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`,
-        `policy_search` must be `false`, so should not be supplied; when `dynamics isa
-        ODESystem`, value inferred by the presence of unbound inputs.
-- `name`: the name of the constructed `PDESystem`
+# Positional Arguments
+  - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
+    function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
+    time and only `t = 0.0` will be used. (For an example of when `f` would have a `u`
+    argument, see [`add_policy_search`](@ref).)
+  - `bounds`: an array of domains, defining the training domain by bounding the states (and
+    derivatives, when applicable) of `dynamics`; only used when `dynamics isa
+    ODESystem`, otherwise use `lb` and `ub`.
+  - `lb` and `ub`: the training domain will be ``[lb_1, ub_1]×[lb_2, ub_2]×...``; not used
+    when `dynamics isa ODESystem`, then use `bounds`.
+  - `spec`: a [`NeuralLyapunovSpecification`](@ref) defining the Lyapunov function
+    structure, as well as the minimization and decrease conditions.
+
+# Keyword Arguments
+  - `fixed_point`: the equilibrium being analyzed; defaults to the origin.
+  - `p`: the values of the parameters of the dynamical system being analyzed; defaults to
+    `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
+    default parameter values of `dynamics`.
+  - `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
+    isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa ODEFunction`,
+    symbols stored there are used, unless overridden here; if not provided here and cannot
+    be inferred, `[:state1, :state2, ...]` will be used.
+  - `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
+    `dynamics isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa
+    ODEFunction`, symbols stored there are used, unless overridden here; if not provided
+    here and cannot be inferred, `[:param1, :param2, ...]` will be used.
+  - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
+    actually be a fixed point; defaults to `false`; only used when `dynamics isa Function &&
+    !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`, `policy_search` must be
+    `false`, so should not be supplied; when `dynamics isa ODESystem`, value inferred by the
+    presence of unbound inputs.
+  - `name`: the name of the constructed `PDESystem`
 """
 function NeuralLyapunovPDESystem(
         dynamics::Function,

@@ -6,9 +6,8 @@ CurrentModule = NeuralLyapunov
 
 Documentation for [NeuralLyapunov](https://github.com/SciML/NeuralLyapunov.jl).
 
-```@index
+```@contents
 ```
 
-```@autodocs
-Modules = [NeuralLyapunov]
+```@index
 ```

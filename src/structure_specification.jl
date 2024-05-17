@@ -1,7 +1,7 @@
 """
     UnstructuredNeuralLyapunov()
 
-Create a `NeuralLyapunovStructure` where the Lyapunov function is the neural network
+Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the neural network
 evaluated at the state. This does not structurally enforce any Lyapunov conditions.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
@@ -21,8 +21,8 @@ end
 """
     NonnegativeNeuralLyapunov(network_dim, δ, pos_def; grad_pos_def, grad)
 
-Create a `NeuralLyapunovStructure` where the Lyapunov function is the L2 norm of the neural
-network output plus a constant δ times a function `pos_def`.
+Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the L2 norm of the
+neural network output plus a constant δ times a function `pos_def`.
 
 The condition that the Lyapunov function must be minimized uniquely at the fixed point can
 be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
@@ -40,6 +40,8 @@ The neural network output has dimension `network_dim`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using `add_policy_search`.
+
+See also: [`DontCheckNonnegativity`](@ref)
 """
 function NonnegativeNeuralLyapunov(
         network_dim::Integer;
@@ -85,9 +87,9 @@ end
 """
     PositiveSemiDefiniteStructure(network_dim; pos_def, non_neg, grad_pos_def, grad_non_neg, grad)
 
-Create a `NeuralLyapunovStructure` where the Lyapunov function is the product of a positive
-(semi-)definite function `pos_def` which does not depend on the network and a nonnegative
-function non_neg which does depend the network.
+Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the product of a
+positive (semi-)definite function `pos_def` which does not depend on the network and a
+nonnegative function non_neg which does depend the network.
 
 The condition that the Lyapunov function must be minimized uniquely at the fixed point can
 be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
@@ -106,6 +108,8 @@ The neural network output has dimension `network_dim`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using `add_policy_search`.
+
+Typically used with [`DontCheckNonnegativity`](@ref).
 """
 function PositiveSemiDefiniteStructure(
         network_dim::Integer;
