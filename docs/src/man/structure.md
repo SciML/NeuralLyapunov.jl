@@ -1,9 +1,5 @@
 # Structuring a neural Lyapunov function
 
-```@docs
-NeuralLyapunovStructure
-```
-
 ## Pre-defined structures
 
 Three simple neural Lyapunov function structures are provided, but users can always specify a custom structure using the [`NeuralLyapunovStructure`](@ref) struct.
@@ -24,3 +20,38 @@ Two structures are provided which partially or fully enforce the minimization co
 NonnegativeNeuralLyapunov
 PositiveSemiDefiniteStructure
 ```
+
+## Defining your own neural Lyapunov function structure
+
+To define a new structure for a neural Lyapunov function, one must specify the form of the Lyapunov candidate ``V`` and its time derivative along a trajectory ``\dot{V}``, as well as how to call the dynamics ``f``.
+Additionally, the dimensionality of the output of the neural network must be known in advance.
+
+```@docs
+NeuralLyapunovStructure
+```
+
+### Calling the dynamics
+
+Very generally, the dynamical system can be a system of ODEs ``\dot{x} = f(x, u, p, t)``, where ``u`` is a control input, ``p`` contains parameters, and ``f`` depends on the neural network in some way.
+To capture this variety, users must supply the function `f_call(dynamics::Function, phi::Function, state, p, t)`.
+
+The most common example is when `dynamics` takes the same form as an `ODEFunction`. 
+i.e., ``\dot{x} = \texttt{dynamics}(x, p, t)``.
+In that case, `f_call(dynamics, phi, state, p, t) = dynamics(state, p, t)`.
+
+Suppose instead, the dynamics were supplied as a function of state alone: ``\dot{x} = \texttt{dynamics}(x)``.
+Then, `f_call(dynamics, phi, state, p, t) = dynamics(state)`.
+
+Finally, suppose ``\dot{x} = \texttt{dynamics}(x, u, p, t)`` has a unidimensional control input that is being trained (via [policy search](policy_search.md)) to be the second output of the neural network.
+Then `f_call(dynamics, phi, state, p, t) = dynamics(state, phi(state)[2], p, t)`.
+
+Note that, despite the inclusion of the time variable ``t``, NeuralLyapunov.jl currently only supports time-invariant systems, so only `t = 0.0` is used.
+
+### Structuring ``V`` and ``\dot{V}``
+
+The Lyapunov candidate function ``V`` gets specified as a function `V(phi, state, fixed_point)`, where `phi` is the neural network as a function `phi(state)`.
+Note that this form allows ``V(x)`` to depend on the neural network evaluated at points other than just the input ``x``.
+
+The time derivative ``\dot{V}`` is similarly defined by a function `V̇(phi, J_phi, dynamics, state, params, t, fixed_point)`.
+The function `J_phi(state)` gives the Jacobian of the neural network `phi` at `state`.
+The function `dynamics` is as above (with parameters `params`). 
