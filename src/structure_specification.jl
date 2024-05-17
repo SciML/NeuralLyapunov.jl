@@ -4,8 +4,10 @@
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the neural network
 evaluated at the state. This does not structurally enforce any Lyapunov conditions.
 
+Corresponds to ``V(x) = ϕ(x)``, where ``ϕ`` is the neural network.
+
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
-`f(state, input, p, t)`, consider using `add_policy_search`.
+`f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 """
 function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
@@ -24,22 +26,31 @@ end
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the L2 norm of the
 neural network output plus a constant δ times a function `pos_def`.
 
-The condition that the Lyapunov function must be minimized uniquely at the fixed point can
-be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
-structure ensures `V(state) ≥ 0`. Further, if `δ > 0` and
-`pos_def(fixed_point, fixed_point) = 0`, but `pos_def(state, fixed_point) > 0` when
-`state ≠ fixed_point`, this ensures that `V(state) > 0` when `state != fixed_point`. This
-does not enforce `V(fixed_point) = 0`, so that condition must included in the neural
-Lyapunov loss function.
+Corresponds to ``V(x) = \\lVert ϕ(x) \\rVert^2 + δ \\, \\texttt{pos\\_def}(x, x_0)``, where
+``ϕ`` is the neural network and `x_0` is the equilibrium point.
 
-`grad_pos_def(state, fixed_point)` should be the gradient of `pos_def` with respect to
-`state` at `state`. If `grad_pos_def` is not defined, it is evaluated using `grad`, which
-defaults to `ForwardDiff.gradient`.
+This structure ensures ``V(x) ≥ 0 \\, ∀ x`` when ``δ ≥ 0`` and `pos_def` is always
+nonnegative. Further, if ``δ > 0`` and `pos_def` is strictly positive definite around
+`fixed_point`, the structure ensures that ``V(x)`` is strictly positive away from
+`fixed_point`. In such cases, the minimization condition reduces to ensuring
+``V(\\texttt{fixed\\_point}) = 0``, and so [`DontCheckNonnegativity(true)`](@ref) should be
+used.
 
-The neural network output has dimension `network_dim`.
+# Arguments
+  - `network_dim`: output dimensionality of the neural network.
+  - `δ`: weight of `pos_def`, as above.
+  - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
+    around `fixed_point`.
+
+# Keyword Arguments
+  - `grad_pos_def(state, fixed_point)`: the gradient of `pos_def` with respect to `state` at
+    `state`. If `isnothing(grad_pos_def)` (as is the default), the gradient of `pos_def`
+    will be evaluated using `grad`.
+  - `grad`: a function for evaluating gradients to be used when `isnothing(grad_pos_def)`;
+    defaults to, and expects the same arguments as, `ForwardDiff.gradient`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
-`f(state, input, p, t)`, consider using `add_policy_search`.
+`f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 See also: [`DontCheckNonnegativity`](@ref)
 """
@@ -89,27 +100,40 @@ end
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the product of a
 positive (semi-)definite function `pos_def` which does not depend on the network and a
-nonnegative function non_neg which does depend the network.
+nonnegative function `non_neg` which does depend the network.
 
-The condition that the Lyapunov function must be minimized uniquely at the fixed point can
-be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
-structure ensures `V(state) ≥ 0`. Further, if `pos_def` is `0` only at `fixed_point` (and
-positive elsewhere) and if `non_neg` is strictly positive away from `fixed_point` (as is the
-case for the default values of `pos_def` and `non_neg`), then this structure ensures
-`V(fixed_point) = 0` and `V(state) > 0` when `state ≠ fixed_point`.
+Corresponds to ``V(x) = \\texttt{pos\\_def}(x, x_0) * \\texttt{non\\_neg}(ϕ, x, x_0)``, where
+``ϕ`` is the neural network and `x_0` is the equilibrium point.
 
-`grad_pos_def(state, fixed_point)` should be the gradient of `pos_def` with respect to
-`state` at `state`. Similarly, `grad_non_neg(net, J_net, state, fixed_point)` should be the
-gradient of `non_neg(net, state, fixed_point)` with respect to `state` at `state`. If
-`grad_pos_def` or `grad_non_neg` is not defined, it is evaluated using `grad`, which
-defaults to `ForwardDiff.gradient`.
+This structure ensures ``V(x) ≥ 0``. Further, if `pos_def` is strictly positive definite
+`fixed_point` and `non_neg` is strictly positive (as is the case for the default values of
+`pos_def` and `non_neg`), then this structure ensures ``V(x)`` is strictly positive definite
+around `fixed_point`. In such cases, the minimization condition is satisfied structurally,
+so [`DontCheckNonnegativity(false)`](@ref) should be used.
 
-The neural network output has dimension `network_dim`.
+# Arguments
+  - network_dim: output dimensionality of the neural network.
+
+# Keyword Arguments
+  - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
+    around `fixed_point`.
+  - `non_neg(net, state, fixed_point)`: a nonnegative function of the neural network; note
+    that `net` is the neural network ``ϕ``, and `net(state)` is the value of the neural
+    network at a point ``ϕ(x)``.
+  - `grad_pos_def(state, fixed_point)`: the gradient of `pos_def` with respect to `state` at
+    `state`. If `isnothing(grad_pos_def)` (as is the default), the gradient of `pos_def`
+    will be evaluated using `grad`.
+  - `grad_non_neg(net, J_net, state, fixed_point)`: the gradient of `non_neg` with respect
+    to `state` at `state`; `J_net` is a function outputting the Jacobian of `net` at the
+    input. If `isnothing(grad_non_neg)` (as is the default), the gradient of `non_neg` will
+    be evaluated using `grad`.
+  - `grad`: a function for evaluating gradients to be used when `isnothing(grad_pos_def) ||
+    isnothing(grad_non_neg)`; defaults to, and expects the same arguments as, `ForwardDiff.gradient`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
-`f(state, input, p, t)`, consider using `add_policy_search`.
+`f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
-Typically used with [`DontCheckNonnegativity`](@ref).
+See also: [`DontCheckNonnegativity`](@ref)
 """
 function PositiveSemiDefiniteStructure(
         network_dim::Integer;
