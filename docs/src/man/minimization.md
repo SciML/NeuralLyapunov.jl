@@ -5,7 +5,7 @@ Put mathematically, it is sufficient to require ``V(x) > 0 \, \forall x \ne x_0`
 We call such functions positive definite (around the fixed point ``x_0``).
 The weaker condition that ``V(x) \ge 0 \, \forall x \ne x_0`` and ``V(x_0) = 0`` is positive *semi-*definiteness.
 
-Users specify the form of the minimization condition to enforce through training using a [`LyapunovMinimizationCondition`](@ref).
+NeuralLyapunov.jl provides the [`LyapunovMinimizationCondition`](@ref) struct for users to specify the form of the minimization condition to enforce through training.
 
 ```@docs
 LyapunovMinimizationCondition     
@@ -14,16 +14,23 @@ LyapunovMinimizationCondition
 ## Pre-defined minimization conditions
 
 ```@docs
+StrictlyPositiveDefinite
 PositiveSemiDefinite
 DontCheckNonnegativity
-StrictlyPositiveDefinite
 ```
 
 ## Defining your own minimization condition
 
+If a user wishes to define their own version of the minimization condition in a form other than
+``V(x) ≥ \texttt{strength}(x, x_0)``,
+they must define their own subtype of [`NeuralLyapunov.AbstractLyapunovMinimizationCondition`](@ref).
+
 ```@docs
 NeuralLyapunov.AbstractLyapunovMinimizationCondition
 ```
+
+When constructing the PDESystem, [`NeuralLyapunovPDESystem`](@ref) uses [`NeuralLyapunov.check_nonnegativity`](@ref) to determine if it should include an equation equating the result of [`NeuralLyapunov.get_minimization_condition`](@ref) to zero.
+It additionally uses [`NeuralLyapunov.check_minimal_fixed_point`](@ref) to determine if it should include the equation ``V(x_0) = 0``.
 
 ```@docs
 NeuralLyapunov.check_nonnegativity

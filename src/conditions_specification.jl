@@ -89,8 +89,12 @@ end
 """
     get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
 
-Return a function of `V`, `state`, and `fixed_point` that equals zero when the Lyapunov
-minimization condition is met and is greater than zero when it's violated.
+Return a function of ``V``, ``x``, and ``x_0`` that equals zero when the Lyapunov
+minimization condition is met for the Lyapunov candidate function ``V`` at the point ``x``,
+and is greater than zero if it's violated.
+
+Note that the first input, ``V``, is a function, so the minimization condition can depend on
+the value of the candidate Lyapunov function at multiple points.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
     error("get_condition not implemented for AbstractLyapunovMinimizationCondition of " *
