@@ -18,9 +18,9 @@ makedocs(;
         "Manual" => [
             "man.md",
             "man/pdesystem.md",
-            "man/structure.md",
             "man/minimization.md",
             "man/decrease.md",
+            "man/structure.md",
             "man/roa.md",
             "man/policy_search.md",
             "man/local_lyapunov.md",
