@@ -15,15 +15,19 @@ Specifies the form of the Lyapunov minimization condition to be used.
 
 # Training conditions
 
-If `check_nonnegativity` is `true`, training will attempt to enforce
-    ``V(x) ≥ \\texttt{strength}(x, x_0)``.
-The inequality will be approximated by the equation
-    ``\\texttt{rectifier}(\\texttt{strength}(x, x_0) - V(x_0)) = 0``.
+If `check_nonnegativity` is `true`, training will attempt to enforce:
+
+``V(x) ≥ \\texttt{strength}(x, x_0).``
+
+The inequality will be approximated by the equation:
+
+``\\texttt{rectifier}(\\texttt{strength}(x, x_0) - V(x_0)) = 0.``
+
 Note that the approximate equation and inequality are identical when
 ``\\texttt{rectifier}(t) = \\max(0, t)``.
 
 If `check_fixed_point` is `true`, then training will also attempt to enforce
-    ``V(x_0) = 0``.
+``V(x_0) = 0``.
 
 # Examples
 

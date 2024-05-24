@@ -1,31 +1,62 @@
 """
-    LyapunovDecreaseCondition(check_decrease, decrease, strength, rectifier)
+    LyapunovDecreaseCondition(check_decrease, rate_metric, strength, rectifier)
 
-Specifies the form of the Lyapunov conditions to be used; if `check_decrease`, training will
-enforce `decrease(V, dVdt) ≤ strength(state, fixed_point)`.
+Specifies the form of the Lyapunov conditions to be used.
 
-The inequality will be approximated by the equation
-    `rectifier(decrease(V, dVdt) - strength(state, fixed_point)) = 0.0`.
+# Fields
+  - `check_decrease::Bool`: whether or not to train for negativity/nonpositivity of
+    ``V̇(x)``.
+  - `rate_metric::Function`: should increase with ``V̇(x)``; used when
+    `check_decrease == true`.
+  - `strength::Function`: specifies the level of strictness for negativity training; should
+    be zero when the two inputs are equal and nonnegative otherwise; used when
+    `check_decrease == true`.
+  - `rectifier::Function`: positive when the input is positive and (approximately) zero when
+    the input is negative.
 
-If the dynamics truly have a fixed point at `fixed_point` and `dVdt` has been defined
-properly in terms of the dynamics, then `dVdt(fixed_point)` will be `0` and there is no need
-to enforce `dVdt(fixed_point) = 0`, so `check_fixed_point` defaults to `false`.
+If `check_decrease == true`, training will enforce:
+
+``\\texttt{rate\\_metric}(V(x), V̇(x)) ≤ -\\texttt{strength}(x, x_0).``
+
+The inequality will be approximated by the equation:
+
+``\\texttt{rectifier}(\\texttt{rate\\_metric}(V(x), V̇(x)) + \\texttt{strength}(x, x_0)) = 0.``
+
+Note that the approximate equation and inequality are identical when
+``\\texttt{rectifier}(t) = \\max(0, t)``.
+
+If the dynamics truly have a fixed point at ``x_0`` and ``V̇(x)`` is truly the rate of
+decrease of ``V(x)`` along the dynamics, then ``V̇(x_0)`` will be ``0`` and there is no need
+to train for ``V̇(x_0) = 0``.
 
 # Examples:
 
 Asymptotic decrease can be enforced by requiring
-    `dVdt ≤ -C |state - fixed_point|^2`,
-which corresponds to
-    `decrease = (V, dVdt) -> dVdt`
-    `strength = (x, x0) -> -C * (x - x0) ⋅ (x - x0)`
+    ``V̇(x) ≤ -C \\lVert x - x_0 \\rVert^2``,
+for some positive ``C``, which corresponds to
 
-Exponential decrease of rate `k` is proven by `dVdt ≤ - k * V`, so corresponds to
-    `decrease = (V, dVdt) -> dVdt + k * V`
-    `strength = (x, x0) -> 0.0`
+    rate_metric = (V, dVdt) -> dVdt
+    strength = (x, x0) -> C * (x - x0) ⋅ (x - x0)
+
+This can also be accomplished with [`AsymptoticDecrease`](@ref).
+
+Exponential decrease of rate ``k`` is proven by
+    ``V̇(x) ≤ - k * V(x)``,
+which corresponds to
+
+    rate_metric = (V, dVdt) -> dVdt + k * V
+    strength = (x, x0) -> 0.0
+
+This can also be accomplished with [`ExponentialDecrease`](@ref).
+
+
+In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` exactly
+represents the inequality, but differentiable approximations of this function may be
+employed.
 """
 struct LyapunovDecreaseCondition <: AbstractLyapunovDecreaseCondition
     check_decrease::Bool
-    decrease::Function
+    rate_metric::Function
     strength::Function
     rectifier::Function
 end
@@ -37,7 +68,7 @@ end
 function get_decrease_condition(cond::LyapunovDecreaseCondition)
     if cond.check_decrease
         return (V, dVdt, x, fixed_point) -> cond.rectifier(
-            cond.decrease(V(x), dVdt(x)) - cond.strength(x, fixed_point)
+            cond.rate_metric(V(x), dVdt(x)) + cond.strength(x, fixed_point)
         )
     else
         return nothing
@@ -47,12 +78,15 @@ end
 """
     AsymptoticDecrease(; strict, C, rectifier)
 
-Construct a `LyapunovDecreaseCondition` corresponding to asymptotic decrease.
+Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to asymptotic decrease.
 
-If `strict` is `false`, the condition is `dV/dt ≤ 0`, and if `strict` is `true`, the
-condition is `dV/dt ≤ - C | state - fixed_point |^2`.
+If `strict == false`, the decrease condition is
+``\\dot{V}(x) ≤ 0``,
+and if `strict == true`, the condition is
+``\\dot{V}(x) ≤ - C \\lVert x - x_0 \\rVert^2``.
 
-The inequality is represented by `a ≥ b` <==> `rectifier(b-a) = 0.0`.
+The inequality is represented by
+``\\texttt{rectifier}(\\dot{V}(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
 """
 function AsymptoticDecrease(;
         strict::Bool = false,
@@ -60,7 +94,7 @@ function AsymptoticDecrease(;
         rectifier = (t) -> max(zero(t), t)
 )::LyapunovDecreaseCondition
     strength = if strict
-        (x, x0) -> -C * (x - x0) ⋅ (x - x0)
+        (x, x0) -> C * (x - x0) ⋅ (x - x0)
     else
         (x, x0) -> 0.0
     end
@@ -76,12 +110,14 @@ end
 """
     ExponentialDecrease(k; strict, C, rectifier)
 
-Construct a `LyapunovDecreaseCondition` corresponding to exponential decrease of rate `k`.
+Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to exponential decrease of
+rate ``k``.
 
-If `strict` is `false`, the condition is `dV/dt ≤ -k * V`, and if `strict` is `true`, the
-condition is `dV/dt ≤ -k * V - C * ||state - fixed_point||^2`.
+If `strict == false`, the condition is ``\\dot{V}(x) ≤ -k * V(x)``, and if `strict == true`,
+the condition is ``\\dot{V}(x) ≤ -k * V(x) - C * \\lVert x - x_0 \\rVert^2``.
 
-The inequality is represented by `a ≥ b` <==> `rectifier(b-a) = 0.0`.
+The inequality is represented by
+``\\texttt{rectifier}(\\dot{V}(x) + k V(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
 """
 function ExponentialDecrease(
         k::Real;
@@ -90,7 +126,7 @@ function ExponentialDecrease(
         rectifier = (t) -> max(zero(t), t)
 )::LyapunovDecreaseCondition
     strength = if strict
-        (x, x0) -> -C * (x - x0) ⋅ (x - x0)
+        (x, x0) -> C * (x - x0) ⋅ (x - x0)
     else
         (x, x0) -> 0.0
     end
@@ -106,7 +142,7 @@ end
 """
     DontCheckDecrease()
 
-Construct a `LyapunovDecreaseCondition` which represents not checking for
+Construct a [`LyapunovDecreaseCondition`](@ref) which represents not checking for
 decrease of the Lyapunov function along system trajectories. This is appropriate
 in cases when the Lyapunov decrease condition has been structurally enforced.
 """

@@ -1,6 +1,6 @@
 # Components of a Neural Lyapunov Problem
 
-For a candidate Lyapunov function $V(x)$ to certify the stability of an equilibrium point $x_0$ of the dynamical system $\dot{x}(t) = f(x(t))$, it must satisfy two conditions:
+For a candidate Lyapunov function $V(x)$ to certify the stability of an equilibrium point $x_0$ of the dynamical system $\frac{dx}{dt} = f(x(t))$, it must satisfy two conditions:
 1. The function $V$ must be uniquely minimized at $x_0$, and 
 2. The function $V$ must decrease along system trajectories (i.e., $V(x(t))$ decreases as long as $x(t)$ is a trajectory of the dynamical system).
 

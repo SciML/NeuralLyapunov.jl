@@ -1,17 +1,17 @@
 """
-    RoAAwareDecreaseCondition(check_decrease, decrease, strength, rectifier, ρ,
+    RoAAwareDecreaseCondition(check_decrease, rate_metric, strength, rectifier, ρ,
                               out_of_RoA_penalty)
 
 Specifies the form of the Lyapunov conditions to be used, training for a region of
 attraction estimate of `{ x : V(x) ≤ ρ }`
 
 If `check_decrease`, training will enforce
-`decrease(V(state), dVdt(state)) ≤ strength(state, fixed_point)` whenever `V(state) ≤ ρ`,
+`rate_metric(V(state), dVdt(state)) ≤ -strength(state, fixed_point)` whenever `V(state) ≤ ρ`,
 and will instead apply
 `|out_of_RoA_penalty(V(state), dVdt(state), state, fixed_point, ρ)|^2` when `V(state) > ρ`.
 
 The inequality will be approximated by the equation
-    `rectifier(decrease(V(state), dVdt(state)) - strength(state, fixed_point)) = 0.0`.
+    `rectifier(rate_metric(V(state), dVdt(state)) + strength(state, fixed_point)) = 0.0`.
 
 If the dynamics truly have a fixed point at `fixed_point` and `dVdt` has been defined
 properly in terms of the dynamics, then `dVdt(fixed_point)` will be `0` and there is no need
@@ -22,11 +22,11 @@ to enforce `dVdt(fixed_point) = 0`, so `check_fixed_point` defaults to `false`.
 Asymptotic decrease can be enforced by requiring
     `dVdt ≤ -C |state - fixed_point|^2`,
 which corresponds to
-    `decrease = (V, dVdt) -> dVdt` and
-    `strength = (x, x0) -> -C * (x - x0) ⋅ (x - x0)`.
+    `rate_metric = (V, dVdt) -> dVdt` and
+    `strength = (x, x0) -> C * (x - x0) ⋅ (x - x0)`.
 
 Exponential decrease of rate `k` is proven by `dVdt ≤ - k * V`, so corresponds to
-    `decrease = (V, dVdt) -> dVdt + k * V` and
+    `rate_metric = (V, dVdt) -> dVdt + k * V` and
     `strength = (x, x0) -> 0.0`.
 
 Enforcing either condition only in the region of attraction and not penalizing any points
@@ -38,7 +38,7 @@ Note that this penalty could also depend on values of `V`, `dVdt`, and `ρ`.
 """
 struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
     check_decrease::Bool
-    decrease::Function
+    rate_metric::Function
     strength::Function
     rectifier::Function
     ρ::Real
@@ -53,7 +53,7 @@ function get_decrease_condition(cond::RoAAwareDecreaseCondition)
     if cond.check_decrease
         return function (V, dVdt, x, fixed_point)
             (V(x) ≤ cond.ρ) * cond.rectifier(
-                cond.decrease(V(x), dVdt(x)) - cond.strength(x, fixed_point)
+                cond.rate_metric(V(x), dVdt(x)) + cond.strength(x, fixed_point)
             ) +
             (V(x) > cond.ρ) * cond.out_of_RoA_penalty(V(x), dVdt(x), x, fixed_point,
                 cond.ρ)
@@ -81,7 +81,7 @@ function make_RoA_aware(
 )::RoAAwareDecreaseCondition
     RoAAwareDecreaseCondition(
         cond.check_decrease,
-        cond.decrease,
+        cond.rate_metric,
         cond.strength,
         cond.rectifier,
         ρ,
