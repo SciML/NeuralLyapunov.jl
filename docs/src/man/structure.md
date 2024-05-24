@@ -1,8 +1,8 @@
 # Structuring a neural Lyapunov function
 
-## Pre-defined structures
-
 Three simple neural Lyapunov function structures are provided, but users can always specify a custom structure using the [`NeuralLyapunovStructure`](@ref) struct.
+
+## Pre-defined structures
 
 The simplest structure is to train the neural network directly to be the Lyapunov function, which can be accomplished using an [`UnstructuredNeuralLyapunov`](@ref).
 

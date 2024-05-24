@@ -1,5 +1,5 @@
 """
-    get_local_lyapunov(dynamics, state_dim, optimizer_factory[, jac]; fixed_point, p)
+    local_lyapunov(dynamics, state_dim, optimizer_factory[, jac]; fixed_point, p)
 
 Use semidefinite programming to derive a quadratic Lyapunov function for the linearization
 of `dynamics` around `fixed_point`. Return `(V, dV/dt)`.
