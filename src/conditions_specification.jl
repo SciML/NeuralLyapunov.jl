@@ -115,8 +115,11 @@ end
 """
     get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
 
-Return a function of `V`, `dVdt`, `state`, and `fixed_point` that is equal to zero
-when the Lyapunov decrease condition is met and is greater than zero when it is violated.
+Return a function of ``V``, ``V̇``, ``x``, and ``x_0`` that returns zero when the Lyapunov
+decrease condition is met and a value greater than zero when it is violated.
+
+Note that the first two inputs, ``V`` and ``V̇``, are functions, so the decrease condition
+can depend on the value of these functions at multiple points.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
     error("get_condition not implemented for AbstractLyapunovDecreaseCondition of type " *

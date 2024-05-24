@@ -113,8 +113,8 @@ end
 Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to exponential decrease of
 rate ``k``.
 
-If `strict == false`, the condition is ``\\dot{V}(x) ≤ -k * V(x)``, and if `strict == true`,
-the condition is ``\\dot{V}(x) ≤ -k * V(x) - C * \\lVert x - x_0 \\rVert^2``.
+If `strict == false`, the condition is ``\\dot{V}(x) ≤ -k V(x)``, and if `strict == true`,
+the condition is ``\\dot{V}(x) ≤ -k V(x) - C \\lVert x - x_0 \\rVert^2``.
 
 The inequality is represented by
 ``\\texttt{rectifier}(\\dot{V}(x) + k V(x) + C \\lVert x - x_0 \\rVert^2) = 0``.

@@ -11,7 +11,7 @@ Thus, we specify our neural Lyapunov problems with three components, each answer
 2. How is the minimization condition to be enforced?
 3. How is the decrease condition to be enforced?
 
-These three components are represented by the three fields of a `NeuralLyapunovSpecification` object.
+These three components are represented by the three fields of a [`NeuralLyapunovSpecification`](@ref) object.
 
 ```@docs
 NeuralLyapunovSpecification
