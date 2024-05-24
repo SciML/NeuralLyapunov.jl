@@ -1,7 +1,7 @@
 """
     LyapunovDecreaseCondition(check_decrease, rate_metric, strength, rectifier)
 
-Specifies the form of the Lyapunov conditions to be used.
+Specifies the form of the Lyapunov decrease condition to be used.
 
 # Fields
   - `check_decrease::Bool`: whether or not to train for negativity/nonpositivity of
@@ -13,6 +13,8 @@ Specifies the form of the Lyapunov conditions to be used.
     `check_decrease == true`.
   - `rectifier::Function`: positive when the input is positive and (approximately) zero when
     the input is negative.
+
+# Training conditions
 
 If `check_decrease == true`, training will enforce:
 
@@ -41,14 +43,13 @@ for some positive ``C``, which corresponds to
 This can also be accomplished with [`AsymptoticDecrease`](@ref).
 
 Exponential decrease of rate ``k`` is proven by
-    ``V̇(x) ≤ - k * V(x)``,
+    ``V̇(x) ≤ - k V(x)``,
 which corresponds to
 
     rate_metric = (V, dVdt) -> dVdt + k * V
     strength = (x, x0) -> 0.0
 
 This can also be accomplished with [`ExponentialDecrease`](@ref).
-
 
 In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` exactly
 represents the inequality, but differentiable approximations of this function may be
