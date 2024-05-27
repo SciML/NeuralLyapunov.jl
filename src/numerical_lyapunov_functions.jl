@@ -10,20 +10,20 @@ These functions can operate on a state vector or columnwise on a matrix of state
 # Positional Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output.
-  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the first
-    neural network output (even if there is only one), `θ[:φ2]` the parameters of the
+  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the
+    first neural network output (even if there is only one), `θ[:φ2]` the parameters of the
     second (if there are multiple), and so on.
-  - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the neural
-    Lyapunov function.
+  - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the
+    neural Lyapunov function.
   - `dynamics`: the system dynamics, as a function to be used in conjunction with
     `structure.f_call`.
   - `fixed_point`: the equilibrium point being analyzed by the Lyapunov function.
 
 # Keyword Arguments
   - `p`: parameters to be passed into `dynamics`; defaults to `SciMLBase.NullParameters()`.
-  - `use_V̇_structure`: when `true`, ``V̇(x)`` is calculated using `structure.V̇`; when `false`,
-    ``V̇(x)`` is calculated using `deriv` as ``\\frac{∂}{∂t} V(x + t f(x))`` at ``t = 0``;
-    defaults to `false`, as it is more efficient in many cases.
+  - `use_V̇_structure`: when `true`, ``V̇(x)`` is calculated using `structure.V̇`; when `
+    false`, ``V̇(x)`` is calculated using `deriv` as ``\\frac{∂}{∂t} V(x + t f(x))`` at
+    ``t = 0``; defaults to `false`, as it is more efficient in many cases.
   - `deriv`: a function for calculating derivatives; defaults to (and expects same arguments
     as) `ForwardDiff.derivative`; only used when `use_V̇_structure` is `false`.
   - `jac`: a function for calculating Jacobians; defaults to (and expects same arguments as)
@@ -98,11 +98,11 @@ Return the network as a function of state alone.
 # Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output.
-  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the first
-    neural network output (even if there is only one), `θ[:φ2]` the parameters of the
+  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the
+    first neural network output (even if there is only one), `θ[:φ2]` the parameters of the
     second (if there are multiple), and so on.
-  - `idx`: the neural network outputs to include in the returned function; defaults to all and
-    only applicable when `phi isa Vector`.
+  - `idx`: the neural network outputs to include in the returned function; defaults to all
+    and only applicable when `phi isa Vector`.
 """
 function phi_to_net(phi, θ)
     let _θ = θ, φ = phi
