@@ -1,8 +1,9 @@
 # Lyapunov Decrease Condition
 
 To represent the condition that the Lyapunov function ``V(x)`` must decrease along system trajectories, we typically introduce a new function ``\dot{V}(x) = \nabla V(x) \cdot f(x)``.
-It is then sufficient to show that ``\dot{V}(x)`` is negative away from the fixed point and zero at the fixed point, since ``\dot{V}`` represents the rate of change of ``V`` along system trajectories.
+This function represents the rate of change of ``V`` along system trajectories.
 That is to say, if ``x(t)`` is a trajectory defined by ``\frac{dx}{dt} = f(x)``, then ``\dot{V}(x(t)) = \frac{d}{dt} [ V(x(t)) ]``.
+It is then sufficient to show that ``\dot{V}(x)`` is negative away from the fixed point and zero at the fixed point, since a negative derivative means a decreasing function.
 
 Put mathematically, it is sufficient to require ``\dot{V}(x) < 0 \, \forall x \ne x_0`` and ``\dot{V}(x_0) = 0``.
 We call such functions negative definite (around the fixed point ``x_0``).

@@ -22,7 +22,7 @@ These functions can operate on a state vector or columnwise on a matrix of state
 # Keyword Arguments
   - `p`: parameters to be passed into `dynamics`; defaults to `SciMLBase.NullParameters()`.
   - `use_V̇_structure`: when `true`, ``V̇(x)`` is calculated using `structure.V̇`; when `false`,
-    ``V̇(x)`` is calculated using `deriv` as ``\\frac{d}{dt} V(x + t f(x))`` at ``t = 0``;
+    ``V̇(x)`` is calculated using `deriv` as ``\\frac{∂}{∂t} V(x + t f(x))`` at ``t = 0``;
     defaults to `false`, as it is more efficient in many cases.
   - `deriv`: a function for calculating derivatives; defaults to (and expects same arguments
     as) `ForwardDiff.derivative`; only used when `use_V̇_structure` is `false`.
