@@ -1,6 +1,6 @@
 using LinearAlgebra
 using NeuralPDE, Lux, ModelingToolkit
-using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
+using Optimization, OptimizationOptimisers, OptimizationOptimJL
 using NeuralLyapunov
 using Random
 using Test
@@ -18,8 +18,8 @@ function f(state, p, t)
     vel = state[2]
     vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
 end
-lb = [-2 * pi, -2.0];
-ub = [2 * pi, 2.0];
+lb = [-5.0, -2.0];
+ub = [5.0, 2.0];
 p = [0.5, 1.0]
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
@@ -35,7 +35,7 @@ chain = [Lux.Chain(
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 
-# Define neural network discretization
+# Define training strategy
 strategy = GridTraining(0.05)
 discretization = PhysicsInformedNN(chain, strategy)
 
@@ -76,10 +76,10 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 500)
+res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,
@@ -92,49 +92,49 @@ V_func, V̇_func = get_numerical_lyapunov_function(
 ################################## Simulate ###################################
 xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V_func(hcat(states...)))
-dVdt_predict = vec(V̇_func(hcat(states...)))
+V_samples = vec(V(hcat(states...)))
+V̇_samples = vec(V̇(hcat(states...)))
 
 #################################### Tests ####################################
 
 # Network structure should enforce nonegativeness of V
-@test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
+@test min(V([0.0, 0.0]), minimum(V_samples)) ≥ 0.0
 
 # Trained for V's minimum to be at the fixed point
-@test V_func([0.0, 0.0])≈minimum(V_predict) atol=1e-4
-@test V_func([0.0, 0.0]) < 1e-4
+@test V([0.0, 0.0])≈minimum(V_samples) atol=1e-4
+@test V([0.0, 0.0]) < 1e-4
 
 # Dynamics should result in a fixed point at the origin
-@test V̇_func([0.0, 0.0]) == 0.0
+@test V̇([0.0, 0.0]) == 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-5
+@test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-5
 
 #=
 # Get RoA Estimate
-data = reshape(V_predict, (length(xs), length(ys)));
+data = reshape(V_samples, (length(xs), length(ys)));
 data = vcat(data[1, :], data[end, :], data[:, 1], data[:, end]);
 ρ = minimum(data)
 
 # Print statistics
-println("V(0.,0.) = ", V_func([0.0, 0.0]))
-println("V ∋ [", min(V_func([0.0, 0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V(0.,0.) = ", V([0.0, 0.0]))
+println("V ∋ [", min(V([0.0, 0.0]), minimum(V_samples)), ", ", maximum(V_samples), "]")
 println(
     "V̇ ∋ [",
-    minimum(dVdt_predict),
+    minimum(V̇_samples),
     ", ",
-    max(V̇_func([0.0, 0.0]), maximum(dVdt_predict)),
+    max(V̇([0.0, 0.0]), maximum(V̇_samples)),
     "]",
 )
 
 # Plot results
 
-p1 = plot(xs, ys, V_predict, linetype = :contourf, title = "V", xlabel = "x", ylabel = "ẋ");
+p1 = plot(xs, ys, V_samples, linetype = :contourf, title = "V", xlabel = "x", ylabel = "ẋ");
 p1 = scatter!([0], [0], label = "Equilibrium");
 p2 = plot(
     xs,
     ys,
-    dVdt_predict,
+    V̇_samples,
     linetype = :contourf,
     title = "dV/dt",
     xlabel = "x",
@@ -144,7 +144,7 @@ p2 = scatter!([0], [0], label = "Equilibrium");
 p3 = plot(
     xs,
     ys,
-    V_predict .< ρ,
+    V_samples .< ρ,
     linetype = :contourf,
     title = "Estimated RoA",
     xlabel = "x",
@@ -154,7 +154,7 @@ p3 = plot(
 p4 = plot(
     xs,
     ys,
-    dVdt_predict .< 0,
+    V̇_samples .< 0,
     linetype = :contourf,
     title = "dV/dt < 0",
     xlabel = "x",
