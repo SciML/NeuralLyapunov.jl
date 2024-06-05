@@ -20,7 +20,8 @@ function f(state, p, t)
 end
 lb = [-5.0, -2.0];
 ub = [5.0, 2.0];
-p = [0.5, 1.0]
+p = [0.5, 1.0];
+fixed_point = [0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 ####################### Specify neural Lyapunov problem #######################
@@ -84,7 +85,7 @@ V, V̇ = get_numerical_lyapunov_function(
     res.u.depvar,
     structure,
     f,
-    zeros(2);
+    fixed_point;
     p = p,
     use_V̇_structure = true
 )
@@ -98,14 +99,14 @@ V̇_samples = vec(V̇(hcat(states...)))
 #################################### Tests ####################################
 
 # Network structure should enforce nonegativeness of V
-@test min(V([0.0, 0.0]), minimum(V_samples)) ≥ 0.0
+@test min(V(fixed_point), minimum(V_samples)) ≥ 0.0
 
 # Trained for V's minimum to be at the fixed point
-@test V([0.0, 0.0])≈minimum(V_samples) atol=1e-4
-@test V([0.0, 0.0]) < 1e-4
+@test V(fixed_point)≈minimum(V_samples) atol=1e-4
+@test V(fixed_point) < 1e-4
 
 # Dynamics should result in a fixed point at the origin
-@test V̇([0.0, 0.0]) == 0.0
+@test V̇(fixed_point) == 0.0
 
 # V̇ should be negative almost everywhere
 @test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-5
@@ -117,13 +118,13 @@ data = vcat(data[1, :], data[end, :], data[:, 1], data[:, end]);
 ρ = minimum(data)
 
 # Print statistics
-println("V(0.,0.) = ", V([0.0, 0.0]))
-println("V ∋ [", min(V([0.0, 0.0]), minimum(V_samples)), ", ", maximum(V_samples), "]")
+println("V(0.,0.) = ", V(fixed_point))
+println("V ∋ [", min(V(fixed_point), minimum(V_samples)), ", ", maximum(V_samples), "]")
 println(
     "V̇ ∋ [",
     minimum(V̇_samples),
     ", ",
-    max(V̇([0.0, 0.0]), maximum(V̇_samples)),
+    max(V̇(fixed_point), maximum(V̇_samples)),
     "]",
 )
 
