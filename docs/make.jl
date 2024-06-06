@@ -27,7 +27,8 @@ makedocs(;
             hide("man/internals.md")
         ],
         "Demonstrations" => [
-            "demos/damped_SHO.md"
+            "demos/damped_SHO.md",
+            "demos/roa_estimation.md"
         ]
     ]
 )

@@ -12,8 +12,9 @@ println("Region of Attraction Estimation")
 ######################### Define dynamics and domain ##########################
 
 f(x, p, t) = -x .+ x .^ 3
-lb = [-2];
-ub = [2];
+lb = [-2.0];
+ub = [2.0];
+fixed_point = [0.0];
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -27,7 +28,7 @@ chain = [Lux.Chain(
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
 
-# Define neural network discretization
+# Define training strategy
 strategy = GridTraining(0.1)
 discretization = PhysicsInformedNN(chain, strategy)
 
@@ -66,48 +67,48 @@ prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,
     f,
-    zeros(length(lb))
+    fixed_point
 )
 
 ################################## Simulate ###################################
-states = first(lb):0.001:first(ub)
-V_predict = vec(V_func(states'))
-dVdt_predict = vec(V̇_func(states'))
+states = lb[]:0.001:ub[]
+V_samples = vec(V(states'))
+V̇_samples = vec(V̇(states'))
 
 # Calculated RoA estimate
 ρ = decrease_condition.ρ
-RoA_states = states[vec(V_func(transpose(states))) .≤ ρ]
+RoA_states = states[vec(V(transpose(states))) .≤ ρ]
 RoA = (first(RoA_states), last(RoA_states))
 
 #################################### Tests ####################################
 
 # Network structure should enforce positive definiteness of V
-@test min(V_func([0.0]), minimum(V_predict)) ≥ 0.0
-@test V_func([0.0]) == 0.0
+@test min(V(fixed_point), minimum(V_samples)) ≥ 0.0
+@test V(fixed_point) == 0.0
 
 # Dynamics should result in a fixed point at the origin
-@test V̇_func([0.0]) == 0.0
+@test V̇(fixed_point) == 0.0
 
 # V̇ should be negative everywhere in the region of attraction except the fixed point
-@test all(V̇_func(transpose(RoA_states[RoA_states .!= 0.0])) .< 0)
+@test all(V̇(transpose(RoA_states[ RoA_states .!= fixed_point[] ])) .< 0)
 
 # The estimated region of attraction should be a subset of the real region of attraction
 @test first(RoA) ≥ -1.0 && last(RoA) ≤ 1.0
 
 #=
 # Print statistics
-println("V(0.,0.) = ", V_func([0.0]))
-println("V ∋ [", min(V_func([0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V(0.,0.) = ", V(fixed_point))
+println("V ∋ [", min(V(fixed_point), minimum(V_samples)), ", ", maximum(V_samples), "]")
 println(
     "V̇ ∋ [",
-    minimum(dVdt_predict),
+    minimum(V̇_samples),
     ", ",
-    max(V̇_func([0.0]), maximum(dVdt_predict)),
+    max(V̇(fixed_point), maximum(V̇_samples)),
     "]",
 )
 println("True region of attraction: (-1, 1)")
@@ -116,12 +117,12 @@ println("Estimated region of attraction: ", RoA)
 # Plot results
 using Plots
 
-p_V = plot(states, V_predict, label = "V", xlabel = "x", linewidth=2);
+p_V = plot(states, V_samples, label = "V", xlabel = "x", linewidth=2);
 p_V = hline!([ρ], label = "V = ρ", legend = :top);
 p_V = vspan!(collect(RoA); label = "Estimated Region of Attraction", color = :gray, fillstyle = :/);
 p_V = vspan!([-1, 1]; label = "True Region of Attraction", opacity = 0.2, color = :green);
 
-p_V̇ = plot(states, dVdt_predict, label = "dV/dt", xlabel = "x", linewidth=2);
+p_V̇ = plot(states, V̇_samples, label = "dV/dt", xlabel = "x", linewidth=2);
 p_V̇ = hline!([0.0], label = "dV/dt = 0", legend = :top);
 p_V̇ = vspan!(collect(RoA); label = "Estimated Region of Attraction", color = :gray, fillstyle = :/);
 p_V̇ = vspan!([-1, 1]; label = "True Region of Attraction", opacity = 0.2, color = :green);
