@@ -69,7 +69,7 @@ function get_minimization_condition(cond::LyapunovMinimizationCondition)
 end
 
 """
-    StrictlyPositiveDefinite(C; check_fixed_point, rectifier)
+    StrictlyPositiveDefinite(; C, check_fixed_point, rectifier)
 
 Construct a [`LyapunovMinimizationCondition`](@ref) representing
     ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``.
@@ -93,7 +93,7 @@ function StrictlyPositiveDefinite(;
 end
 
 """
-    PositiveSemiDefinite(check_fixed_point)
+    PositiveSemiDefinite(; check_fixed_point)
 
 Construct a [`LyapunovMinimizationCondition`](@ref) representing
     ``V(x) ≥ 0``.
@@ -115,7 +115,7 @@ function PositiveSemiDefinite(;
 end
 
 """
-    DontCheckNonnegativity(check_fixed_point)
+    DontCheckNonnegativity(; check_fixed_point)
 
 Construct a [`LyapunovMinimizationCondition`](@ref) which represents not checking for
 nonnegativity of the Lyapunov function. This is appropriate in cases where this condition
@@ -123,9 +123,11 @@ has been structurally enforced.
 
 It is still possible to check for ``V(x_0) = 0``, even in this case, for example if `V` is
 structured to be positive for ``x ≠ x_0``, but it is not guaranteed structurally that
-``V(x_0) = 0`` (such as [`NonnegativeNeuralLyapunov`](@ref)).
+``V(x_0) = 0`` (such as [`NonnegativeNeuralLyapunov`](@ref)). `check_fixed_point` defaults
+to `true`, since in cases where ``V(x_0) = 0`` is enforced structurally, the equation will
+reduce to `0.0 ~ 0.0`, which gets removed in most cases.
 """
-function DontCheckNonnegativity(; check_fixed_point = false)::LyapunovMinimizationCondition
+function DontCheckNonnegativity(; check_fixed_point = true)::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         false,
         (state, fixed_point) -> 0.0,
