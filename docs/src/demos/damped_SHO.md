@@ -36,23 +36,23 @@ end
 lb = [-5.0, -2.0];
 ub = [ 5.0,  2.0];
 p = [0.5, 1.0];
-fixed_point = zeros(2);
+fixed_point = [0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
 dim_state = length(lb)
-dim_hidden = 20
-dim_output = 5
+dim_hidden = 10
+dim_output = 3
 chain = [Lux.Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 
-# Define neural network discretization
-strategy = GridTraining(0.05)
+# Define training strategy
+strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -125,7 +125,7 @@ end
 lb = [-5.0, -2.0];
 ub = [ 5.0,  2.0];
 p = [0.5, 1.0];
-fixed_point = zeros(2);
+fixed_point = [0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 ```
 
@@ -137,8 +137,8 @@ using Lux
 
 # Define neural network discretization
 dim_state = length(lb)
-dim_hidden = 20
-dim_output = 5
+dim_hidden = 10
+dim_output = 3
 chain = [Lux.Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
@@ -148,7 +148,7 @@ chain = [Lux.Chain(
 
 ```@example SHO
 # Define training strategy
-strategy = GridTraining(0.05)
+strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy)
 ```
 
@@ -224,18 +224,29 @@ V, V̇ = get_numerical_lyapunov_function(
 ```
 
 Now let's see how we did.
-We'll evaluate both ``V`` and ``\dot{V}`` on a finer grid than we trained on:
+We'll evaluate both ``V`` and ``\dot{V}`` on a ``101 \times 101`` grid:
 
 ```@example SHO
-xs, ys = [lb[i]:0.02:ub[i] for i in eachindex(lb)]
-states = Iterators.map(collect, Iterators.product(xs, ys))
+Δx = (ub[1] - lb[1]) / 100
+Δv = (ub[2] - lb[2]) / 100
+xs = lb[1]:Δx:ub[1]
+vs = lb[2]:Δv:ub[2]
+states = Iterators.map(collect, Iterators.product(xs, vs))
 V_samples = vec(V(hcat(states...)))
 V̇_samples = vec(V̇(hcat(states...)))
 
 # Print statistics
+V_min, i_min = findmin(V_samples)
+state_min = collect(states)[i_min]
+V_min, state_min = if V(fixed_point) ≤ V_min
+        V(fixed_point), fixed_point
+    else
+        V_min, state_min
+    end
+
 println("V(0.,0.) = ", V(fixed_point))
-println("V̇(0.,0.) = ", V̇(fixed_point))
-println("V ∋ [", min(V(fixed_point), minimum(V_samples)), ", ", maximum(V_samples), "]")
+println("V ∋ [", V_min, ", ", maximum(V_samples), "]")
+println("Minimial sample of V is at ", state_min)
 println(
     "V̇ ∋ [",
     minimum(V̇_samples),
@@ -245,16 +256,16 @@ println(
 )
 ```
 
-At least at these validation samples, ``\dot{V}`` is at least negative semi-definite and ``V`` is almost positive definite and is minimized (though perhaps not uniquely) at the origin.
+At least at these validation samples, the conditions that ``\dot{V}`` be negative semi-definite and ``V`` be minimized at the origin are nearly sastisfied.
 
 ```@example SHO
 using Plots
 
-p1 = plot(xs, ys, V_samples, linetype = :contourf, title = "V", xlabel = "x", ylabel = "v");
+p1 = plot(xs, vs, V_samples, linetype = :contourf, title = "V", xlabel = "x", ylabel = "v");
 p1 = scatter!([0], [0], label = "Equilibrium");
 p2 = plot(
     xs,
-    ys,
+    vs,
     V̇_samples,
     linetype = :contourf,
     title = "V̇",
