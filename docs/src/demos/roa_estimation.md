@@ -207,7 +207,7 @@ states = lb[]:0.001:ub[]
 V_samples = vec(V(states'))
 V̇_samples = vec(V̇(states'))
 
-# Calculated RoA estimate
+# Calculate RoA estimate
 ρ = decrease_condition.ρ
 RoA_states = states[vec(V(transpose(states))) .≤ ρ]
 RoA = (first(RoA_states), last(RoA_states))
