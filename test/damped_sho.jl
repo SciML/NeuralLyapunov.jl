@@ -1,7 +1,5 @@
-using LinearAlgebra
-using NeuralPDE, Lux, ModelingToolkit
+using NeuralPDE, Lux, NeuralLyapunov
 using Optimization, OptimizationOptimisers, OptimizationOptimJL
-using NeuralLyapunov
 using Random
 using Test
 
