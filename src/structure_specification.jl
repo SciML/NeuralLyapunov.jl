@@ -39,7 +39,7 @@ used.
   - `network_dim`: output dimensionality of the neural network.
   - `δ`: weight of `pos_def`, as above.
   - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
-    around `fixed_point`.
+    around `fixed_point`; defaults to ``log(1 + \\lVert x - x_0 \\rVert^2)``.
 
 # Keyword Arguments
   - `grad_pos_def(state, fixed_point)`: the gradient of `pos_def` with respect to `state` at
@@ -112,10 +112,10 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
 
 # Keyword Arguments
   - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
-    around `fixed_point`.
+    around `fixed_point`; defaults to ``log(1 + \\lVert x - x_0 \\rVert^2)``.
   - `non_neg(net, state, fixed_point)`: a nonnegative function of the neural network; note
     that `net` is the neural network ``ϕ``, and `net(state)` is the value of the neural
-    network at a point ``ϕ(x)``.
+    network at a point ``ϕ(x)``; defaults to ``1 + \\lVert ϕ(x) \\rVert^2``.
   - `grad_pos_def(state, fixed_point)`: the gradient of `pos_def` with respect to `state` at
     `state`. If `isnothing(grad_pos_def)` (as is the default), the gradient of `pos_def`
     will be evaluated using `grad`.

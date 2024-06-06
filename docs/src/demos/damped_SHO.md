@@ -192,7 +192,7 @@ spec = NeuralLyapunovSpecification(
     ub,
     spec;
     p = p
-);
+)
 ```
 
 Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.
