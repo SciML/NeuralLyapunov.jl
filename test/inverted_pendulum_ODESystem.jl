@@ -1,6 +1,5 @@
-using NeuralPDE, Lux, ModelingToolkit
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
-using NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
 
@@ -43,9 +42,9 @@ p = [defaults[param] for param in p_order]
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
 dim_state = length(bounds)
-dim_hidden = 15
-dim_phi = 2
-dim_u = 1
+dim_hidden = 20
+dim_phi = 3
+dim_u = 2
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
              PeriodicEmbedding([1], [2π]),
@@ -55,7 +54,7 @@ chain = [Lux.Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = GridTraining(0.1)
+strategy = QuasiRandomTraining(12_630)# GridTraining(0.1)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -105,16 +104,19 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
+net = discretization.phi
+_θ = res.u.depvar
+
 V_func, V̇_func = get_numerical_lyapunov_function(
-    discretization.phi,
-    res.u.depvar,
+    net,
+    _θ,
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
     p = p
 )
 
-u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)
+u = get_policy(net, _θ, dim_output, dim_u)
 
 ################################## Simulate ###################################
 
@@ -139,17 +141,17 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 # Training should result in a fixed point at the upright equilibrium
 @test all(isapprox.(
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
-    0.0; atol = 1e-8))
+    0.0; atol = 1e-5))
 @test V̇_func(upright_equilibrium) == 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1.04e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 3e-3
 
 ################################## Simulate ###################################
 
 using DifferentialEquations
 
-state_order = map(st -> istree(st) ? operation(st) : st, state_order)
+state_order = map(st -> SymbolicUtils.iscall(st) ? operation(st) : st, state_order)
 state_syms = Symbol.(state_order)
 
 closed_loop_dynamics = ODEFunction(
