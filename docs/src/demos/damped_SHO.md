@@ -1,4 +1,4 @@
-# Damped Simple Harmonic Oscillator
+# Damped simple harmonic oscillator
 
 Let's train a neural network to prove the exponential stability of the damped simple harmonic oscillator (SHO).
 
@@ -16,10 +16,8 @@ We'll consider just the box domain ``x \in [-5, 5], v \in [-2, 2]``.
 ## Copy-Pastable Code
 
 ```julia
-using LinearAlgebra
-using NeuralPDE, Lux, ModelingToolkit
+using NeuralPDE, Lux, NeuralLyapunov
 using Optimization, OptimizationOptimisers, OptimizationOptimJL
-using NeuralLyapunov
 using Random
 
 Random.seed!(200)
@@ -111,6 +109,12 @@ V, V̇ = get_numerical_lyapunov_function(
 ## Detailed description
 
 In this example, we set the dynamics up as an `ODEFunction` and use a `SciMLBase.SymbolCache` to tell the ultimate `PDESystem` what to call our state and parameter variables.
+
+```@setup SHO
+using Random
+
+Random.seed!(200)
+```
 
 ```@example SHO
 using NeuralPDE # for ODEFunction and SciMLBase.SymbolCache

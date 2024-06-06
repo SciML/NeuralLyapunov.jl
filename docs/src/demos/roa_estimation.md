@@ -13,13 +13,11 @@ We'll train in the larger domain ``x \in [-2, 2]``.
 ## Copy-Pastable Code
 
 ```julia
-using LinearAlgebra
-using NeuralPDE, Lux, ModelingToolkit
+using NeuralPDE, Lux, NeuralLyapunov
 using Optimization, OptimizationOptimisers, OptimizationOptimJL
-using NeuralLyapunov
 using Random
 
-Random.seed!(250)
+Random.seed!(200)
 
 ######################### Define dynamics and domain ##########################
 
@@ -104,6 +102,12 @@ RoA = (first(RoA_states), last(RoA_states))
 ## Detailed description
 
 In this example, we set up the dynamics as a Julia function and don't bother specifying the symbols for the variables (so ``x`` will be called the default `state1` in the PDESystem).
+
+```@setup RoA
+using Random
+
+Random.seed!(200)
+```
 
 ```@example RoA
 f(x, p, t) = -x .+ x .^ 3
