@@ -84,7 +84,6 @@ spec = NeuralLyapunovSpecification(
 ######################## Construct OptimizationProblem ########################
 
 prob = discretize(pde_system, discretization)
-sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
