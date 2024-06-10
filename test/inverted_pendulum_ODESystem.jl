@@ -31,11 +31,7 @@ bounds = [
     Dt(θ) ∈ (-10.0, 10.0)
 ]
 
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    driven_pendulum; simplify = true)
-
 upright_equilibrium = [π, 0.0]
-p = [defaults[param] for param in p_order]
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -54,7 +50,7 @@ chain = [Lux.Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(1_250)# GridTraining(0.1)
+strategy = QuasiRandomTraining(1_250)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -106,6 +102,10 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 net = discretization.phi
 _θ = res.u.depvar
+
+(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
+    driven_pendulum; simplify = true)
+p = [defaults[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
     net,

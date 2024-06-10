@@ -100,13 +100,13 @@ RoA = (first(RoA_states), last(RoA_states))
 
 ## Detailed description
 
-In this example, we set up the dynamics as a Julia function and don't bother specifying the symbols for the variables (so ``x`` will be called the default `state1` in the PDESystem).
-
 ```@setup RoA
 using Random
 
 Random.seed!(200)
 ```
+
+In this example, we set up the dynamics as a Julia function and don't bother specifying the symbols for the variables (so ``x`` will be called the default `state1` in the PDESystem).
 
 ```@example RoA
 f(x, p, t) = -x .+ x .^ 3
@@ -184,7 +184,7 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 ```@example RoA
 prob = discretize(pde_system, discretization)
 
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)

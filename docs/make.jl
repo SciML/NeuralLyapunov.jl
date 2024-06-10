@@ -28,7 +28,8 @@ makedocs(;
         ],
         "Demonstrations" => [
             "demos/damped_SHO.md",
-            "demos/roa_estimation.md"
+            "demos/roa_estimation.md",
+            "demos/policy_search.md"
         ]
     ]
 )
