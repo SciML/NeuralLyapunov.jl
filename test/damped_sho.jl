@@ -73,9 +73,9 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 450)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 500)
+res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 V, V̇ = get_numerical_lyapunov_function(
