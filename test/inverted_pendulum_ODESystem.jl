@@ -94,7 +94,7 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 400)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 450)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
