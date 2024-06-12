@@ -93,7 +93,7 @@ RoA = (first(RoA_states), last(RoA_states))
 @test V̇(fixed_point) == 0.0
 
 # V̇ should be negative everywhere in the region of attraction except the fixed point
-@test all(V̇(transpose(RoA_states[ RoA_states .!= fixed_point[] ])) .< 0)
+@test all(V̇(transpose(RoA_states[RoA_states .!= fixed_point[]])) .< 0)
 
 # The estimated region of attraction should be a subset of the real region of attraction
 @test first(RoA) ≥ -1.0 && last(RoA) ≤ 1.0

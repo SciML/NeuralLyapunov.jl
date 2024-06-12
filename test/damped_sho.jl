@@ -103,10 +103,10 @@ V̇_samples = vec(V̇(hcat(states...)))
 V_min, i_min = findmin(V_samples)
 state_min = collect(states)[i_min]
 V_min, state_min = if V(fixed_point) ≤ V_min
-        V(fixed_point), fixed_point
-    else
-        V_min, state_min
-    end
+    V(fixed_point), fixed_point
+else
+    V_min, state_min
+end
 @test V_min ≥ 0.0
 
 # Trained for V's minimum to be near the fixed point

@@ -19,9 +19,8 @@ If `fixed_point` is not specified, it defaults to the origin, i.e., `zeros(state
 Parameters `p` for the dynamics should be supplied when the dynamics depend on them.
 """
 function local_lyapunov(dynamics::Function, state_dim, optimizer_factory,
-                        jac::AbstractMatrix{T}; fixed_point = zeros(T, state_dim),
-                        p = SciMLBase.NullParameters()) where T <: Number
-
+        jac::AbstractMatrix{T}; fixed_point = zeros(T, state_dim),
+        p = SciMLBase.NullParameters()) where {T <: Number}
     model = JuMP.Model(optimizer_factory)
     JuMP.set_silent(model)
 
@@ -45,8 +44,8 @@ function local_lyapunov(dynamics::Function, state_dim, optimizer_factory,
     V(states::AbstractMatrix) = mapslices(V, states, dims = [1])
 
     # Numerical gradient of Lyapunov function
-#    ∇V(state::AbstractVector) = 2 * ( Psol * (state - fixed_point) )
-#    ∇V(states::AbstractMatrix) = mapslices(∇V, states, dims = [1])
+    #    ∇V(state::AbstractVector) = 2 * ( Psol * (state - fixed_point) )
+    #    ∇V(states::AbstractMatrix) = mapslices(∇V, states, dims = [1])
 
     # Numerical time derivative of Lyapunov function
     V̇(state::AbstractVector) = 2 * dot(dynamics(state, p, 0.0), Psol, state - fixed_point)
@@ -56,8 +55,7 @@ function local_lyapunov(dynamics::Function, state_dim, optimizer_factory,
 end
 
 function local_lyapunov(dynamics::Function, state_dim, optimizer_factory, jac::Function;
-                        fixed_point = zeros(state_dim), p = SciMLBase.NullParameters())
-
+        fixed_point = zeros(state_dim), p = SciMLBase.NullParameters())
     A::AbstractMatrix = jac(fixed_point, p)
     return local_lyapunov(
         dynamics,
@@ -70,8 +68,7 @@ function local_lyapunov(dynamics::Function, state_dim, optimizer_factory, jac::F
 end
 
 function local_lyapunov(dynamics::Function, state_dim, optimizer_factory;
-                        fixed_point = zeros(state_dim), p = SciMLBase.NullParameters())
-
+        fixed_point = zeros(state_dim), p = SciMLBase.NullParameters())
     A::AbstractMatrix = ForwardDiff.jacobian(x -> dynamics(x, p, 0.0), fixed_point)
     return local_lyapunov(
         dynamics,

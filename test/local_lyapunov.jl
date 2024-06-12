@@ -5,7 +5,7 @@ using NeuralLyapunov, CSDP, ForwardDiff, Test, LinearAlgebra
 f1(x, p, t) = -x
 
 # Set up Jacobian
-J1(x, p) = (-1.0*I)(3)
+J1(x, p) = (-1.0 * I)(3)
 
 # Find Lyapunov function and rescale for C = 1
 _V1, _V̇1 = local_lyapunov(f1, 3, CSDP.Optimizer, J1)
@@ -25,7 +25,7 @@ function f2(state::AbstractVector, p, t)
 end
 function f2(states::AbstractMatrix, p, t)
     ζ, ω_0 = p
-    pos, vel = states[1,:], states[2,:]
+    pos, vel = states[1, :], states[2, :]
     vcat(transpose(vel), transpose(-2ζ * ω_0 * vel - ω_0^2 * pos))
 end
 p2 = [3.2, 5.1]
@@ -37,9 +37,9 @@ dV2dt = (state) -> ForwardDiff.derivative((δt) -> V2(state + δt * f2(state, p2
 # Test V̇2 = d/dt V2
 xs2 = -1:0.03:1
 states2 = hcat(Iterators.map(collect, Iterators.product(xs2, xs2))...)
-errs2 = abs.( V̇2(states2) .- dV2dt(states2))
+errs2 = abs.(V̇2(states2) .- dV2dt(states2))
 @test all(errs2 .< 1e-10)
 
 # Test V̇2 ≺ 0
-@test all( V̇2(states2) .< 0)
+@test all(V̇2(states2) .< 0)
 @test V̇2(zeros(2)) == 0.0
