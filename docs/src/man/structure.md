@@ -1,4 +1,4 @@
-# Structuring a neural Lyapunov function
+# Structuring a Neural Lyapunov function
 
 Three simple neural Lyapunov function structures are provided, but users can always specify a custom structure using the [`NeuralLyapunovStructure`](@ref) struct.
 

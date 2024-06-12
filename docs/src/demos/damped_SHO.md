@@ -1,4 +1,4 @@
-# Damped simple harmonic oscillator
+# Damped Simple Harmonic Oscillator
 
 Let's train a neural network to prove the exponential stability of the damped simple harmonic oscillator (SHO).
 

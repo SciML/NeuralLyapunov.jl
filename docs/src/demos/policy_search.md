@@ -1,4 +1,4 @@
-# Policy search on the driven inverted pendulum
+# Policy Search on the Driven Inverted Pendulum
 
 In this demonstration, we'll search for a neural network policy to stabilize the upright equilibrium of the inverted pendulum.
 

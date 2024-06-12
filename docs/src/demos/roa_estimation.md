@@ -1,4 +1,4 @@
-# Estimating the region of attraction
+# Estimating the Region of Attraction
 
 In this demonstration, we add awareness of the region of attraction (RoA) estimation task to our training.
 
