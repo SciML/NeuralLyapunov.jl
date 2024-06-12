@@ -1,6 +1,5 @@
-using NeuralPDE, Lux, ModelingToolkit
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
-using NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
 

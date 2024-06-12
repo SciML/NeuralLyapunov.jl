@@ -1,5 +1,5 @@
 using NeuralPDE, Lux, NeuralLyapunov
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
 
