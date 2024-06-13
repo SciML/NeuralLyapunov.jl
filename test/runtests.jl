@@ -19,4 +19,7 @@ using SafeTestsets
     @time @safetestset "Local Lyapunov function search" begin
         include("local_lyapunov.jl")
     end
+    @time @safetestset "Errors for partially-implemented extensions" begin
+        include("unimplemented.jl")
+    end
 end
