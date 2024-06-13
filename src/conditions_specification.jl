@@ -1,25 +1,25 @@
 """
-    NeuralLyapunovStructure
+    NeuralLyapunovStructure(V, V̇, f_call, network_dim)
 
 Specifies the structure of the neural Lyapunov function and its derivative.
 
-Allows the user to define the Lyapunov in terms of the neural network to structurally
-enforce Lyapunov conditions.
-`V(phi::Function, state, fixed_point)` takes in the neural network, the state, and the fixed
-point, and outputs the value of the Lyapunov function at `state`.
-`V̇(phi::Function, J_phi::Function, f::Function, state, params, t, fixed_point)` takes in the
-neural network, jacobian of the neural network, dynamics, state, parameters and time (for
-calling the dynamics, when relevant), and fixed point, and outputs the time derivative of
-the Lyapunov function at `state`.
-`f_call(dynamics::Function, phi::Function, state, p, t)` takes in the dynamics, the neural
-network, the state, the parameters of the dynamics, and time, and outputs the derivative of
-the state; this is useful for making closed-loop dynamics which depend on the neural
-network, such as in the policy search case
-`network_dim` is the dimension of the output of the neural network.
+Allows the user to define the Lyapunov in terms of the neural network, potentially
+structurally enforcing some Lyapunov conditions.
+
+# Fields
+  - `V(phi::Function, state, fixed_point)`: outputs the value of the Lyapunov function at
+    `state`.
+  - `V̇(phi::Function, J_phi::Function, dynamics::Function, state, params, t, fixed_point)`:
+    outputs the time derivative of the Lyapunov function at `state`.
+  - `f_call(dynamics::Function, phi::Function, state, p, t)`: outputs the derivative of the
+    state; this is useful for making closed-loop dynamics which depend on the neural
+    network, such as in the policy search case.
+  - `network_dim`: the dimension of the output of the neural network.
+
+`phi` and `J_phi` above are both functions of `state` alone.
 """
 struct NeuralLyapunovStructure
     V::Function
-    ∇V::Function
     V̇::Function
     f_call::Function
     network_dim::Integer
@@ -46,9 +46,17 @@ All concrete `AbstractLyapunovDecreaseCondition` subtypes should define the
 abstract type AbstractLyapunovDecreaseCondition end
 
 """
-    NeuralLyapunovSpecification
+    NeuralLyapunovSpecification(structure, minimzation_condition, decrease_condition)
 
-Specifies a neural Lyapunov problem
+Specifies a neural Lyapunov problem.
+
+# Fields
+  - `structure`: a [`NeuralLyapunovStructure`](@ref) specifying the relationship between the
+    neural network and the candidate Lyapunov function.
+  - `minimzation_condition`: an [`AbstractLyapunovMinimizationCondition`](@ref) specifying
+    how the minimization condition will be enforced.
+  - `decrease_condition`: an [`AbstractLyapunovDecreaseCondition`](@ref) specifying how the
+    decrease condition will be enforced.
 """
 struct NeuralLyapunovSpecification
     structure::NeuralLyapunovStructure
@@ -81,8 +89,12 @@ end
 """
     get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
 
-Return a function of `V`, `state`, and `fixed_point` that equals zero when the Lyapunov
-minimization condition is met and is greater than zero when it's violated.
+Return a function of ``V``, ``x``, and ``x_0`` that equals zero when the Lyapunov
+minimization condition is met for the Lyapunov candidate function ``V`` at the point ``x``,
+and is greater than zero if it's violated.
+
+Note that the first input, ``V``, is a function, so the minimization condition can depend on
+the value of the candidate Lyapunov function at multiple points.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
     error("get_condition not implemented for AbstractLyapunovMinimizationCondition of " *
@@ -103,8 +115,11 @@ end
 """
     get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
 
-Return a function of `V`, `dVdt`, `state`, and `fixed_point` that is equal to zero
-when the Lyapunov decrease condition is met and is greater than zero when it is violated.
+Return a function of ``V``, ``V̇``, ``x``, and ``x_0`` that returns zero when the Lyapunov
+decrease condition is met and a value greater than zero when it is violated.
+
+Note that the first two inputs, ``V`` and ``V̇``, are functions, so the decrease condition
+can depend on the value of these functions at multiple points.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
     error("get_condition not implemented for AbstractLyapunovDecreaseCondition of type " *

@@ -1,7 +1,5 @@
-using LinearAlgebra
-using NeuralPDE, Lux, ModelingToolkit
-using Optimization, OptimizationOptimisers, OptimizationOptimJL, NLopt
-using NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
 
@@ -99,7 +97,7 @@ prob = discretize(pde_system, discretization)
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 

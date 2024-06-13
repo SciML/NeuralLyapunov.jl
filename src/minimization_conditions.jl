@@ -1,31 +1,49 @@
 """
-    LyapunovMinimizationCondition
+    LyapunovMinimizationCondition(check_nonnegativity, strength, rectifier, check_fixed_point)
 
-Specifies the form of the Lyapunov conditions to be used.
+Specifies the form of the Lyapunov minimization condition to be used.
 
-If `check_nonnegativity` is `true`, training will attempt to enforce
-    `V(state) ≥ strength(state, fixed_point)`.
-The inequality will be approximated by the equation
-    `rectifier(strength(state, fixed_point) - V(state)) = 0.0`.
+# Fields
+  - `check_nonnegativity::Bool`: whether or not to train for positivity/nonnegativity of
+    ``V(x)``
+  - `strength::Function`: specifies the level of strictness for positivity training; should
+    be zero when the two inputs are equal and nonnegative otherwise; used when
+    `check_nonnegativity == true`
+  - `rectifier::Function`: positive when the input is positive and (approximately) zero when
+    the input is negative
+  - `check_fixed_point`: whether or not to train for ``V(x_0) = 0``.
+
+# Training conditions
+
+If `check_nonnegativity` is `true`, training will attempt to enforce:
+
+``V(x) ≥ \\texttt{strength}(x, x_0).``
+
+The inequality will be approximated by the equation:
+
+``\\texttt{rectifier}(\\texttt{strength}(x, x_0) - V(x_0)) = 0.``
+
+Note that the approximate equation and inequality are identical when
+``\\texttt{rectifier}(t) = \\max(0, t)``.
+
 If `check_fixed_point` is `true`, then training will also attempt to enforce
-    `V(fixed_point) = 0`.
+``V(x_0) = 0``.
 
 # Examples
 
-The condition that the Lyapunov function must be minimized uniquely at the fixed point can
-be represented as `V(fixed_point) = 0`, `V(state) > 0` when `state ≠ fixed_point`. This
-could be enfored by `V(fixed_point) ≥ ||state - fixed_point||^2`, which would be
-represented, with `check_nonnegativity = true`, by
-    strength(state, fixed_point) = ||state - fixed_point||^2,
-paired with `V(fixed_point) = 0`, which can be enforced with `check_fixed_point = true`.
+When training for a strictly positive definite ``V``, an example of an appropriate `strength`
+is ``\\texttt{strength}(x, x_0) = \\lVert x - x_0 \\rVert^2``.
+This form is used in [`StrictlyPositiveDefinite`](@ref).
 
-If `V` were structured such that it is always nonnegative, then `V(fixed_point) = 0` is all
+If ``V`` were structured such that it is always nonnegative, then ``V(x_0) = 0`` is all
 that must be enforced in training for the Lyapunov function to be uniquely minimized at
-`fixed_point`. So, in that case, we would use
+``x_0``. In that case, we would use
     `check_nonnegativity = false;  check_fixed_point = true`.
+This can also be accomplished with [`DontCheckNonnegativity(true)`](@ref).
 
-In either case, `rectifier = (t) -> max(0.0, t)` exactly represents the inequality, but
-differentiable approximations of this function may be employed.
+In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` exactly
+represents the inequality, but differentiable approximations of this function may be
+employed.
 """
 struct LyapunovMinimizationCondition <: AbstractLyapunovMinimizationCondition
     check_nonnegativity::Bool
@@ -51,14 +69,15 @@ function get_minimization_condition(cond::LyapunovMinimizationCondition)
 end
 
 """
-    StrictlyPositiveDefinite(C; check_fixed_point, rectifier)
+    StrictlyPositiveDefinite(; C, check_fixed_point, rectifier)
 
-Construct a `LyapunovMinimizationCondition` representing
-    `V(state) ≥ C * ||state - fixed_point||^2`.
-If `check_fixed_point` is `true`, then training will also attempt to enforce
-    `V(fixed_point) = 0`.
+Construct a [`LyapunovMinimizationCondition`](@ref) representing
+    ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``.
+If `check_fixed_point == true`, then training will also attempt to enforce
+    ``V(x_0) = 0``.
 
-The inequality is represented by `a ≥ b` <==> `rectifier(b-a) = 0.0`.
+The inequality is represented by
+    ``\\texttt{rectifier}(C \\lVert x - x_0 \\rVert^2 - V(x)) = 0``.
 """
 function StrictlyPositiveDefinite(;
         check_fixed_point = true,
@@ -74,15 +93,15 @@ function StrictlyPositiveDefinite(;
 end
 
 """
-    PositiveSemiDefinite(check_fixed_point)
+    PositiveSemiDefinite(; check_fixed_point)
 
-Construct a `LyapunovMinimizationCondition` representing
-    `V(state) ≥ 0`.
-If `check_fixed_point` is `true`, then training will also attempt to enforce
-    `V(fixed_point) = 0`.
+Construct a [`LyapunovMinimizationCondition`](@ref) representing
+    ``V(x) ≥ 0``.
+If `check_fixed_point == true`, then training will also attempt to enforce
+    ``V(x_0) = 0``.
 
-The inequality is represented by `a ≥ b` <==> `rectifier(b-a) = 0.0`.
-"""
+The inequality is represented by
+    ``\\texttt{rectifier}( -V(x) ) = 0``."""
 function PositiveSemiDefinite(;
         check_fixed_point = true,
         rectifier = (t) -> max(zero(t), t)
@@ -96,17 +115,19 @@ function PositiveSemiDefinite(;
 end
 
 """
-    DontCheckNonnegativity(check_fixed_point)
+    DontCheckNonnegativity(; check_fixed_point)
 
-Construct a `LyapunovMinimizationCondition` which represents not checking for nonnegativity
-of the Lyapunov function. This is appropriate in cases where this condition has been
-structurally enforced.
+Construct a [`LyapunovMinimizationCondition`](@ref) which represents not checking for
+nonnegativity of the Lyapunov function. This is appropriate in cases where this condition
+has been structurally enforced.
 
-It is still possible to check for `V(fixed_point) = 0`, even in this case, for example if
-`V` is structured to be positive for `state ≠ fixed_point`, but it is not guaranteed
-structurally that `V(fixed_point) = 0`.
+It is still possible to check for ``V(x_0) = 0``, even in this case, for example if `V` is
+structured to be positive for ``x ≠ x_0``, but it is not guaranteed structurally that
+``V(x_0) = 0`` (such as [`NonnegativeNeuralLyapunov`](@ref)). `check_fixed_point` defaults
+to `true`, since in cases where ``V(x_0) = 0`` is enforced structurally, the equation will
+reduce to `0.0 ~ 0.0`, which gets removed in most cases.
 """
-function DontCheckNonnegativity(; check_fixed_point = false)::LyapunovMinimizationCondition
+function DontCheckNonnegativity(; check_fixed_point = true)::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(
         false,
         (state, fixed_point) -> 0.0,
