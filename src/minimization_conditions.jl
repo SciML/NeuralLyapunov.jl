@@ -41,7 +41,7 @@ that must be enforced in training for the Lyapunov function to be uniquely minim
     `check_nonnegativity = false;  check_fixed_point = true`.
 This can also be accomplished with [`DontCheckNonnegativity(true)`](@ref).
 
-In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` exactly
+In either case, the rectified linear unit `rectifier(t) = max(zero(t), t)` exactly
 represents the inequality, but differentiable approximations of this function may be
 employed.
 """
@@ -76,8 +76,10 @@ Construct a [`LyapunovMinimizationCondition`](@ref) representing
 If `check_fixed_point == true`, then training will also attempt to enforce
     ``V(x_0) = 0``.
 
-The inequality is represented by
-    ``\\texttt{rectifier}(C \\lVert x - x_0 \\rVert^2 - V(x)) = 0``.
+The inequality is approximated by
+    ``\\texttt{rectifier}(C \\lVert x - x_0 \\rVert^2 - V(x)) = 0``,
+and the default `rectifier` is the rectified linear unit `(t) -> max(zero(t), t)`, which
+exactly represents ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``.
 """
 function StrictlyPositiveDefinite(;
         check_fixed_point = true,
@@ -93,15 +95,16 @@ function StrictlyPositiveDefinite(;
 end
 
 """
-    PositiveSemiDefinite(; check_fixed_point)
+    PositiveSemiDefinite(; check_fixed_point, rectifier)
 
-Construct a [`LyapunovMinimizationCondition`](@ref) representing
-    ``V(x) ≥ 0``.
-If `check_fixed_point == true`, then training will also attempt to enforce
-    ``V(x_0) = 0``.
+Construct a [`LyapunovMinimizationCondition`](@ref) representing ``V(x) ≥ 0``.
+If `check_fixed_point == true` (as is the default), then training will also attempt to
+enforce ``V(x_0) = 0``.
 
-The inequality is represented by
-    ``\\texttt{rectifier}( -V(x) ) = 0``."""
+The inequality is approximated by ``\\texttt{rectifier}( -V(x) ) = 0`` and the default
+`rectifier` is the rectified linear unit `(t) -> max(zero(t), t)`, which exactly represents
+``V(x) ≥ 0``.
+"""
 function PositiveSemiDefinite(;
         check_fixed_point = true,
         rectifier = (t) -> max(zero(t), t)
