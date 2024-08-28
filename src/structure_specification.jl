@@ -20,13 +20,13 @@ function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
 end
 
 """
-    NonnegativeNeuralLyapunov(network_dim, δ, pos_def; grad_pos_def, grad)
+    NonnegativeNeuralLyapunov(network_dim; δ, pos_def, grad_pos_def, grad)
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the L2 norm of the
 neural network output plus a constant δ times a function `pos_def`.
 
 Corresponds to ``V(x) = \\lVert ϕ(x) \\rVert^2 + δ \\, \\texttt{pos\\_def}(x, x_0)``, where
-``ϕ`` is the neural network and `x_0` is the equilibrium point.
+``ϕ`` is the neural network and ``x_0`` is the equilibrium point.
 
 This structure ensures ``V(x) ≥ 0 \\, ∀ x`` when ``δ ≥ 0`` and `pos_def` is always
 nonnegative. Further, if ``δ > 0`` and `pos_def` is strictly positive definite around
@@ -37,11 +37,11 @@ used.
 
 # Arguments
   - `network_dim`: output dimensionality of the neural network.
-  - `δ`: weight of `pos_def`, as above.
-  - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
-    around `fixed_point`; defaults to ``log(1 + \\lVert x - x_0 \\rVert^2)``.
 
 # Keyword Arguments
+  - `δ`: weight of `pos_def`, as above; defaults to 0.
+  - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
+    around `fixed_point`; defaults to ``\\log(1 + \\lVert x - x_0 \\rVert^2)``.
   - `grad_pos_def(state, fixed_point)`: the gradient of `pos_def` with respect to `state` at
     `state`. If `isnothing(grad_pos_def)` (as is the default), the gradient of `pos_def`
     will be evaluated using `grad`.
@@ -98,7 +98,7 @@ positive (semi-)definite function `pos_def` which does not depend on the network
 nonnegative function `non_neg` which does depend the network.
 
 Corresponds to ``V(x) = \\texttt{pos\\_def}(x, x_0) * \\texttt{non\\_neg}(ϕ, x, x_0)``, where
-``ϕ`` is the neural network and `x_0` is the equilibrium point.
+``ϕ`` is the neural network and ``x_0`` is the equilibrium point.
 
 This structure ensures ``V(x) ≥ 0``. Further, if `pos_def` is strictly positive definite
 `fixed_point` and `non_neg` is strictly positive (as is the case for the default values of
@@ -111,7 +111,7 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
 
 # Keyword Arguments
   - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
-    around `fixed_point`; defaults to ``log(1 + \\lVert x - x_0 \\rVert^2)``.
+    around `fixed_point`; defaults to ``\\log(1 + \\lVert x - x_0 \\rVert^2)``.
   - `non_neg(net, state, fixed_point)`: a nonnegative function of the neural network; note
     that `net` is the neural network ``ϕ``, and `net(state)` is the value of the neural
     network at a point ``ϕ(x)``; defaults to ``1 + \\lVert ϕ(x) \\rVert^2``.
