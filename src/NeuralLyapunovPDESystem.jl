@@ -202,7 +202,7 @@ function _NeuralLyapunovPDESystem(
 )::PDESystem
     ########################## Unpack specifications ##########################
     structure = spec.structure
-    minimzation_condition = spec.minimzation_condition
+    minimization_condition = spec.minimization_condition
     decrease_condition = spec.decrease_condition
     f_call = structure.f_call
     state_dim = length(domains)
@@ -234,8 +234,8 @@ function _NeuralLyapunovPDESystem(
     ################ Define equations and boundary conditions #################
     eqs = []
 
-    if check_nonnegativity(minimzation_condition)
-        cond = get_minimization_condition(minimzation_condition)
+    if check_nonnegativity(minimization_condition)
+        cond = get_minimization_condition(minimization_condition)
         push!(eqs, cond(V, state, fixed_point) ~ 0.0)
     end
 
@@ -246,7 +246,7 @@ function _NeuralLyapunovPDESystem(
 
     bcs = []
 
-    if check_minimal_fixed_point(minimzation_condition)
+    if check_minimal_fixed_point(minimization_condition)
         push!(bcs, V(fixed_point) ~ 0.0)
     end
 

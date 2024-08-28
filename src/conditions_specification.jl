@@ -60,7 +60,7 @@ Specifies a neural Lyapunov problem.
 """
 struct NeuralLyapunovSpecification
     structure::NeuralLyapunovStructure
-    minimzation_condition::AbstractLyapunovMinimizationCondition
+    minimization_condition::AbstractLyapunovMinimizationCondition
     decrease_condition::AbstractLyapunovDecreaseCondition
 end
 
