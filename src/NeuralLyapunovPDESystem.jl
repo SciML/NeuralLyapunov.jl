@@ -215,11 +215,11 @@ function _NeuralLyapunovPDESystem(
     # φ(x) is the symbolic form of neural network output
     φ(x) = Num.([φi(x...) for φi in net])
 
-    # V_sym(x) is the symobolic form of the Lyapunov function
-    V_sym(x) = structure.V(φ, x, fixed_point)
+    # V(x) is the symobolic form of the Lyapunov function
+    V(x) = structure.V(φ, x, fixed_point)
 
-    # V̇_sym(x) is the symbolic time derivative of the Lyapunov function
-    function V̇_sym(x)
+    # V̇(x) is the symbolic time derivative of the Lyapunov function
+    function V̇(x)
         structure.V̇(
             φ,
             y -> Symbolics.jacobian(φ(y), y),
@@ -236,18 +236,18 @@ function _NeuralLyapunovPDESystem(
 
     if check_nonnegativity(minimzation_condition)
         cond = get_minimization_condition(minimzation_condition)
-        push!(eqs, cond(V_sym, state, fixed_point) ~ 0.0)
+        push!(eqs, cond(V, state, fixed_point) ~ 0.0)
     end
 
     if check_decrease(decrease_condition)
         cond = get_decrease_condition(decrease_condition)
-        push!(eqs, cond(V_sym, V̇_sym, state, fixed_point) ~ 0.0)
+        push!(eqs, cond(V, V̇, state, fixed_point) ~ 0.0)
     end
 
     bcs = []
 
     if check_minimal_fixed_point(minimzation_condition)
-        push!(bcs, V_sym(fixed_point) ~ 0.0)
+        push!(bcs, V(fixed_point) ~ 0.0)
     end
 
     if policy_search

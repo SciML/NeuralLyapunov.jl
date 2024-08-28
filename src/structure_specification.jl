@@ -65,8 +65,7 @@ function NonnegativeNeuralLyapunov(
     if δ == 0.0
         NeuralLyapunovStructure(
             (net, state, fixed_point) -> net(state) ⋅ net(state),
-            (net, J_net, f, state, params, t, fixed_point) -> 2 *
-                                                              dot(
+            (net, J_net, f, state, params, t, fixed_point) -> 2 * dot(
                 net(state), J_net(state), f(state, params, t)),
             (f, net, state, p, t) -> f(state, p, t),
             network_dim
@@ -140,7 +139,7 @@ function PositiveSemiDefiniteStructure(
         grad_pos_def = nothing,
         grad_non_neg = nothing,
         grad = ForwardDiff.gradient
-)
+)::NeuralLyapunovStructure
     _grad(f::Function, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
     _grad(f::Function, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)
