@@ -1,4 +1,4 @@
-# Policy Search and Network-Sependent Dynamics
+# Policy Search and Network-Dependent Dynamics
 
 At times, we wish to model a component of the dynamics with a neural network.
 A common example is the policy search case, when the closed-loop dynamics include a neural network controller.
