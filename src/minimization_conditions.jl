@@ -73,13 +73,13 @@ end
 
 Construct a [`LyapunovMinimizationCondition`](@ref) representing
     ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``.
-If `check_fixed_point == true`, then training will also attempt to enforce
-    ``V(x_0) = 0``.
+If `check_fixed_point == true` (as is the default), then training will also attempt to
+enforce ``V(x_0) = 0``.
 
 The inequality is approximated by
     ``\\texttt{rectifier}(C \\lVert x - x_0 \\rVert^2 - V(x)) = 0``,
 and the default `rectifier` is the rectified linear unit `(t) -> max(zero(t), t)`, which
-exactly represents ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``.
+exactly represents ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``. ``C`` defaults to `1e-6`.
 """
 function StrictlyPositiveDefinite(;
         check_fixed_point = true,
@@ -124,11 +124,11 @@ Construct a [`LyapunovMinimizationCondition`](@ref) which represents not checkin
 nonnegativity of the Lyapunov function. This is appropriate in cases where this condition
 has been structurally enforced.
 
-It is still possible to check for ``V(x_0) = 0``, even in this case, for example if `V` is
-structured to be positive for ``x ≠ x_0``, but it is not guaranteed structurally that
-``V(x_0) = 0`` (such as [`NonnegativeNeuralLyapunov`](@ref)). `check_fixed_point` defaults
-to `true`, since in cases where ``V(x_0) = 0`` is enforced structurally, the equation will
-reduce to `0.0 ~ 0.0`, which gets removed in most cases.
+Even in this case, it is still possible to check for ``V(x_0) = 0``, for example if `V` is
+structured to be positive for ``x ≠ x_0`` but does not guarantee ``V(x_0) = 0`` (such as
+[`NonnegativeNeuralLyapunov`](@ref)). `check_fixed_point` defaults to `true`, since in cases
+where ``V(x_0) = 0`` is enforced structurally, the equation will reduce to `0.0 ~ 0.0`,
+which gets automatically removed in most cases.
 """
 function DontCheckNonnegativity(; check_fixed_point = true)::LyapunovMinimizationCondition
     LyapunovMinimizationCondition(

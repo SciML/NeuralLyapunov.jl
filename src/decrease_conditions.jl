@@ -81,13 +81,14 @@ end
 
 Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to asymptotic decrease.
 
-If `strict == false`, the decrease condition is
-``\\dot{V}(x) ≤ 0``,
-and if `strict == true`, the condition is
-``\\dot{V}(x) ≤ - C \\lVert x - x_0 \\rVert^2``.
+If `strict == false` (as is the default), the decrease condition is ``\\dot{V}(x) ≤ 0``,
+and if `strict == true`, the condition is ``\\dot{V}(x) ≤ - C \\lVert x - x_0 \\rVert^2``.
+``C`` defaults to `1e-6`.
 
 The inequality is represented by
 ``\\texttt{rectifier}(\\dot{V}(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
+The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
+but differentiable approximations of this function may be employed.
 """
 function AsymptoticDecrease(;
         strict::Bool = false,
@@ -114,11 +115,14 @@ end
 Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to exponential decrease of
 rate ``k``.
 
-If `strict == false`, the condition is ``\\dot{V}(x) ≤ -k V(x)``, and if `strict == true`,
+If `strict == false` (as is the default), the condition is ``\\dot{V}(x) ≤ -k V(x)``, and if `strict == true`,
 the condition is ``\\dot{V}(x) ≤ -k V(x) - C \\lVert x - x_0 \\rVert^2``.
+``C`` defaults to `1e-6`.
 
 The inequality is represented by
 ``\\texttt{rectifier}(\\dot{V}(x) + k V(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
+The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
+but differentiable approximations of this function may be employed.
 """
 function ExponentialDecrease(
         k::Real;
