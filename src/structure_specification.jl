@@ -20,7 +20,7 @@ function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
 end
 
 """
-    NonnegativeNeuralLyapunov(network_dim; δ, pos_def, grad_pos_def, grad)
+    NonnegativeNeuralLyapunov(network_dim; <keyword_arguments>)
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the L2 norm of the
 neural network output plus a constant δ times a function `pos_def`.
@@ -91,7 +91,7 @@ function NonnegativeNeuralLyapunov(
 end
 
 """
-    PositiveSemiDefiniteStructure(network_dim; pos_def, non_neg, grad_pos_def, grad_non_neg, grad)
+    PositiveSemiDefiniteStructure(network_dim; <keyword_arguments>)
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the product of a
 positive (semi-)definite function `pos_def` which does not depend on the network and a
@@ -123,7 +123,8 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
     input. If `isnothing(grad_non_neg)` (as is the default), the gradient of `non_neg` will
     be evaluated using `grad`.
   - `grad`: a function for evaluating gradients to be used when `isnothing(grad_pos_def) ||
-    isnothing(grad_non_neg)`; defaults to, and expects the same arguments as, `ForwardDiff.gradient`.
+    isnothing(grad_non_neg)`; defaults to, and expects the same arguments as,
+    `ForwardDiff.gradient`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
