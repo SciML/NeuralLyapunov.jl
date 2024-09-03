@@ -35,7 +35,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(AsymptoticStability())
+decrease_condition = make_RoA_aware(StabilityISL())
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
