@@ -25,7 +25,8 @@ export LyapunovMinimizationCondition, StrictlyPositiveDefinite, PositiveSemiDefi
        DontCheckNonnegativity
 
 # Decrease conditions
-export LyapunovDecreaseCondition, AsymptoticDecrease, ExponentialDecrease, DontCheckDecrease
+export LyapunovDecreaseCondition, StabilityISL, AsymptoticStability, ExponentialStability,
+       DontCheckDecrease
 
 # Setting up the PDESystem for NeuralPDE
 export NeuralLyapunovSpecification, NeuralLyapunovPDESystem

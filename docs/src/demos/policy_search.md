@@ -81,7 +81,7 @@ structure = add_policy_search(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticDecrease(strict = true)
+decrease_condition = AsymptoticStability()
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -243,7 +243,7 @@ Since our Lyapunov candidate structurally enforces positive definiteness, we use
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticDecrease(strict = true)
+decrease_condition = AsymptoticStability()
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(

@@ -47,7 +47,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(AsymptoticDecrease(strict = true))
+decrease_condition = make_RoA_aware(AsymptoticStability())
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -151,7 +151,7 @@ V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVer
 which structurally enforces positive definiteness.
 We therefore use [`DontCheckNonnegativity()`](@ref).
 
-We only require asymptotic decrease in this example, but we use [`make_RoA_aware`](@ref) to only penalize positive values of ``\dot{V}(x)`` when ``V(x) \le 1``.
+We only require asymptotic stability in this example, but we use [`make_RoA_aware`](@ref) to only penalize positive values of ``\dot{V}(x)`` when ``V(x) \le 1``.
 
 ```@example RoA
 using NeuralLyapunov
@@ -161,7 +161,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(AsymptoticDecrease(strict = true))
+decrease_condition = make_RoA_aware(AsymptoticStability())
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(

@@ -66,10 +66,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
 κ = 20.0
-decrease_condition = AsymptoticDecrease(
-    strict = true,
-    rectifier = (t) -> log(1.0 + exp(κ * t)) / κ
-)
+decrease_condition = AsymptoticStability(rectifier = (t) -> log(1.0 + exp(κ * t)) / κ)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(

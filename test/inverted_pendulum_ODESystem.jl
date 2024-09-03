@@ -69,7 +69,7 @@ structure = add_policy_search(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticDecrease(strict = true)
+decrease_condition = AsymptoticStability()
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -151,7 +151,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 
 using DifferentialEquations
 
-state_order = map(st -> SymbolicUtils.iscall(st) ? operation(st) : st, state_order)
+state_order = map(st -> SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
 state_syms = Symbol.(state_order)
 
 closed_loop_dynamics = ODEFunction(

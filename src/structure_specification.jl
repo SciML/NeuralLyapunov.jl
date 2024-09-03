@@ -32,7 +32,7 @@ This structure ensures ``V(x) ≥ 0 \\, ∀ x`` when ``δ ≥ 0`` and `pos_def` 
 nonnegative. Further, if ``δ > 0`` and `pos_def` is strictly positive definite around
 `fixed_point`, the structure ensures that ``V(x)`` is strictly positive away from
 `fixed_point`. In such cases, the minimization condition reduces to ensuring
-``V(\\texttt{fixed\\_point}) = 0``, and so [`DontCheckNonnegativity(true)`](@ref) should be
+``V(x_0) = 0``, and so [`DontCheckNonnegativity(true)`](@ref) should be
 used.
 
 # Arguments

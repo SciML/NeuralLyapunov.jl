@@ -21,8 +21,9 @@ LyapunovDecreaseCondition
 ## Pre-defined decrease conditions
 
 ```@docs
-AsymptoticDecrease
-ExponentialDecrease
+AsymptoticStability
+ExponentialStability
+StabilityISL
 DontCheckDecrease
 ```
 
