@@ -121,7 +121,7 @@ function NeuralLyapunovPDESystem(
         p_syms = if isnothing(dynamics.sys.parameters)
             []
         else
-            dynamics.sys.parameters
+            keys(dynamics.sys.parameters)
         end
         (s_syms, p_syms)
     else
