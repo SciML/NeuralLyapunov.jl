@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
@@ -43,7 +43,7 @@ dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
-             PeriodicEmbedding([1], [2π]),
+             Boltz.Layers.PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
