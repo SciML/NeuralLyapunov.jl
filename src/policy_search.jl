@@ -8,6 +8,8 @@ Add dependence on the neural network to the dynamics in a [`NeuralLyapunovStruct
     assume dynamics take a form of `f(x, p, t)`.
   - `new_dims::Integer`: number of outputs of the neural network to pass into the dynamics
     through `control_structure`.
+
+# Keyword Arguments
   - `control_structure::Function`: transforms the final `new_dims` outputs of the neural net
     before passing them into the dynamics; defaults to `identity`, passing in the neural
     network outputs unchanged.
@@ -67,6 +69,8 @@ vectors.
     second (if there are multiple), and so on.
   - `network_dim`: total number of neural network outputs.
   - `control_dim`: number of neural network outputs used in the control policy.
+
+# Keyword Arguments
   - `control_structure`: transforms the final `control_dim` outputs of the neural net before
     passing them into the dynamics; defaults to `identity`, passing in the neural network
     outputs unchanged.
