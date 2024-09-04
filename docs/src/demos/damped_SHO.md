@@ -259,7 +259,7 @@ println(
 )
 ```
 
-At least at these validation samples, the conditions that ``\dot{V}`` be negative semi-definite and ``V`` be minimized at the origin are nearly sastisfied.
+At least at these validation samples, the conditions that ``\dot{V}`` be negative semi-definite and ``V`` be minimized at the origin are nearly satisfied.
 
 ```@example SHO
 using Plots
