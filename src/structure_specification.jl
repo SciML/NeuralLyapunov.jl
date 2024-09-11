@@ -20,28 +20,28 @@ function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
 end
 
 """
-    NonnegativeNeuralLyapunov(network_dim, δ, pos_def; grad_pos_def, grad)
+    NonnegativeNeuralLyapunov(network_dim; <keyword_arguments>)
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the L2 norm of the
 neural network output plus a constant δ times a function `pos_def`.
 
 Corresponds to ``V(x) = \\lVert ϕ(x) \\rVert^2 + δ \\, \\texttt{pos\\_def}(x, x_0)``, where
-``ϕ`` is the neural network and `x_0` is the equilibrium point.
+``ϕ`` is the neural network and ``x_0`` is the equilibrium point.
 
 This structure ensures ``V(x) ≥ 0 \\, ∀ x`` when ``δ ≥ 0`` and `pos_def` is always
 nonnegative. Further, if ``δ > 0`` and `pos_def` is strictly positive definite around
 `fixed_point`, the structure ensures that ``V(x)`` is strictly positive away from
 `fixed_point`. In such cases, the minimization condition reduces to ensuring
-``V(\\texttt{fixed\\_point}) = 0``, and so [`DontCheckNonnegativity(true)`](@ref) should be
+``V(x_0) = 0``, and so [`DontCheckNonnegativity(true)`](@ref) should be
 used.
 
 # Arguments
   - `network_dim`: output dimensionality of the neural network.
-  - `δ`: weight of `pos_def`, as above.
-  - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
-    around `fixed_point`; defaults to ``log(1 + \\lVert x - x_0 \\rVert^2)``.
 
 # Keyword Arguments
+  - `δ`: weight of `pos_def`, as above; defaults to 0.
+  - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
+    around `fixed_point`; defaults to ``\\log(1 + \\lVert x - x_0 \\rVert^2)``.
   - `grad_pos_def(state, fixed_point)`: the gradient of `pos_def` with respect to `state` at
     `state`. If `isnothing(grad_pos_def)` (as is the default), the gradient of `pos_def`
     will be evaluated using `grad`.
@@ -65,8 +65,7 @@ function NonnegativeNeuralLyapunov(
     if δ == 0.0
         NeuralLyapunovStructure(
             (net, state, fixed_point) -> net(state) ⋅ net(state),
-            (net, J_net, f, state, params, t, fixed_point) -> 2 *
-                                                              dot(
+            (net, J_net, f, state, params, t, fixed_point) -> 2 * dot(
                 net(state), J_net(state), f(state, params, t)),
             (f, net, state, p, t) -> f(state, p, t),
             network_dim
@@ -92,14 +91,14 @@ function NonnegativeNeuralLyapunov(
 end
 
 """
-    PositiveSemiDefiniteStructure(network_dim; pos_def, non_neg, grad_pos_def, grad_non_neg, grad)
+    PositiveSemiDefiniteStructure(network_dim; <keyword_arguments>)
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the product of a
 positive (semi-)definite function `pos_def` which does not depend on the network and a
 nonnegative function `non_neg` which does depend the network.
 
 Corresponds to ``V(x) = \\texttt{pos\\_def}(x, x_0) * \\texttt{non\\_neg}(ϕ, x, x_0)``, where
-``ϕ`` is the neural network and `x_0` is the equilibrium point.
+``ϕ`` is the neural network and ``x_0`` is the equilibrium point.
 
 This structure ensures ``V(x) ≥ 0``. Further, if `pos_def` is strictly positive definite
 `fixed_point` and `non_neg` is strictly positive (as is the case for the default values of
@@ -112,7 +111,7 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
 
 # Keyword Arguments
   - `pos_def(state, fixed_point)`: a function that is postive (semi-)definite in `state`
-    around `fixed_point`; defaults to ``log(1 + \\lVert x - x_0 \\rVert^2)``.
+    around `fixed_point`; defaults to ``\\log(1 + \\lVert x - x_0 \\rVert^2)``.
   - `non_neg(net, state, fixed_point)`: a nonnegative function of the neural network; note
     that `net` is the neural network ``ϕ``, and `net(state)` is the value of the neural
     network at a point ``ϕ(x)``; defaults to ``1 + \\lVert ϕ(x) \\rVert^2``.
@@ -124,7 +123,8 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
     input. If `isnothing(grad_non_neg)` (as is the default), the gradient of `non_neg` will
     be evaluated using `grad`.
   - `grad`: a function for evaluating gradients to be used when `isnothing(grad_pos_def) ||
-    isnothing(grad_non_neg)`; defaults to, and expects the same arguments as, `ForwardDiff.gradient`.
+    isnothing(grad_non_neg)`; defaults to, and expects the same arguments as,
+    `ForwardDiff.gradient`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
@@ -140,7 +140,7 @@ function PositiveSemiDefiniteStructure(
         grad_pos_def = nothing,
         grad_non_neg = nothing,
         grad = ForwardDiff.gradient
-)
+)::NeuralLyapunovStructure
     _grad(f::Function, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
     _grad(f::Function, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)

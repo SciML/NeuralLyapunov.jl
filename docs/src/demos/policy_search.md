@@ -13,7 +13,7 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 ## Copy-Pastable Code
 
 ```julia
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 
@@ -55,7 +55,7 @@ dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
-             PeriodicEmbedding([1], [2π]),
+             Boltz.Layers.PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -81,7 +81,7 @@ structure = add_policy_search(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticDecrease(strict = true)
+decrease_condition = AsymptoticStability()
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -179,7 +179,7 @@ Other than that, setting up the neural network using Lux and NeuralPDE training 
 For more on that aspect, see the [NeuralPDE documentation](https://docs.sciml.ai/NeuralPDE/stable/).
 
 ```@example policy_search
-using Lux
+using Lux, Boltz
 
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
@@ -189,7 +189,7 @@ dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
-             PeriodicEmbedding([1], [2π]),
+             Boltz.Layers.PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -243,7 +243,7 @@ Since our Lyapunov candidate structurally enforces positive definiteness, we use
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticDecrease(strict = true)
+decrease_condition = AsymptoticStability()
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -384,7 +384,7 @@ Now, let's simulate the closed-loop dynamics to verify that the controller can g
 First, we'll start at the downward equilibrium:
 
 ```@example policy_search
-state_order = map(st -> SymbolicUtils.iscall(st) ? operation(st) : st, state_order)
+state_order = map(st -> SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
 state_syms = Symbol.(state_order)
 
 closed_loop_dynamics = ODEFunction(

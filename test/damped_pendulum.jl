@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
@@ -43,7 +43,7 @@ dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
 chain = [Lux.Chain(
-             PeriodicEmbedding([1], [2π]),
+             Boltz.Layers.PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
@@ -66,10 +66,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
 κ = 20.0
-decrease_condition = AsymptoticDecrease(
-    strict = true,
-    rectifier = (t) -> log(1.0 + exp(κ * t)) / κ
-)
+decrease_condition = AsymptoticStability(rectifier = (t) -> log(1.0 + exp(κ * t)) / κ)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(

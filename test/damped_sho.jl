@@ -47,7 +47,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
 # Damped SHO has exponential decrease at a rate of k = ζ * ω_0, so we train to certify that
-decrease_condition = ExponentialDecrease(prod(p))
+decrease_condition = ExponentialStability(prod(p))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(

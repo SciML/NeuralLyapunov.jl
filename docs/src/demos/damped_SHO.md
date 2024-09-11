@@ -61,8 +61,8 @@ structure = NonnegativeNeuralLyapunov(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
-# Damped SHO has exponential decrease at a rate of k = ζ * ω_0, so we train to certify that
-decrease_condition = ExponentialDecrease(prod(p))
+# Damped SHO has exponential stability at a rate of k = ζ * ω_0, so we train to certify that
+decrease_condition = ExponentialStability(prod(p))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -88,8 +88,6 @@ prob = discretize(pde_system, discretization)
 ########################## Solve OptimizationProblem ##########################
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
 net = discretization.phi
@@ -165,7 +163,7 @@ which structurally enforces nonnegativity, but doesn't guarantee ``V([0, 0]) = 0
 We therefore don't need a term in the loss function enforcing ``V(x) > 0 \, \forall x \ne 0``, but we do need something enforcing ``V([0, 0]) = 0``.
 So, we use [`DontCheckNonnegativity(check_fixed_point = true)`](@ref).
 
-To train for exponential decrease we use [`ExponentialDecrease`](@ref), but we must specify the rate of exponential decrease, which we know in this case to be ``\zeta \omega_0``.
+To train for exponential stability we use [`ExponentialStability`](@ref), but we must specify the rate of exponential decrease, which we know in this case to be ``\zeta \omega_0``.
 
 ```@example SHO
 using NeuralLyapunov
@@ -178,8 +176,8 @@ structure = NonnegativeNeuralLyapunov(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
-# Damped SHO has exponential decrease at a rate of k = ζ * ω_0, so we train to certify that
-decrease_condition = ExponentialDecrease(prod(p))
+# Damped SHO has exponential stability at a rate of k = ζ * ω_0, so we train to certify that
+decrease_condition = ExponentialStability(prod(p))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -206,8 +204,6 @@ prob = discretize(pde_system, discretization)
 using Optimization, OptimizationOptimisers, OptimizationOptimJL
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 500)
 
 net = discretization.phi
 θ = res.u.depvar
@@ -259,7 +255,7 @@ println(
 )
 ```
 
-At least at these validation samples, the conditions that ``\dot{V}`` be negative semi-definite and ``V`` be minimized at the origin are nearly sastisfied.
+At least at these validation samples, the conditions that ``\dot{V}`` be negative semi-definite and ``V`` be minimized at the origin are nearly satisfied.
 
 ```@example SHO
 using Plots

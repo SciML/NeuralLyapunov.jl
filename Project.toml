@@ -24,6 +24,8 @@ SciMLBase = "2"
 julia = "1.10"
 
 [extras]
+Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
+CSDP = "0a46da34-8e4b-519e-b418-48813639ff34"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
@@ -34,7 +36,6 @@ OptimizationOptimisers = "42dfb2eb-d2b4-4451-abcd-913932933ac1"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-CSDP = "0a46da34-8e4b-519e-b418-48813639ff34"
 
 [targets]
-test = ["SafeTestsets", "Test", "Lux", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NLopt", "Random", "NeuralPDE", "DifferentialEquations", "CSDP"]
+test = ["SafeTestsets", "Test", "Lux", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NLopt", "Random", "NeuralPDE", "DifferentialEquations", "CSDP", "Boltz"]

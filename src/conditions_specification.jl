@@ -11,8 +11,8 @@ structurally enforcing some Lyapunov conditions.
     `state`.
   - `V̇(phi::Function, J_phi::Function, dynamics::Function, state, params, t, fixed_point)`:
     outputs the time derivative of the Lyapunov function at `state`.
-  - `f_call(dynamics::Function, phi::Function, state, p, t)`: outputs the derivative of the
-    state; this is useful for making closed-loop dynamics which depend on the neural
+  - `f_call(dynamics::Function, phi::Function, state, params, t)`: outputs the derivative of
+    the state; this is useful for making closed-loop dynamics which depend on the neural
     network, such as in the policy search case.
   - `network_dim`: the dimension of the output of the neural network.
 
@@ -60,7 +60,7 @@ Specifies a neural Lyapunov problem.
 """
 struct NeuralLyapunovSpecification
     structure::NeuralLyapunovStructure
-    minimzation_condition::AbstractLyapunovMinimizationCondition
+    minimization_condition::AbstractLyapunovMinimizationCondition
     decrease_condition::AbstractLyapunovDecreaseCondition
 end
 
@@ -97,8 +97,8 @@ Note that the first input, ``V``, is a function, so the minimization condition c
 the value of the candidate Lyapunov function at multiple points.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
-    error("get_condition not implemented for AbstractLyapunovMinimizationCondition of " *
-          "type $(typeof(cond))")
+    error("get_minimization_condition not implemented for " *
+          "AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
 end
 
 """
@@ -122,6 +122,6 @@ Note that the first two inputs, ``V`` and ``V̇``, are functions, so the decreas
 can depend on the value of these functions at multiple points.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
-    error("get_condition not implemented for AbstractLyapunovDecreaseCondition of type " *
-          string((typeof(cond))))
+    error("get_decrease_condition not implemented for AbstractLyapunovDecreaseCondition " *
+          "of type $(typeof(cond))")
 end

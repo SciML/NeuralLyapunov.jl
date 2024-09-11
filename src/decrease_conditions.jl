@@ -40,7 +40,7 @@ for some positive ``C``, which corresponds to
     rate_metric = (V, dVdt) -> dVdt
     strength = (x, x0) -> C * (x - x0) ⋅ (x - x0)
 
-This can also be accomplished with [`AsymptoticDecrease`](@ref).
+This can also be accomplished with [`AsymptoticStability`](@ref).
 
 Exponential decrease of rate ``k`` is proven by
     ``V̇(x) ≤ - k V(x)``,
@@ -49,7 +49,7 @@ which corresponds to
     rate_metric = (V, dVdt) -> dVdt + k * V
     strength = (x, x0) -> 0.0
 
-This can also be accomplished with [`ExponentialDecrease`](@ref).
+This can also be accomplished with [`ExponentialStability`](@ref).
 
 In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` exactly
 represents the inequality, but differentiable approximations of this function may be
@@ -77,65 +77,70 @@ function get_decrease_condition(cond::LyapunovDecreaseCondition)
 end
 
 """
-    AsymptoticDecrease(; strict, C, rectifier)
+    StabilityISL(; rectifier)
 
-Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to asymptotic decrease.
+Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to stability in the sense of
+Lyapunov (i.s.L.).
 
-If `strict == false`, the decrease condition is
-``\\dot{V}(x) ≤ 0``,
-and if `strict == true`, the condition is
-``\\dot{V}(x) ≤ - C \\lVert x - x_0 \\rVert^2``.
-
-The inequality is represented by
-``\\texttt{rectifier}(\\dot{V}(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
+Stability i.s.L. is proven by ``V̇(x) ≤ 0``. The inequality is represented by
+``\\texttt{rectifier}(V̇(x)) = 0``. The default value `rectifier = (t) -> max(zero(t), t)`
+exactly represents the inequality, but differentiable approximations of this function may be
+employed.
 """
-function AsymptoticDecrease(;
-        strict::Bool = false,
-        C::Real = 1e-6,
-        rectifier = (t) -> max(zero(t), t)
-)::LyapunovDecreaseCondition
-    strength = if strict
-        (x, x0) -> C * (x - x0) ⋅ (x - x0)
-    else
-        (x, x0) -> 0.0
-    end
-
+function StabilityISL(; rectifier = (t) -> max(zero(t), t))
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt,
-        strength,
+        (x, x0) -> 0.0,
         rectifier
     )
 end
 
 """
-    ExponentialDecrease(k; strict, C, rectifier)
+    AsymptoticStability(; C, rectifier)
 
-Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to exponential decrease of
-rate ``k``.
+Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to asymptotic stability.
 
-If `strict == false`, the condition is ``\\dot{V}(x) ≤ -k V(x)``, and if `strict == true`,
-the condition is ``\\dot{V}(x) ≤ -k V(x) - C \\lVert x - x_0 \\rVert^2``.
+The decrease condition for asymptotic stability is ``V̇(x) < 0``, which is here represented
+as ``V̇(x) ≤ - C \\lVert x - x_0 \\rVert^2`` for some ``C > 0``. ``C`` defaults to `1e-6`.
 
 The inequality is represented by
-``\\texttt{rectifier}(\\dot{V}(x) + k V(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
+``\\texttt{rectifier}(V̇(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
+The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
+but differentiable approximations of this function may be employed.
 """
-function ExponentialDecrease(
-        k::Real;
-        strict::Bool = false,
+function AsymptoticStability(;
         C::Real = 1e-6,
         rectifier = (t) -> max(zero(t), t)
 )::LyapunovDecreaseCondition
-    strength = if strict
-        (x, x0) -> C * (x - x0) ⋅ (x - x0)
-    else
-        (x, x0) -> 0.0
-    end
+    return LyapunovDecreaseCondition(
+        true,
+        (V, dVdt) -> dVdt,
+        (x, x0) -> C * (x - x0) ⋅ (x - x0),
+        rectifier
+    )
+end
 
+"""
+    ExponentialStability(k; rectifier)
+
+Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to exponential stability of
+rate ``k``.
+
+The Lyapunov condition for exponential stability is ``V̇(x) ≤ -k V(x)`` for some ``k > 0``.
+
+The inequality is represented by ``\\texttt{rectifier}(V̇(x) + k V(x)) = 0``.
+The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
+but differentiable approximations of this function may be employed.
+"""
+function ExponentialStability(
+        k::Real;
+        rectifier = (t) -> max(zero(t), t)
+)::LyapunovDecreaseCondition
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt + k * V,
-        strength,
+        (x, x0) -> 0.0,
         rectifier
     )
 end

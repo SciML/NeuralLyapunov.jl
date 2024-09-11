@@ -127,10 +127,13 @@ by `cond` only in that sublevel set.
 
 # Arguments
   - `cond::LyapunovDecreaseCondition`: specifies the loss to be applied when ``V(x) ≤ ρ``.
-  - `ρ`: the target level such that the RoA will be ``\\{ x : V(x) ≤ ρ \\}``.
-  - `out_of_RoA_penalty::Function`: specifies the loss to be applied when ``V(x) > ρ``.
+
+# Keyword Arguments
+  - `ρ`: the target level such that the RoA will be ``\\{ x : V(x) ≤ ρ \\}``, defaults to 1.
+  - `out_of_RoA_penalty::Function`: specifies the loss to be applied when ``V(x) > ρ``,
+    defaults to no loss.
   - `sigmoid::Function`: approximately one when the input is positive and approximately zero
-    when the input is negative.
+    when the input is negative, defaults to unit step function.
 
 The loss applied to samples ``x`` such that ``V(x) > ρ`` is
 ``\\lvert \\texttt{out\\_of\\_RoA\\_penalty}(V(x), V̇(x), x, x_0, ρ) \\rvert^2``.
