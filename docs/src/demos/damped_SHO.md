@@ -88,8 +88,6 @@ prob = discretize(pde_system, discretization)
 ########################## Solve OptimizationProblem ##########################
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
 net = discretization.phi
@@ -206,8 +204,6 @@ prob = discretize(pde_system, discretization)
 using Optimization, OptimizationOptimisers, OptimizationOptimJL
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 500)
 
 net = discretization.phi
 θ = res.u.depvar
