@@ -5,6 +5,9 @@ import JuMP
 using LinearAlgebra
 using ModelingToolkit
 import SciMLBase
+using NeuralPDE
+import DifferentialEquations: Tsit5
+import EvalMetrics: ConfusionMatrix
 
 include("conditions_specification.jl")
 include("structure_specification.jl")
@@ -15,6 +18,7 @@ include("NeuralLyapunovPDESystem.jl")
 include("numerical_lyapunov_functions.jl")
 include("local_lyapunov.jl")
 include("policy_search.jl")
+include("benchmark_harness.jl")
 
 # Lyapunov function structures
 export NeuralLyapunovStructure, UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov,
@@ -39,5 +43,8 @@ export add_policy_search, get_policy
 
 # Local Lyapunov analysis
 export local_lyapunov
+
+# Benchmarking tool
+export benchmark
 
 end

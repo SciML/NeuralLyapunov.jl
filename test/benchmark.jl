@@ -1,0 +1,176 @@
+using NeuralPDE, NeuralLyapunov, Lux, Boltz
+using OptimizationOptimisers
+using Random
+using Test
+
+###################### Damped simple harmonic oscillator ######################
+
+println("Benchmark: Damped SHO")
+Random.seed!(200)
+
+# Define dynamics and domain
+
+"Simple Harmonic Oscillator Dynamics"
+function sho(state, p, t)
+    ζ, ω_0 = p
+    pos = state[1]
+    vel = state[2]
+    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+end
+lb = [-5.0, -2.0];
+ub = [5.0, 2.0];
+p = [0.5, 1.0];
+fixed_point = [0.0, 0.0];
+sho_dynamics = ODEFunction(sho; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
+
+# Define neural network discretization
+dim_state = length(lb)
+dim_hidden = 10
+dim_output = 3
+chain = [Lux.Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1)
+         ) for _ in 1:dim_output]
+
+# Define training strategy
+strategy = QuasiRandomTraining(1000)
+
+# Define neural Lyapunov structure
+structure = NonnegativeNeuralLyapunov(
+    dim_output;
+    δ = 1e-6
+)
+minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+
+# Define Lyapunov decrease condition
+# Damped SHO has exponential decrease at a rate of k = ζ * ω_0, so we train to certify that
+decrease_condition = ExponentialStability(prod(p))
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition
+)
+
+# Define optimization parameters
+opt = OptimizationOptimisers.Adam()
+optimization_args = [:maxiters => 450]
+
+# Run benchmark
+cm, time = benchmark(
+    sho,
+    lb,
+    ub,
+    spec,
+    chain,
+    strategy,
+    opt;
+    simulation_time = 100,
+    n_grid = 20,
+    p = p,
+    optimization_args = optimization_args
+)
+
+@testset "Simple Harmonic Oscillator Benchmarking" begin
+    # SHO is globally asymptotically stable
+    @test cm.n == 0
+
+    # Should accurately classify
+    @test cm.fn / cm.p < 0.5
+end
+
+####################### Inverted pendulum policy search #######################
+
+println("Benchmark: Inverted Pendulum - Policy Search")
+Random.seed!(200)
+
+# Define dynamics and domain
+function open_loop_pendulum_dynamics(x, u, p, t)
+    θ, ω = x
+    ζ, ω_0 = p
+    τ = u[]
+    return [ω
+            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+end
+
+lb = [0.0, -10.0];
+ub = [2π, 10.0];
+upright_equilibrium = [π, 0.0]
+p = [0.5, 1.0]
+state_syms = [:θ, :ω]
+parameter_syms = [:ζ, :ω_0]
+
+# Define neural network discretization
+# We use an input layer that is periodic with period 2π with respect to θ
+dim_state = length(lb)
+dim_hidden = 15
+dim_phi = 2
+dim_u = 1
+dim_output = dim_phi + dim_u
+chain = [Lux.Chain(
+             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+             Dense(3, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
+
+# Define neural network discretization
+strategy = GridTraining(0.1)
+
+# Define neural Lyapunov structure
+structure = PositiveSemiDefiniteStructure(
+    dim_phi;
+    pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
+    end
+)
+structure = add_policy_search(
+    structure,
+    dim_u
+)
+minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+# Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability()
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition
+)
+
+# Define optimization parameters
+opt = OptimizationOptimisers.Adam()
+optimization_args = [:maxiters => 1000]
+
+# Run benchmark
+cm, time = benchmark(
+    open_loop_pendulum_dynamics,
+    lb,
+    ub,
+    spec,
+    chain,
+    strategy,
+    opt;
+    simulation_time = 200,
+    n_grid = 20,
+    p = p,
+    optimization_args = optimization_args,
+    state_syms = state_syms,
+    parameter_syms = parameter_syms,
+    policy_search = true,
+    atol = 5e-3
+)
+
+@testset "Policy search on inverted pendulum" begin
+    # Resulting controller should drive more states to equilibrium than not
+    @test cm.p > cm.n broken=true
+
+    # Resulting classifier should be accurate
+    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9 broken=true
+end

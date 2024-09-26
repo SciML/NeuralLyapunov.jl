@@ -22,4 +22,7 @@ using SafeTestsets
     @time @safetestset "Errors for partially-implemented extensions" begin
         include("unimplemented.jl")
     end
+    @time @safetestset "Benchmarking tool" begin
+        include("benchmark.jl")
+    end
 end

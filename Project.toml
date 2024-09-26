@@ -4,22 +4,24 @@ authors = ["Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+EvalMetrics = "251d5f9e-10c1-4699-ba24-e0ad168fa3e4"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
+Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
 ForwardDiff = "0.10"
 JuMP = "1"
-Lux = "0.5.45"
+Lux = "0.5"
 ModelingToolkit = "8, 9"
 NLopt = "1"
 NeuralPDE = "5.10"
-Optimization = "3"
-OptimizationOptimJL = "0.2"
-OptimizationOptimisers = "0.2"
+Optimization = "3, 4"
 SciMLBase = "2"
 julia = "1.10"
 
