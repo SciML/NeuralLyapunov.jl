@@ -4,6 +4,7 @@ using Random
 using Test
 
 ###################### Damped simple harmonic oscillator ######################
+@testset "Simple harmonic oscillator benchmarking" begin
 
 println("Benchmark: Damped SHO")
 Random.seed!(200)
@@ -73,15 +74,16 @@ cm, time = benchmark(
     optimization_args = optimization_args
 )
 
-@testset "Simple Harmonic Oscillator Benchmarking" begin
-    # SHO is globally asymptotically stable
-    @test cm.n == 0
+# SHO is globally asymptotically stable
+@test cm.n == 0
 
-    # Should accurately classify
-    @test cm.fn / cm.p < 0.5
+# Should accurately classify
+@test cm.fn / cm.p < 0.5
+
 end
 
 ####################### Inverted pendulum policy search #######################
+@testset "Policy search on inverted pendulum benchmarking" begin
 
 println("Benchmark: Inverted Pendulum - Policy Search")
 Random.seed!(200)
@@ -167,10 +169,103 @@ cm, time = benchmark(
     atol = 5e-3
 )
 
-@testset "Policy search on inverted pendulum" begin
-    # Resulting controller should drive more states to equilibrium than not
-    @test cm.p > cm.n broken=true
+# Resulting controller should drive more states to equilibrium than not
+@test cm.p > cm.n broken=true
 
-    # Resulting classifier should be accurate
-    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9 broken=true
+# Resulting classifier should be accurate
+@test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9 broken=true
+
+end
+
+############################### Damped pendulum ###############################
+@testset "Damped pendulum benchmarking" begin
+
+println("Benchmark: Damped Pendulum")
+Random.seed!(200)
+
+# Define dynamics and domain
+@parameters ζ ω_0
+defaults = Dict([ζ => 5.0, ω_0 => 1.0])
+
+@variables t θ(t)
+Dt = Differential(t)
+DDt = Dt^2
+
+eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
+
+@named damped_pendulum = ODESystem(
+    eqs,
+    t,
+    [θ],
+    [ζ, ω_0];
+    defaults = defaults
+)
+
+damped_pendulum = structural_simplify(damped_pendulum)
+bounds = [
+    θ ∈ (-π, π),
+    Dt(θ) ∈ (-10.0, 10.0)
+]
+
+# Define neural network discretization
+# We use an input layer that is periodic with period 2π with respect to θ
+dim_state = length(bounds)
+dim_hidden = 15
+dim_output = 2
+chain = [Lux.Chain(
+             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+             Dense(3, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
+
+# Define neural network discretization
+strategy = GridTraining(0.1)
+
+# Define neural Lyapunov structure
+structure = PositiveSemiDefiniteStructure(
+    dim_output;
+    pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
+    end
+)
+minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+# Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability()
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition
+)
+
+# Define optimization parameters
+opt = OptimizationOptimisers.Adam()
+optimization_args = [:maxiters => 600]
+
+
+# Run benchmark
+cm, time = benchmark(
+    damped_pendulum,
+    bounds,
+    spec,
+    chain,
+    strategy,
+    opt;
+    simulation_time = 300,
+    n_grid = 20,
+    optimization_args = optimization_args,
+    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol=1e-3)
+)
+
+# Damped pendulum is globally asymptotically stable, except at upright equilibrium
+@test cm.n == 2
+
+# Should accurately classify
+@test cm.fn / cm.p < 0.5
+
 end
