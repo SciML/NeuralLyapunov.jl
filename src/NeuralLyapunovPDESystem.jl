@@ -170,11 +170,14 @@ function NeuralLyapunovPDESystem(
         name
 )::PDESystem
     ######################### Check for policy search #########################
-    f, x, p, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
+    f, x, params, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
         (ODEFunction(dynamics), unknowns(dynamics), parameters(dynamics), false)
     else
-        (f, _), x, p = ModelingToolkit.generate_control_function(dynamics; simplify = true)
-        (f, x, p, true)
+        (f, _), x, params = ModelingToolkit.generate_control_function(
+            dynamics;
+            simplify = true
+        )
+        (f, x, params, true)
     end
 
     ########################## Define state symbols ###########################
@@ -202,7 +205,7 @@ function NeuralLyapunovPDESystem(
         spec,
         fixed_point,
         state,
-        p,
+        params,
         ModelingToolkit.get_defaults(dynamics),
         policy_search,
         name
