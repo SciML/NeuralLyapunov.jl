@@ -53,7 +53,6 @@ function benchmark(
         optimization_args,
         ode_solver,
         ode_solver_args,
-        atol,
         endpoint_check,
         verbose
     )
@@ -112,7 +111,6 @@ function benchmark(
         optimization_args,
         ode_solver,
         ode_solver_args,
-        atol,
         endpoint_check,
         verbose
     )
@@ -135,7 +133,6 @@ function _benchmark(
     optimization_args,
     ode_solver,
     ode_solver_args,
-    atol,
     endpoint_check,
     verbose
 )
@@ -177,7 +174,6 @@ function _benchmark(
             p,
             ode_solver,
             ode_solver_args,
-            atol,
             endpoint_check,
             verbose
         )
@@ -194,7 +190,6 @@ function _benchmark(
             p,
             ode_solver,
             ode_solver_args,
-            atol,
             endpoint_check,
             verbose
         )
@@ -250,7 +245,6 @@ function build_confusion_matrix(
     p,
     ode_solver,
     ode_solver_args,
-    atol,
     endpoint_check,
     verbose
 )
@@ -272,22 +266,6 @@ function build_confusion_matrix(
     ]
 
     actual = endpoint_check.(endpoints)
-#=
-    actual = [
-        ≈(
-            get_endpoint(
-                dynamics,
-                x,
-                simulation_time;
-                p = p,
-                solver = ode_solver,
-                solver_args = ode_solver_args
-            ),
-            fixed_point;
-            atol = atol
-        ) for x in states
-    ]
-=#
 
     cm = ConfusionMatrix(vec(actual), vec(predicted))
 
