@@ -161,19 +161,20 @@ cm, time = benchmark(
     opt;
     simulation_time = 200,
     n_grid = 20,
+    fixed_point = upright_equilibrium,
     p = p,
     optimization_args = optimization_args,
     state_syms = state_syms,
     parameter_syms = parameter_syms,
     policy_search = true,
-    atol = 5e-3
+    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3),
 )
 
 # Resulting controller should drive more states to equilibrium than not
-@test cm.p > cm.n broken=true
+@test cm.p > cm.n
 
 # Resulting classifier should be accurate
-@test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9 broken=true
+@test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
 
 end
 
