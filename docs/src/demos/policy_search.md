@@ -172,14 +172,15 @@ upright_equilibrium = [π, 0.0]
 ```
 
 We'll use an architecture that's ``2\pi``-periodic in ``\theta`` so that we can train on just one period of ``\theta`` and don't need to add any periodic boundary conditions.
-To achieve that, we use `Lux.PeriodicEmbedding([1], [2pi])`, enforces `2pi`-periodicity in input number `1`.
+To achieve that, we use `Boltz.Layers.PeriodicEmbedding([1], [2pi])`, enforces `2pi`-periodicity in input number `1`.
 Additionally, we include output dimensions for both the neural Lyapunov function and the neural controller.
 
 Other than that, setting up the neural network using Lux and NeuralPDE training strategy is no different from any other physics-informed neural network problem.
 For more on that aspect, see the [NeuralPDE documentation](https://docs.sciml.ai/NeuralPDE/stable/).
 
 ```@example policy_search
-using Lux, Boltz
+using Lux
+import Boltz.Layers: PeriodicEmbedding
 
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
@@ -189,7 +190,7 @@ dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)

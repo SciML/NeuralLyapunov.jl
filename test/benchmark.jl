@@ -1,4 +1,5 @@
-using NeuralPDE, NeuralLyapunov, Lux, Boltz
+using NeuralPDE, NeuralLyapunov, Lux
+import Boltz.Layers: PeriodicEmbedding
 using OptimizationOptimisers
 using Random
 using Test
@@ -112,7 +113,7 @@ dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
@@ -214,7 +215,7 @@ dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
 chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
