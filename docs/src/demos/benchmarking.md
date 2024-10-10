@@ -184,6 +184,7 @@ optimization_args = [:maxiters => 1000]
 Finally, we can run the [`benchmark`](@ref) function.
 
 ```@example benchmarking
+endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
 (confusion_matrix, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples) = benchmark(
     open_loop_pendulum_dynamics,
     lb,
@@ -200,7 +201,8 @@ Finally, we can run the [`benchmark`](@ref) function.
     state_syms = state_syms,
     parameter_syms = parameter_syms,
     policy_search = true,
-    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3),
+    endpoint_check = endpoint_check,
+    classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
     verbose = true
 );
 nothing # hide
@@ -225,7 +227,6 @@ training_time
 The returned `actual` labels are just `endpoint_check` applied to `endpoints`, which are the results of simulating from each element of `states`.
 
 ```@example benchmarking
-endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
 all(endpoint_check.(endpoints) .== actual)
 ```
 
@@ -233,6 +234,6 @@ Similarly, the `predicted` labels are the results of the neural Lyapunov classif
 In this case, we used the default classifier, which just checks for negative values of ``\dot{V}``.
 
 ```@example benchmarking
-classifier = (V, V̇, x) -> V̇ < zero(V̇)
+classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
 all(classifier.(V_samples, V̇_samples, states) .== predicted)
 ```

@@ -38,7 +38,7 @@ optimization to run.
   - `n_grid`: number or grid points in each dimension used for evaluating the neural
     Lyapunov classifier.
   - `classifier`: function of ``V(x)``, ``V̇(x)``, and ``x`` that predicts whether ``x`` is
-    in the region of attraction.
+    in the region of attraction; defaults to `(V, V̇, x) -> V̇ < 0 || endpoint_check(x)`.
   - `fixed_point`: the equilibrium being analyzed; defaults to the origin.
   - `p`: the values of the parameters of the dynamical system being analyzed; defaults to
     `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
@@ -87,7 +87,6 @@ function benchmark(
     strategy,
     opt;
     n_grid,
-    classifier = (V, V̇, x) -> V̇ < zero(V̇),
     fixed_point = zeros(length(bounds)),
     optimization_args = [],
     simulation_time,
@@ -95,6 +94,7 @@ function benchmark(
     ode_solver_args = [],
     atol = 1e-6,
     endpoint_check = (x) -> ≈(x, fixed_point; atol=atol),
+    classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
     verbose = false
 )
     @named pde_system = NeuralLyapunovPDESystem(
@@ -330,10 +330,6 @@ function build_confusion_matrix(
     verbose
 )
     predicted = classifier.(V_samples, V̇_samples, states)
-    ix0 = findfirst(x -> x == fixed_point, states)
-    if !isnothing(ix0)
-        predicted[ix0] = true
-    end
 
     endpoints = [
         get_endpoint(
