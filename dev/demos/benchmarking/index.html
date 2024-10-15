@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Benchmarking a neural Lyapunov method · NeuralLyapunov.jl</title><meta name="title" content="Benchmarking a neural Lyapunov method · NeuralLyapunov.jl"/><meta property="og:title" content="Benchmarking a neural Lyapunov method · NeuralLyapunov.jl"/><meta property="twitter:title" content="Benchmarking a neural Lyapunov method · NeuralLyapunov.jl"/><meta name="description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:description" content="Documentation for NeuralLyapunov.jl."/><meta property="twitter:description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:url" content="https://SciML.github.io/NeuralLyapunov.jl/demos/benchmarking/"/><meta property="twitter:url" content="https://SciML.github.io/NeuralLyapunov.jl/demos/benchmarking/"/><link rel="canonical" href="https://SciML.github.io/NeuralLyapunov.jl/demos/benchmarking/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">NeuralLyapunov.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../man/">Components of a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/pdesystem/">Solving a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/minimization/">Lyapunov Minimization Condition</a></li><li><a class="tocitem" href="../../man/decrease/">Lyapunov Decrease Condition</a></li><li><a class="tocitem" href="../../man/structure/">Structuring a Neural Lyapunov function</a></li><li><a class="tocitem" href="../../man/roa/">Training for Region of Attraction Identification</a></li><li><a class="tocitem" href="../../man/policy_search/">Policy Search and Network-Dependent Dynamics</a></li><li><a class="tocitem" href="../../man/local_lyapunov/">Local Lyapunov analysis</a></li></ul></li><li><span class="tocitem">Demonstrations</span><ul><li><a class="tocitem" href="../damped_SHO/">Damped Simple Harmonic Oscillator</a></li><li><a class="tocitem" href="../roa_estimation/">Estimating the Region of Attraction</a></li><li><a class="tocitem" href="../policy_search/">Policy Search on the Driven Inverted Pendulum</a></li><li class="is-active"><a class="tocitem" href>Benchmarking a neural Lyapunov method</a><ul class="internal"><li><a class="tocitem" href="#Copy-Pastable-Code"><span>Copy-Pastable Code</span></a></li><li><a class="tocitem" href="#Detailed-Description"><span>Detailed Description</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Demonstrations</a></li><li class="is-active"><a href>Benchmarking a neural Lyapunov method</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Benchmarking a neural Lyapunov method</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl/blob/master/docs/src/demos/benchmarking.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Benchmarking-a-neural-Lyapunov-method"><a class="docs-heading-anchor" href="#Benchmarking-a-neural-Lyapunov-method">Benchmarking a neural Lyapunov method</a><a id="Benchmarking-a-neural-Lyapunov-method-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmarking-a-neural-Lyapunov-method" title="Permalink"></a></h1><p>In this demonstration, we&#39;ll benchmark the neural Lyapunov method used in the <a href="../policy_search/">policy search demo</a>. In that demonstration, we searched for a neural network policy to stabilize the upright equilibrium of the inverted pendulum. Here, we will use the <a href="../../man/benchmarking/#NeuralLyapunov.benchmark"><code>benchmark</code></a> function to run approximately the same training, then check the performance the of the resulting controller and neural Lyapunov function by simulating the closed loop system to see (1) how well the controller drives the pendulum to the upright equilibrium, and (2) how well the neural Lyapunov function performs as a classifier of whether a state is in the region of attraction or not. These results will be represented by a confusion matrix using the simulation results as ground truth. (Keep in mind that training does no simulation.)</p><h2 id="Copy-Pastable-Code"><a class="docs-heading-anchor" href="#Copy-Pastable-Code">Copy-Pastable Code</a><a id="Copy-Pastable-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Copy-Pastable-Code" title="Permalink"></a></h2><pre><code class="language-julia hljs">using NeuralPDE, NeuralLyapunov, Lux
+import Boltz.Layers: PeriodicEmbedding
+using OptimizationOptimisers
+using Random
+
+Random.seed!(200)
+
+# Define dynamics and domain
+function open_loop_pendulum_dynamics(x, u, p, t)
+    θ, ω = x
+    ζ, ω_0 = p
+    τ = u[]
+    return [ω
+            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+end
+
+lb = [0.0, -10.0];
+ub = [2π, 10.0];
+upright_equilibrium = [π, 0.0]
+p = [0.5, 1.0]
+state_syms = [:θ, :ω]
+parameter_syms = [:ζ, :ω_0]
+
+# Define neural network discretization
+# We use an input layer that is periodic with period 2π with respect to θ
+dim_state = length(lb)
+dim_hidden = 15
+dim_phi = 2
+dim_u = 1
+dim_output = dim_phi + dim_u
+chain = [Lux.Chain(
+             PeriodicEmbedding([1], [2π]),
+             Dense(3, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
+
+# Define neural network discretization
+strategy = QuasiRandomTraining(1250)
+
+# Define neural Lyapunov structure
+structure = PositiveSemiDefiniteStructure(
+    dim_phi;
+    pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
+    end
+)
+structure = add_policy_search(
+    structure,
+    dim_u
+)
+minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+# Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability()
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition
+)
+
+# Define optimization parameters
+opt = OptimizationOptimisers.Adam()
+optimization_args = [:maxiters =&gt; 1000]
+
+# Run benchmark
+cm, time = benchmark(
+    open_loop_pendulum_dynamics,
+    lb,
+    ub,
+    spec,
+    chain,
+    strategy,
+    opt;
+    simulation_time = 200,
+    n_grid = 20,
+    fixed_point = upright_equilibrium,
+    p = p,
+    optimization_args = optimization_args,
+    state_syms = state_syms,
+    parameter_syms = parameter_syms,
+    policy_search = true,
+    endpoint_check = (x) -&gt; ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3),
+)</code></pre><h2 id="Detailed-Description"><a class="docs-heading-anchor" href="#Detailed-Description">Detailed Description</a><a id="Detailed-Description-1"></a><a class="docs-heading-anchor-permalink" href="#Detailed-Description" title="Permalink"></a></h2><p>Much of the set up is the same as in the <a href="../policy_search/">policy search demo</a>, so see that page for details.</p><pre><code class="language-julia hljs">using NeuralPDE, NeuralLyapunov, Lux
+import Boltz.Layers: PeriodicEmbedding
+using Random
+
+Random.seed!(200)
+
+# Define dynamics and domain
+function open_loop_pendulum_dynamics(x, u, p, t)
+    θ, ω = x
+    ζ, ω_0 = p
+    τ = u[]
+    return [ω
+            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+end
+
+lb = [0.0, -10.0];
+ub = [2π, 10.0];
+upright_equilibrium = [π, 0.0]
+p = [0.5, 1.0]
+state_syms = [:θ, :ω]
+parameter_syms = [:ζ, :ω_0]
+
+# Define neural network discretization
+# We use an input layer that is periodic with period 2π with respect to θ
+dim_state = length(lb)
+dim_hidden = 15
+dim_phi = 2
+dim_u = 1
+dim_output = dim_phi + dim_u
+chain = [Lux.Chain(
+             PeriodicEmbedding([1], [2π]),
+             Dense(3, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
+
+# Define neural network discretization
+strategy = QuasiRandomTraining(1250)
+
+# Define neural Lyapunov structure
+structure = PositiveSemiDefiniteStructure(
+    dim_phi;
+    pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
+    end
+)
+structure = add_policy_search(
+    structure,
+    dim_u
+)
+minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+# Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability()
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(
+    structure,
+    minimization_condition,
+    decrease_condition
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">NeuralLyapunovSpecification(NeuralLyapunovStructure(NeuralLyapunov.var&quot;#188#197&quot;{NeuralLyapunov.var&quot;#33#45&quot;{Main.var&quot;#3#4&quot;, NeuralLyapunov.var&quot;#39#51&quot;}, Int64}(NeuralLyapunov.var&quot;#33#45&quot;{Main.var&quot;#3#4&quot;, NeuralLyapunov.var&quot;#39#51&quot;}(Main.var&quot;#3#4&quot;(), NeuralLyapunov.var&quot;#39#51&quot;()), 2), NeuralLyapunov.var&quot;#192#201&quot;{NeuralLyapunov.var&quot;#34#46&quot;{Main.var&quot;#3#4&quot;, NeuralLyapunov.var&quot;#39#51&quot;, NeuralLyapunov.var&quot;#29#41&quot;{Main.var&quot;#3#4&quot;}, NeuralLyapunov.var&quot;#31#43&quot;{NeuralLyapunov.var&quot;#39#51&quot;}}, Int64, typeof(identity)}(NeuralLyapunov.var&quot;#34#46&quot;{Main.var&quot;#3#4&quot;, NeuralLyapunov.var&quot;#39#51&quot;, NeuralLyapunov.var&quot;#29#41&quot;{Main.var&quot;#3#4&quot;}, NeuralLyapunov.var&quot;#31#43&quot;{NeuralLyapunov.var&quot;#39#51&quot;}}(Main.var&quot;#3#4&quot;(), NeuralLyapunov.var&quot;#39#51&quot;(), NeuralLyapunov.var&quot;#29#41&quot;{Main.var&quot;#3#4&quot;}(Main.var&quot;#3#4&quot;(), Core.Box(NeuralLyapunov.var&quot;#_grad#40&quot;{typeof(ForwardDiff.gradient)}(ForwardDiff.gradient))), NeuralLyapunov.var&quot;#31#43&quot;{NeuralLyapunov.var&quot;#39#51&quot;}(NeuralLyapunov.var&quot;#39#51&quot;(), Core.Box(NeuralLyapunov.var&quot;#_grad#40&quot;{typeof(ForwardDiff.gradient)}(ForwardDiff.gradient)))), 2, identity), NeuralLyapunov.var&quot;#196#205&quot;{Int64, typeof(identity)}(2, identity), 3), LyapunovMinimizationCondition(false, NeuralLyapunov.var&quot;#69#71&quot;(), NeuralLyapunov.var&quot;#70#72&quot;(), false), LyapunovDecreaseCondition(true, NeuralLyapunov.var&quot;#85#89&quot;(), NeuralLyapunov.var&quot;#86#90&quot;{Float64}(1.0e-6), NeuralLyapunov.var&quot;#87#91&quot;()))</code></pre><p>At this point of the <a href="../policy_search/">policy search demo</a>, we constructed the PDESystem, discretized it using NeuralPDE.jl, and solved the resulting OptimizationProblem using Optimization.jl. All of that occurs in the <a href="../../man/benchmarking/#NeuralLyapunov.benchmark"><code>benchmark</code></a> function, so we instead provide that function with the optimizer and optimization arguments to use.</p><pre><code class="language-julia hljs">using OptimizationOptimisers
+
+# Define optimization parameters
+opt = OptimizationOptimisers.Adam()
+optimization_args = [:maxiters =&gt; 1000]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-element Vector{Pair{Symbol, Int64}}:
+ :maxiters =&gt; 1000</code></pre><p>Finally, we can run the <a href="../../man/benchmarking/#NeuralLyapunov.benchmark"><code>benchmark</code></a> function.</p><pre><code class="language-julia hljs">endpoint_check = (x) -&gt; ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
+(confusion_matrix, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples) = benchmark(
+    open_loop_pendulum_dynamics,
+    lb,
+    ub,
+    spec,
+    chain,
+    strategy,
+    opt;
+    simulation_time = 200,
+    n_grid = 20,
+    fixed_point = upright_equilibrium,
+    p = p,
+    optimization_args = optimization_args,
+    state_syms = state_syms,
+    parameter_syms = parameter_syms,
+    policy_search = true,
+    endpoint_check = endpoint_check,
+    classifier = (V, V̇, x) -&gt; V̇ &lt; zero(V̇) || endpoint_check(x),
+    verbose = true
+);</code></pre><p>In this case, we used the <code>verbose = true</code> option to demonstrate the outputs of that option, but if you only want the confusion matrix and training time, leave that option off (<code>verbose</code> defaults to <code>false</code>) and change the first line to:</p><pre><code class="language-julia hljs">confusion_matrix, training_time = benchmark(</code></pre><p>We can observe the confusion matrix and training time:</p><pre><code class="language-julia hljs">confusion_matrix</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌────────────┬───────────┬───────────┐
+│ Tot = 441  │ Actual │ Actual │
+│            │ positives │ negatives │
+├────────────┼───────────┼───────────┤
+│ Prediced │ 421 │ 0 │
+│ positives │           │           │
+├────────────┼───────────┼───────────┤
+│ Prediced │ 20 │ 0 │
+│ negatives │           │           │
+└────────────┴───────────┴───────────┘
+</code></pre><pre><code class="language-julia hljs">training_time</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">424.132196388</code></pre><p>The returned <code>actual</code> labels are just <code>endpoint_check</code> applied to <code>endpoints</code>, which are the results of simulating from each element of <code>states</code>.</p><pre><code class="language-julia hljs">all(endpoint_check.(endpoints) .== actual)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><p>Similarly, the <code>predicted</code> labels are the results of the neural Lyapunov classifier. In this case, we used the default classifier, which just checks for negative values of <span>$\dot{V}$</span>.</p><pre><code class="language-julia hljs">classifier = (V, V̇, x) -&gt; V̇ &lt; zero(V̇) || endpoint_check(x)
+all(classifier.(V_samples, V̇_samples, states) .== predicted)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../policy_search/">« Policy Search on the Driven Inverted Pendulum</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Tuesday 15 October 2024 17:32">Tuesday 15 October 2024</span>. Using Julia version 1.11.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
