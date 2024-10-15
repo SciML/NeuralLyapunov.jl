@@ -17,7 +17,8 @@ MANUAL_PAGES = [
 DEMONSTRATION_PAGES = [
     "demos/damped_SHO.md",
     "demos/roa_estimation.md",
-    "demos/policy_search.md"
+    "demos/policy_search.md",
+    "demos/benchmarking.md"
 ]
 
 makedocs(;

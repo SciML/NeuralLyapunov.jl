@@ -105,13 +105,21 @@ function NeuralLyapunovPDESystem(
         spec::NeuralLyapunovSpecification;
         fixed_point = zeros(length(lb)),
         p = SciMLBase.NullParameters(),
+        state_syms = [],
+        parameter_syms = [],
+        policy_search::Bool = false,
         name
 )::PDESystem
     if dynamics.mass_matrix !== I
         throw(ErrorException("DAEs are not supported at this time. Please supply dynamics" *
                              " without a mass matrix."))
     end
+    if policy_search
+        throw(ErrorException("Got policy_search == true when dynamics were supplied as an" *
+                             " ODEFunction f(x,p,t), so no input can be supplied."))
+    end
 
+    # Extract state and parameter symbols from ODEFunction
     s_syms, p_syms = if dynamics.sys isa ODESystem
         s_syms = Symbol.(operation.(unknowns(dynamics.sys)))
         p_syms = Symbol.(parameters(dynamics.sys))
@@ -126,6 +134,18 @@ function NeuralLyapunovPDESystem(
         (s_syms, p_syms)
     else
         ([], [])
+    end
+
+    # Override ODEFunction state and parameter symbols when supplied
+    s_syms = if state_syms == []
+        s_syms
+    else
+        state_syms
+    end
+    p_syms = if parameter_syms == []
+        p_syms
+    else
+        parameter_syms
     end
 
     return NeuralLyapunovPDESystem(
@@ -150,11 +170,14 @@ function NeuralLyapunovPDESystem(
         name
 )::PDESystem
     ######################### Check for policy search #########################
-    f, x, p, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
+    f, x, params, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
         (ODEFunction(dynamics), unknowns(dynamics), parameters(dynamics), false)
     else
-        (f, _), x, p = ModelingToolkit.generate_control_function(dynamics; simplify = true)
-        (f, x, p, true)
+        (f, _), x, params = ModelingToolkit.generate_control_function(
+            dynamics;
+            simplify = true
+        )
+        (f, x, params, true)
     end
 
     ########################## Define state symbols ###########################
@@ -182,7 +205,7 @@ function NeuralLyapunovPDESystem(
         spec,
         fixed_point,
         state,
-        p,
+        params,
         ModelingToolkit.get_defaults(dynamics),
         policy_search,
         name
