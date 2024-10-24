@@ -13,7 +13,8 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 ## Copy-Pastable Code
 
 ```julia
-using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 
@@ -54,8 +55,8 @@ dim_hidden = 20
 dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -189,7 +190,7 @@ dim_hidden = 20
 dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
+chain = [Chain(
              PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),

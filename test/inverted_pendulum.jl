@@ -1,4 +1,5 @@
-using NeuralPDE, Lux, Boltz, NeuralLyapunov
+using NeuralPDE, Lux, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
@@ -33,8 +34,8 @@ dim_hidden = 15
 dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
@@ -136,7 +137,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 
 ################################## Simulate ###################################
 
-using DifferentialEquations
+using OrdinaryDiffEq
 
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);

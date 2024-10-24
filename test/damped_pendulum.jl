@@ -1,4 +1,5 @@
-using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
@@ -12,7 +13,8 @@ println("Damped Pendulum")
 @parameters ζ ω_0
 defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 
-@variables t θ(t)
+@independent_variables t
+@variables θ(t)
 Dt = Differential(t)
 DDt = Dt^2
 
@@ -42,8 +44,8 @@ p = [defaults[param] for param in parameters(dynamics)]
 dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
-chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)

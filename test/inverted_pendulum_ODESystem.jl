@@ -1,4 +1,5 @@
-using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers : PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
@@ -12,7 +13,8 @@ println("Inverted Pendulum - Policy Search 2")
 @parameters ζ ω_0
 defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 
-@variables t θ(t) τ(t) [input = true]
+@independent_variables t
+@variables θ(t) τ(t) [input = true]
 Dt = Differential(t)
 DDt = Dt^2
 
@@ -42,8 +44,8 @@ dim_hidden = 20
 dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
@@ -103,8 +105,8 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    driven_pendulum; simplify = true)
+(open_loop_pendulum_dynamics, _), state_order, p_order =
+    ModelingToolkit.generate_control_function(driven_pendulum; simplify = true)
 p = [defaults[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
@@ -149,7 +151,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 
 ################################## Simulate ###################################
 
-using DifferentialEquations
+using OrdinaryDiffEq
 
 state_order = map(st -> SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
 state_syms = Symbol.(state_order)

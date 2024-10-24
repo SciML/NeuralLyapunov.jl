@@ -87,7 +87,7 @@ Stability i.s.L. is proven by ``V̇(x) ≤ 0``. The inequality is represented by
 exactly represents the inequality, but differentiable approximations of this function may be
 employed.
 """
-function StabilityISL(; rectifier = (t) -> max(zero(t), t))
+function StabilityISL(; rectifier = (t) -> log(one(t) + exp(t))) # max(zero(t), t)) #
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt,

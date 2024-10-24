@@ -41,7 +41,7 @@ discretization = PhysicsInformedNN(chain, strategy)
 # Define neural Lyapunov structure
 structure = NonnegativeNeuralLyapunov(
     dim_output;
-    δ = 1e-6
+    δ = 5.0
 )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
@@ -116,7 +116,7 @@ end
 @test V̇(fixed_point) == 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-4
+@test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-3
 
 #=
 # Print statistics

@@ -4,7 +4,6 @@ authors = ["Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 EvalMetrics = "251d5f9e-10c1-4699-ba24-e0ad168fa3e4"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -12,15 +11,16 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
 ForwardDiff = "0.10"
 JuMP = "1"
-Lux = "0.5"
+Lux = "1"
 ModelingToolkit = "8, 9"
 NLopt = "1"
-NeuralPDE = "5.10"
+NeuralPDE = "5.17"
 Optimization = "3, 4"
 SciMLBase = "2"
 julia = "1.10"
@@ -28,7 +28,7 @@ julia = "1.10"
 [extras]
 Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 CSDP = "0a46da34-8e4b-519e-b418-48813639ff34"
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
 NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
@@ -40,4 +40,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["SafeTestsets", "Test", "Lux", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NLopt", "Random", "NeuralPDE", "DifferentialEquations", "CSDP", "Boltz"]
+test = ["SafeTestsets", "Test", "Lux", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NLopt", "Random", "NeuralPDE", "CSDP", "Boltz", "ComponentArrays"]

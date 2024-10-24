@@ -29,7 +29,7 @@ sho_dynamics = ODEFunction(sho; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_
 dim_state = length(lb)
 dim_hidden = 10
 dim_output = 3
-chain = [Lux.Chain(
+chain = [Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -112,7 +112,7 @@ dim_hidden = 15
 dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
+chain = [Chain(
              PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
