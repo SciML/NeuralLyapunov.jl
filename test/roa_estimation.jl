@@ -27,7 +27,7 @@ chain = [Lux.Chain(
          ) for _ in 1:dim_output]
 
 # Define training strategy
-strategy = GridTraining(0.1)
+strategy = QuadratureTraining()
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -35,7 +35,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(StabilityISL())
+decrease_condition = make_RoA_aware(StabilityISL(rectifier = (t) -> log(one(t) + exp(t))))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(

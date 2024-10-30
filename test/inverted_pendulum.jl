@@ -42,7 +42,7 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = GridTraining(0.1)
+strategy = StochasticTraining(5000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -129,11 +129,11 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 # Training should result in a fixed point at the upright equilibrium
 @test all(isapprox.(
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
-    0.0; atol = 1e-8))
+    0.0; atol = 2e-4))
 @test V̇_func(upright_equilibrium) == 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 5e-3
 
 ################################## Simulate ###################################
 

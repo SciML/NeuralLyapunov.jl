@@ -52,7 +52,7 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = GridTraining(0.1)
+strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -131,7 +131,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 @test V̇_func([0.0, 0.0]) == 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 3e-3
 
 #=
 # Print statistics

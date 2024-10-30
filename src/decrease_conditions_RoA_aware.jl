@@ -154,7 +154,7 @@ function make_RoA_aware(
         cond::LyapunovDecreaseCondition;
         ρ = 1.0,
         out_of_RoA_penalty = (V, dVdt, state, fixed_point, _ρ) -> 0.0,
-        sigmoid = (x) -> one(x) ./ (one(x) + exp.(-x)) # x .≥ zero.(x) #
+        sigmoid = (x) -> x .≥ zero.(x)
 )::RoAAwareDecreaseCondition
     RoAAwareDecreaseCondition(
         cond.check_decrease,
