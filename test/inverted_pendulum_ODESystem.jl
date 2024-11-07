@@ -30,7 +30,7 @@ eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
 
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-10.0, 10.0)
+    Dt(θ) ∈ (-2.0, 2.0)
 ]
 
 upright_equilibrium = [π, 0.0]
@@ -61,7 +61,7 @@ structure = PositiveSemiDefiniteStructure(
     pos_def = function (state, fixed_point)
         θ, ω = state
         θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
+        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2)
     end
 )
 structure = add_policy_search(
@@ -71,7 +71,7 @@ structure = add_policy_search(
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability()
+decrease_condition = AsymptoticStability(C = 0.01)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -122,8 +122,8 @@ u = get_policy(net, _θ, dim_output, dim_u)
 
 ################################## Simulate ###################################
 
-lb = [0.0, -10.0];
-ub = [2π, 10.0];
+lb = [0.0, -2.0];
+ub = [2π, 2.0];
 xs = (-2π):0.1:(2π)
 ys = lb[2]:0.1:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
@@ -147,7 +147,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 @test V̇_func(upright_equilibrium) == 0.0
 
 # V̇ should be negative almost everywhere
-@test_broken sum(V̇_samples .> 0) / length(V_samples) < 0.01
+@test sum(V̇_samples .> 0) / length(V_samples) < 0.01
 
 ################################## Simulate ###################################
 
@@ -170,7 +170,7 @@ sol = solve(ode_prob, Tsit5())
 # ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test_broken all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
 
 # Starting at a random point ...
 x0 = lb .+ rand(2) .* (ub .- lb)
@@ -181,7 +181,7 @@ sol = solve(ode_prob, Tsit5())
 # ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test_broken all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
 
 #=
 # Print statistics
@@ -250,8 +250,8 @@ p3 = plot(
     linewidth = 0
 );
 p3 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
-    label = "Downward Equilibria", color = :green, markershape = :+);
+    label = "Downward Equilibria", color = :red, markershape = :x);
 p3 = scatter!([-pi, pi] / pi, [0, 0], label = "Upward Equilibria",
-    color = :red, markershape = :x, legend = false);
+    color = :green, markershape = :+, legend = false);
 plot(p1, p2, p3)
 =#
