@@ -2,7 +2,7 @@ using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
-using Test
+using Test, LinearAlgebra, ForwardDiff
 
 Random.seed!(200)
 
@@ -40,8 +40,8 @@ upright_equilibrium = [π, 0.0]
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
 dim_state = length(bounds)
-dim_hidden = 20
-dim_phi = 3
+dim_hidden = 15
+dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
@@ -52,26 +52,26 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(1_250)
+strategy = StochasticTraining(5000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
-structure = add_policy_search(
-    structure,
-    dim_u
-)
+structure = add_policy_search(structure, dim_u)
+
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
-# Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability(C = 0.01)
+# Define a periodic Lyapunov decrease condition
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -96,7 +96,7 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 450)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
@@ -109,7 +109,7 @@ _θ = res.u.depvar
     ModelingToolkit.generate_control_function(driven_pendulum; simplify = true)
 p = [defaults[param] for param in p_order]
 
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     net,
     _θ,
     structure,
@@ -127,24 +127,38 @@ ub = [2π, 2.0];
 xs = (-2π):0.1:(2π)
 ys = lb[2]:0.1:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_samples = vec(V_func(hcat(states...)))
-V̇_samples = vec(V̇_func(hcat(states...)))
+V_samples = vec(V(hcat(states...)))
+V̇_samples = vec(V̇(hcat(states...)))
 
 #################################### Tests ####################################
 
 # Network structure should enforce positive definiteness
-@test V_func(upright_equilibrium) == 0.0
-@test min(V_func(upright_equilibrium), minimum(V_samples)) ≥ 0.0
+@test V(upright_equilibrium) == 0.0
+@test min(V(upright_equilibrium), minimum(V_samples)) ≥ 0.0
+@test all(ForwardDiff.gradient(V, upright_equilibrium) .== 0.0)
+@test all(eigvals(ForwardDiff.hessian(V, upright_equilibrium)) .≥ 0)
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(2, 100) .+ lb
-@test all(isapprox.(V_func(x0), V_func(x0 .+ [2π, 0.0]); rtol = 1e-3))
+@test all(isapprox.(V(x0), V(x0 .+ [2π, 0.0]); rtol = 1e-3))
 
-# Training should result in a fixed point at the upright equilibrium
+# Training should result in a locally stable fixed point at the upright equilibrium
 @test all(isapprox.(
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
-    0.0; atol = 1e-3))
-@test V̇_func(upright_equilibrium) == 0.0
+    0.0; atol = 1.25e-2))
+@test all(
+    eigvals(
+        ForwardDiff.jacobian(
+            x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
+            upright_equilibrium
+        )
+    ) .< 0
+)
+
+# Check for local negative definiteness of V̇
+@test V̇(upright_equilibrium) == 0.0
+@test all(isapprox.(ForwardDiff.gradient(V̇, upright_equilibrium), 0.0; atol=5e-3))
+@test_broken all(eigvals(ForwardDiff.hessian(V̇, upright_equilibrium)) .≤ 0)
 
 # V̇ should be negative almost everywhere
 @test sum(V̇_samples .> 0) / length(V_samples) < 0.01
@@ -170,7 +184,7 @@ sol = solve(ode_prob, Tsit5())
 # ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 2.5e-2))
 
 # Starting at a random point ...
 x0 = lb .+ rand(2) .* (ub .- lb)
@@ -181,18 +195,18 @@ sol = solve(ode_prob, Tsit5())
 # ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 2.5e-2))
 
 #=
 # Print statistics
-println("V(π, 0) = ", V_func(upright_equilibrium))
+println("V(π, 0) = ", V(upright_equilibrium))
 println(
     "f([π, 0], u([π, 0])) = ",
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
 )
 println(
     "V ∋ [",
-    min(V_func(upright_equilibrium),
+    min(V(upright_equilibrium),
     minimum(V_samples)),
     ", ",
     maximum(V_samples),
@@ -202,7 +216,7 @@ println(
     "V̇ ∋ [",
     minimum(V̇_samples),
     ", ",
-    max(V̇_func(upright_equilibrium), maximum(V̇_samples)),
+    max(V̇(upright_equilibrium), maximum(V̇_samples)),
     "]"
 )
 

@@ -18,8 +18,8 @@ function open_loop_pendulum_dynamics(x, u, p, t)
             -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
-lb = [0.0, -10.0];
-ub = [2π, 10.0];
+lb = [0.0, -2.0];
+ub = [2π, 2.0];
 upright_equilibrium = [π, 0.0]
 p = [0.5, 1.0]
 state_syms = [:θ, :ω]
@@ -46,22 +46,22 @@ strategy = StochasticTraining(5000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
-structure = add_policy_search(
-    structure,
-    dim_u
-)
+structure = add_policy_search(structure, dim_u)
+
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability()
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -131,7 +131,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 # Training should result in a locally stable fixed point at the upright equilibrium
 @test all(isapprox.(
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
-    0.0; atol = 2e-4))
+    0.0; atol = 1e-5))
 @test all(
     eigvals(
         ForwardDiff.jacobian(
@@ -143,7 +143,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 
 # Check for local negative definiteness of V̇
 @test V̇(upright_equilibrium) == 0.0
-@test all(isapprox.(ForwardDiff.gradient(V̇, upright_equilibrium), 0.0; atol=4e-4))
+@test all(isapprox.(ForwardDiff.gradient(V̇, upright_equilibrium), 0.0; atol=1e-6))
 @test_broken all(eigvals(ForwardDiff.hessian(V̇, upright_equilibrium)) .≤ 0)
 
 # V̇ should be negative almost everywhere

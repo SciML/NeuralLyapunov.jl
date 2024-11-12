@@ -97,26 +97,29 @@ function StabilityISL(; rectifier = (t) -> max(zero(t), t))
 end
 
 """
-    AsymptoticStability(; C, rectifier)
+    AsymptoticStability(; C, strength, rectifier)
 
 Construct a [`LyapunovDecreaseCondition`](@ref) corresponding to asymptotic stability.
 
 The decrease condition for asymptotic stability is ``V̇(x) < 0``, which is here represented
-as ``V̇(x) ≤ - C \\lVert x - x_0 \\rVert^2`` for some ``C > 0``. ``C`` defaults to `1e-6`.
+as ``V̇(x) ≤ - \\texttt{strength}(x, x_0)``, where `strength` is positive definite around
+``x_0``. By default, ``\\texttt{strength}(x, x_0) = C \\lVert x - x_0 \\rVert^2`` for the
+supplied ``C > 0``. ``C`` defaults to `1e-6`.
 
 The inequality is represented by
-``\\texttt{rectifier}(V̇(x) + C \\lVert x - x_0 \\rVert^2) = 0``.
+``\\texttt{rectifier}(V̇(x) + \\texttt{strength}(x, x_0)) = 0``.
 The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
 but differentiable approximations of this function may be employed.
 """
 function AsymptoticStability(;
         C::Real = 1e-6,
+        strength = (x, x0) -> C * (x - x0) ⋅ (x - x0),
         rectifier = (t) -> max(zero(t), t)
 )::LyapunovDecreaseCondition
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt,
-        (x, x0) -> C * (x - x0) ⋅ (x - x0),
+        strength,
         rectifier
     )
 end
