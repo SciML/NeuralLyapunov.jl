@@ -89,8 +89,10 @@ RoA = (first(RoA_states), last(RoA_states))
 @test min(V(fixed_point), minimum(V_samples)) ≥ 0.0
 @test V(fixed_point) == 0.0
 
-# Dynamics should result in a fixed point at the origin
+# Check local negative definiteness of V̇ at fixed point
 @test V̇(fixed_point) == 0.0
+@test ForwardDiff.gradient(V̇, fixed_point)[] == 0.0
+@test ForwardDiff.hessian(V̇, fixed_point)[] ≤ 0
 
 # V̇ should be negative everywhere in the region of attraction except the fixed point
 @test all(V̇(transpose(RoA_states[RoA_states .!= fixed_point[]])) .< 0)

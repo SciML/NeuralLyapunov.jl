@@ -2,7 +2,7 @@ using NeuralPDE, Lux, NeuralLyapunov
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
-using Test
+using Test, LinearAlgebra, ForwardDiff
 
 Random.seed!(200)
 
@@ -97,7 +97,7 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,
@@ -113,24 +113,38 @@ u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)
 xs = (-2π):0.02:(2π)
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V_func(hcat(states...)))
-dVdt_predict = vec(V̇_func(hcat(states...)))
+V_predict = vec(V(hcat(states...)))
+dVdt_predict = vec(V̇(hcat(states...)))
 
 #################################### Tests ####################################
 
 # Network structure should enforce positive definiteness
-@test V_func(upright_equilibrium) == 0.0
-@test min(V_func(upright_equilibrium), minimum(V_predict)) ≥ 0.0
+@test V(upright_equilibrium) == 0.0
+@test min(V(upright_equilibrium), minimum(V_predict)) ≥ 0.0
+@test all(ForwardDiff.gradient(V, upright_equilibrium) .== 0.0)
+@test all(eigvals(ForwardDiff.hessian(V, upright_equilibrium)) .≥ 0)
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(2, 100) .+ lb
-@test all(isapprox.(V_func(x0), V_func(x0 .+ [2π, 0.0]); rtol = 1e-3))
+@test all(isapprox.(V(x0), V(x0 .+ [2π, 0.0]); rtol = 1e-3))
 
-# Training should result in a fixed point at the upright equilibrium
+# Training should result in a locally stable fixed point at the upright equilibrium
 @test all(isapprox.(
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
     0.0; atol = 2e-4))
-@test V̇_func(upright_equilibrium) == 0.0
+@test all(
+    eigvals(
+        ForwardDiff.jacobian(
+            x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
+            upright_equilibrium
+        )
+    ) .< 0
+)
+
+# Check for local negative definiteness of V̇
+@test V̇(upright_equilibrium) == 0.0
+@test all(isapprox.(ForwardDiff.gradient(V̇, upright_equilibrium), 0.0; atol=4e-4))
+@test_broken all(eigvals(ForwardDiff.hessian(V̇, upright_equilibrium)) .≤ 0)
 
 # V̇ should be negative almost everywhere
 @test sum(dVdt_predict .> 0) / length(dVdt_predict) < 5e-3
@@ -168,14 +182,14 @@ x_end, y_end = sin(θ_end), -cos(θ_end)
 
 #=
 # Print statistics
-println("V(π, 0) = ", V_func(upright_equilibrium))
+println("V(π, 0) = ", V(upright_equilibrium))
 println(
     "f([π, 0], u([π, 0])) = ",
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
 )
 println(
     "V ∋ [",
-    min(V_func(upright_equilibrium),
+    min(V(upright_equilibrium),
     minimum(V_predict)),
     ", ",
     maximum(V_predict),
@@ -185,7 +199,7 @@ println(
     "V̇ ∋ [",
     minimum(dVdt_predict),
     ", ",
-    max(V̇_func(upright_equilibrium), maximum(dVdt_predict)),
+    max(V̇(upright_equilibrium), maximum(dVdt_predict)),
     "]"
 )
 
