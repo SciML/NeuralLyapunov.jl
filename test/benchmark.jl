@@ -1,6 +1,6 @@
 using NeuralPDE, NeuralLyapunov, Lux
 import Boltz.Layers: PeriodicEmbedding
-using OptimizationOptimisers
+using OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Test
 
@@ -98,8 +98,8 @@ function open_loop_pendulum_dynamics(x, u, p, t)
             -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
-lb = [0.0, -10.0];
-ub = [2π, 10.0];
+lb = [0.0, -2.0];
+ub = [2π, 2.0];
 upright_equilibrium = [π, 0.0]
 p = [0.5, 1.0]
 state_syms = [:θ, :ω]
@@ -120,25 +120,25 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = QuadratureTraining()
+strategy = StochasticTraining(5000)
 
 # Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
-structure = add_policy_search(
-    structure,
-    dim_u
-)
+structure = add_policy_search(structure, dim_u)
+
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability()
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -147,12 +147,26 @@ spec = NeuralLyapunovSpecification(
     decrease_condition
 )
 
+@named pde_system = NeuralLyapunovPDESystem(
+    open_loop_pendulum_dynamics,
+    lb,
+    ub,
+    spec;
+    fixed_point = upright_equilibrium,
+    p = p,
+    state_syms = state_syms,
+    parameter_syms = parameter_syms,
+    policy_search = true
+)
+discretization = PhysicsInformedNN(chain, strategy)
+sym_prob = symbolic_discretize(pde_system, discretization)
+
 # Define optimization parameters
-opt = OptimizationOptimisers.Adam()
-optimization_args = [:maxiters => 1000]
+opt = [OptimizationOptimisers.Adam(), OptimizationOptimJL.BFGS()]
+optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
 # Run benchmark
-cm, time = benchmark(
+(cm, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples) = benchmark(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -163,19 +177,20 @@ cm, time = benchmark(
     simulation_time = 200,
     n_grid = 20,
     fixed_point = upright_equilibrium,
-    p = p,
-    optimization_args = optimization_args,
-    state_syms = state_syms,
-    parameter_syms = parameter_syms,
+    p,
+    optimization_args,
+    state_syms,
+    parameter_syms,
     policy_search = true,
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3),
+    verbose = true
 )
 
 # Resulting controller should drive more states to equilibrium than not
-@test_broken cm.p > cm.n
+@test cm.p > cm.n
 
 # Resulting classifier should be accurate
-@test_broken (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
+@test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
 
 end
 
