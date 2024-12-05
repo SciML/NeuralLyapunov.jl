@@ -24,7 +24,7 @@ as specified originally by `lyapunov_structure`.
 function add_policy_search(
         lyapunov_structure::NeuralLyapunovStructure,
         new_dims::Integer;
-        control_structure::Function = identity
+        control_structure::Function = (φ, x) -> φ
 )::NeuralLyapunovStructure
     let V = lyapunov_structure.V, V̇ = lyapunov_structure.V̇,
         V_dim = lyapunov_structure.network_dim, nd = new_dims, u = control_structure
@@ -43,10 +43,10 @@ function add_policy_search(
             end,
             function (net, J_net, f, state, params, t, fixed_point)
                 V̇(st -> net(st)[1:V_dim], st -> J_net(st)[1:V_dim, :],
-                    (st, p, t) -> f(st, u(net(st)[(V_dim + 1):end]), p, t), state, params,
+                    (st, p, t) -> f(st, u(net(st)[(V_dim + 1):end], st), p, t), state, params,
                     t, fixed_point)
             end,
-            (f, net, state, p, t) -> f(state, u(net(state)[(V_dim + 1):end]), p, t),
+            (f, net, state, p, t) -> f(state, u(net(state)[(V_dim + 1):end], state), p, t),
             V_dim + nd
         )
     end
@@ -80,14 +80,14 @@ function get_policy(
         θ,
         network_dim::Integer,
         control_dim::Integer;
-        control_structure::Function = identity
+        control_structure::Function = (φ, x) -> φ
 )
     network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
 
-    policy(state::AbstractVector) = control_structure(network_func(state))
+    policy(state::AbstractVector) = control_structure(network_func(state), state)
     policy(states::AbstractMatrix) = mapslices(
-            control_structure,
-            network_func(states),
+            x -> control_structure(network_func(x), x),
+            states,
             dims = [1]
         )
 

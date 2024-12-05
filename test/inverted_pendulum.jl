@@ -42,7 +42,7 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = StochasticTraining(5000)
+strategy = QuadratureTraining()#QuasiRandomTraining(5000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -56,12 +56,16 @@ structure = PositiveSemiDefiniteStructure(
     dim_phi;
     pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
-structure = add_policy_search(structure, dim_u)
+control_structure = let x0 = upright_equilibrium
+    (φ, x) -> φ * tanh(periodic_pos_def(x, x0))
+end
+
+structure = add_policy_search(structure, dim_u; control_structure)
 
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability(strength = periodic_pos_def)
+decrease_condition = AsymptoticStability(strength = (x, x0) -> 10 * periodic_pos_def(x, x0))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -86,11 +90,13 @@ spec = NeuralLyapunovSpecification(
 
 ######################## Construct OptimizationProblem ########################
 
-sym_prob = symbolic_discretize(pde_system, discretization)
+# sym_prob = symbolic_discretize(pde_system, discretization)
 prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
@@ -106,7 +112,7 @@ V, V̇ = get_numerical_lyapunov_function(
     p = p
 )
 
-u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)
+u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u; control_structure)
 
 ################################## Simulate ###################################
 
