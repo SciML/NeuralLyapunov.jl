@@ -68,9 +68,15 @@ end
 
 function get_decrease_condition(cond::LyapunovDecreaseCondition)
     if cond.check_decrease
-        return (V, dVdt, x, fixed_point) -> cond.rectifier(
-            cond.rate_metric(V(x), dVdt(x)) + cond.strength(x, fixed_point)
-        )
+        return function (V, dVdt, x, fixed_point)
+            _V = V(x)
+            _V = _V isa AbstractVector ? _V[] : _V
+            _V̇ = dVdt(x)
+            _V̇ = _V̇ isa AbstractVector ? _V̇[] : _V̇
+            return cond.rectifier(
+                cond.rate_metric(_V, _V̇) + cond.strength(x, fixed_point)
+            )
+        end
     else
         return nothing
     end

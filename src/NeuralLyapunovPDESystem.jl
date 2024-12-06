@@ -255,7 +255,7 @@ function _NeuralLyapunovPDESystem(
     end
 
     ################ Define equations and boundary conditions #################
-    eqs = []
+    eqs = Equation[]
 
     if check_nonnegativity(minimization_condition)
         cond = get_minimization_condition(minimization_condition)
@@ -267,10 +267,12 @@ function _NeuralLyapunovPDESystem(
         push!(eqs, cond(V, V̇, state, fixed_point) ~ 0.0)
     end
 
-    bcs = []
+    bcs = Equation[]
 
     if check_minimal_fixed_point(minimization_condition)
-        push!(bcs, V(fixed_point) ~ 0.0)
+        _V = V(fixed_point)
+        _V = _V isa AbstractVector ? _V[] : _V
+        push!(bcs, _V ~ 0.0)
     end
 
     if policy_search

@@ -103,10 +103,14 @@ end
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
     if cond.check_decrease
         return function (V, dVdt, x, fixed_point)
-            cond.sigmoid(cond.ρ - V(x)) * cond.rectifier(
-                cond.rate_metric(V(x), dVdt(x)) + cond.strength(x, fixed_point)
+            _V = V(x)
+            _V = _V isa AbstractVector ? _V[] : _V
+            _V̇ = dVdt(x)
+            _V̇ = _V̇ isa AbstractVector ? _V̇[] : _V̇
+            return cond.sigmoid(cond.ρ - _V) * cond.rectifier(
+                cond.rate_metric(_V, _V̇) + cond.strength(x, fixed_point)
             ) +
-            cond.sigmoid(V(x) - cond.ρ) * cond.out_of_RoA_penalty(V(x), dVdt(x), x, fixed_point,
+            cond.sigmoid(_V - cond.ρ) * cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point,
                 cond.ρ)
         end
     else
