@@ -16,6 +16,9 @@ using SafeTestsets
     @time @safetestset "Policy search - inverted pendulum 2" begin
         include("inverted_pendulum_ODESystem.jl")
     end
+    @time @safetestset "CUDA test - Damped SHO" begin
+        include("damped_sho_CUDA.jl")
+    end
     @time @safetestset "Local Lyapunov function search" begin
         include("local_lyapunov.jl")
     end

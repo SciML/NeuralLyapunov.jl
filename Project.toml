@@ -18,6 +18,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 ForwardDiff = "0.10"
 JuMP = "1"
 Lux = "1"
+LuxCUDA = "0.3.3"
 ModelingToolkit = "8, 9"
 NLopt = "1"
 NeuralPDE = "5.17"
@@ -30,6 +31,7 @@ Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 CSDP = "0a46da34-8e4b-519e-b418-48813639ff34"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
+LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
 NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
@@ -40,4 +42,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["SafeTestsets", "Test", "Lux", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NLopt", "Random", "NeuralPDE", "CSDP", "Boltz", "ComponentArrays"]
+test = ["SafeTestsets", "Test", "Lux", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NLopt", "Random", "NeuralPDE", "CSDP", "Boltz", "ComponentArrays", "LuxCUDA"]
