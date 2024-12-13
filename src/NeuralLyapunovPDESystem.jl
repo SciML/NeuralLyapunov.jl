@@ -175,7 +175,8 @@ function NeuralLyapunovPDESystem(
     else
         (f, _), x, params = ModelingToolkit.generate_control_function(
             dynamics;
-            simplify = true
+            simplify = true,
+            split = false
         )
         (f, x, params, true)
     end
@@ -255,7 +256,7 @@ function _NeuralLyapunovPDESystem(
     end
 
     ################ Define equations and boundary conditions #################
-    eqs = []
+    eqs = Equation[]
 
     if check_nonnegativity(minimization_condition)
         cond = get_minimization_condition(minimization_condition)
@@ -267,10 +268,12 @@ function _NeuralLyapunovPDESystem(
         push!(eqs, cond(V, V̇, state, fixed_point) ~ 0.0)
     end
 
-    bcs = []
+    bcs = Equation[]
 
     if check_minimal_fixed_point(minimization_condition)
-        push!(bcs, V(fixed_point) ~ 0.0)
+        _V = V(fixed_point)
+        _V = _V isa AbstractVector ? _V[] : _V
+        push!(bcs, _V ~ 0.0)
     end
 
     if policy_search
@@ -282,16 +285,16 @@ function _NeuralLyapunovPDESystem(
     end
 
     # NeuralPDE requires an equation and a boundary condition, even if they are
-    # trivial like 0.0 == 0.0, so we remove those trivial equations if they showed up
+    # trivial like φ(0.0) == φ(0.0), so we remove those trivial equations if they showed up
     # naturally alongside other equations and add them in if we have no other equations
     eqs = filter(eq -> eq != (0.0 ~ 0.0), eqs)
     bcs = filter(eq -> eq != (0.0 ~ 0.0), bcs)
 
     if isempty(eqs)
-        push!(eqs, 0.0 ~ 0.0)
+        push!(eqs, φ(fixed_point)[1] ~ φ(fixed_point)[1])
     end
     if isempty(bcs)
-        push!(bcs, 0.0 ~ 0.0)
+        push!(bcs, φ(fixed_point)[1] ~ φ(fixed_point)[1])
     end
 
     ########################### Construct PDESystem ###########################

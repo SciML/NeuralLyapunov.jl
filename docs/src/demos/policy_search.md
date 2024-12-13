@@ -13,7 +13,8 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 ## Copy-Pastable Code
 
 ```julia
-using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 
@@ -54,8 +55,8 @@ dim_hidden = 20
 dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -115,7 +116,7 @@ net = discretization.phi
 _θ = res.u.depvar
 
 (open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    driven_pendulum; simplify = true)
+    driven_pendulum; simplify = true, split = false)
 p = [defaults[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
@@ -189,7 +190,7 @@ dim_hidden = 20
 dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Lux.Chain(
+chain = [Chain(
              PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
@@ -280,7 +281,7 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(driven_pendulum; simplify = true)
+(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(driven_pendulum; simplify = true, split = false)
 p = [defaults[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(

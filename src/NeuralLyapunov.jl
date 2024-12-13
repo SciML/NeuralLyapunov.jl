@@ -6,7 +6,7 @@ using LinearAlgebra
 using ModelingToolkit
 import SciMLBase
 using NeuralPDE
-import DifferentialEquations: Tsit5
+import OrdinaryDiffEq: Tsit5
 import EvalMetrics: ConfusionMatrix
 
 include("conditions_specification.jl")

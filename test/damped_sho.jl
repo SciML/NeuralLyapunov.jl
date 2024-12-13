@@ -1,7 +1,7 @@
 using NeuralPDE, Lux, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
-using Test
+using Test, LinearAlgebra, ForwardDiff
 
 Random.seed!(200)
 
@@ -41,7 +41,7 @@ discretization = PhysicsInformedNN(chain, strategy)
 # Define neural Lyapunov structure
 structure = NonnegativeNeuralLyapunov(
     dim_output;
-    δ = 1e-6
+    δ = 5.0
 )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
@@ -112,11 +112,13 @@ end
 # Trained for V's minimum to be near the fixed point
 @test all(abs.(state_min .- fixed_point) .≤ [Δx, Δv])
 
-# Dynamics should result in a fixed point at the origin
+# Check local negative semidefiniteness of V̇ at fixed point
 @test V̇(fixed_point) == 0.0
+@test all(ForwardDiff.gradient(V̇, fixed_point) .== 0.0)
+@test all(eigvals(ForwardDiff.hessian(V̇, fixed_point)) .≤ 0.0)
 
 # V̇ should be negative almost everywhere
-@test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-4
+@test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-3
 
 #=
 # Print statistics

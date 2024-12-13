@@ -62,7 +62,11 @@ end
 
 function get_minimization_condition(cond::LyapunovMinimizationCondition)
     if cond.check_nonnegativity
-        return (V, x, fixed_point) -> cond.rectifier(cond.strength(x, fixed_point) - V(x))
+        return function (V, x, fixed_point)
+            _V = V(x)
+            _V = _V isa AbstractVector ? _V[] : _V
+            return cond.rectifier(cond.strength(x, fixed_point) - _V)
+        end
     else
         return nothing
     end

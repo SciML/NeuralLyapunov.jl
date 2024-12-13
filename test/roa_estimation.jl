@@ -1,7 +1,7 @@
 using NeuralPDE, Lux, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
-using Test
+using Test, LinearAlgebra, ForwardDiff
 
 Random.seed!(200)
 
@@ -27,7 +27,7 @@ chain = [Lux.Chain(
          ) for _ in 1:dim_output]
 
 # Define training strategy
-strategy = GridTraining(0.1)
+strategy = QuadratureTraining()
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -35,7 +35,7 @@ structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
 # Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(StabilityISL())
+decrease_condition = make_RoA_aware(StabilityISL(rectifier = (t) -> log(one(t) + exp(t))))
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -89,8 +89,10 @@ RoA = (first(RoA_states), last(RoA_states))
 @test min(V(fixed_point), minimum(V_samples)) ≥ 0.0
 @test V(fixed_point) == 0.0
 
-# Dynamics should result in a fixed point at the origin
+# Check local negative definiteness of V̇ at fixed point
 @test V̇(fixed_point) == 0.0
+@test ForwardDiff.gradient(V̇, fixed_point)[] == 0.0
+@test ForwardDiff.hessian(V̇, fixed_point)[] ≤ 0
 
 # V̇ should be negative everywhere in the region of attraction except the fixed point
 @test all(V̇(transpose(RoA_states[RoA_states .!= fixed_point[]])) .< 0)

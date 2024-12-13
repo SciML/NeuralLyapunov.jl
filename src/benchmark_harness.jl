@@ -13,6 +13,13 @@ fixed point. Return a confusion matrix for the neural Lyapunov classifier using 
 of the simulated trajectories as ground truth. Additionally return the time it took for the
 optimization to run.
 
+To use multiple solvers, users should supply a vector of optimizers in `opt`. The first
+optimizer will be used, then the problem will be remade with the result of the first
+optimization as the initial guess. Then, the second optimizer will be used, and so on.
+Supplying a vector of `Pair`s in `optimization_args` will use the same arguments for each
+optimization pass, and supplying a vector of such vectors will use potentially different
+arguments for each optimization pass.
+
 # Positional Arguments
   - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
     function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
@@ -56,8 +63,8 @@ optimization to run.
     !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`, `policy_search` should
     not be supplied (as it must be false); when `dynamics isa ODESystem`, value inferred by
     the presence of unbound inputs.
-  - `optimization_args`: arguments to be passed into the optimization solver. For more
-    information, see the
+  - `optimization_args`: arguments to be passed into the optimization solver, as a vector of
+    `Pair`s. For more information, see the
     [Optimization.jl docs](https://docs.sciml.ai/Optimization/stable/API/solve/).
   - `simulation_time`: simulation end time for checking if trajectory from a point reaches
     equilibrium
@@ -107,7 +114,11 @@ function benchmark(
     f, params = if isempty(ModelingToolkit.unbound_inputs(dynamics))
         ODEFunction(dynamics), parameters(dynamics)
     else
-        (_f, _), _, _p = ModelingToolkit.generate_control_function(dynamics, simplify = true)
+        (_f, _), _, _p = ModelingToolkit.generate_control_function(
+            dynamics,
+            simplify = true,
+            split = false
+        )
         _f, _p
     end
 
@@ -221,8 +232,8 @@ function _benchmark(
         pde_system,
         chain,
         strategy,
-        opt;
-        optimization_args = optimization_args
+        opt,
+        optimization_args
     )
     solve_time = t.time
     θ, phi = t.value
@@ -278,13 +289,46 @@ function _benchmark(
     end
 end
 
-function benchmark_solve(pde_system, chain, strategy, opt; optimization_args)
+function benchmark_solve(pde_system, chain, strategy, opt, optimization_args)
     # Construct OptimizationProblem
     discretization = PhysicsInformedNN(chain, strategy)
     prob = discretize(pde_system, discretization)
 
     # Solve OptimizationProblem
     res = solve(prob, opt; optimization_args...)
+
+    # Return parameters θ and network phi
+    return res.u.depvar, discretization.phi
+end
+
+function benchmark_solve(pde_system, chain, strategy, opt::AbstractVector, optimization_args::AbstractVector{<:AbstractVector})
+    # Construct OptimizationProblem
+    discretization = PhysicsInformedNN(chain, strategy)
+    prob = discretize(pde_system, discretization)
+
+    # Solve OptimizationProblem
+    res = Ref{Any}()
+    for i in eachindex(opt)
+        _res = solve(prob, opt[i]; optimization_args[i]...)
+        prob = remake(prob, u0 = _res.u)
+        res[] = _res
+    end
+
+    # Return parameters θ and network phi
+    return res[].u.depvar, discretization.phi
+end
+
+function benchmark_solve(pde_system, chain, strategy, opt::AbstractVector, optimization_args)
+    # Construct OptimizationProblem
+    discretization = PhysicsInformedNN(chain, strategy)
+    prob = discretize(pde_system, discretization)
+
+    # Solve OptimizationProblem
+    res = for i in eachindex(opt)
+        _res = solve(prob, opt[i]; optimization_args...)
+        prob = Optimization.remake(prob, u0 = _res.u)
+        _res
+    end
 
     # Return parameters θ and network phi
     return res.u.depvar, discretization.phi

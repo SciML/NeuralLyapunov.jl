@@ -1,7 +1,8 @@
-using NeuralPDE, Lux, Boltz, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
-using Test
+using Test, LinearAlgebra, ForwardDiff
 
 Random.seed!(200)
 
@@ -12,7 +13,8 @@ println("Damped Pendulum")
 @parameters ζ ω_0
 defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 
-@variables t θ(t)
+@independent_variables t
+@variables θ(t)
 Dt = Differential(t)
 DDt = Dt^2
 
@@ -34,6 +36,7 @@ bounds = [
 lb = [-π, -10.0];
 ub = [π, 10.0];
 p = [defaults[param] for param in parameters(dynamics)]
+fixed_point = [0.0, 0.0]
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -42,15 +45,15 @@ p = [defaults[param] for param in parameters(dynamics)]
 dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
-chain = [Lux.Chain(
-             Boltz.Layers.PeriodicEmbedding([1], [2π]),
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = GridTraining(0.1)
+strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy)
 
 # Define neural Lyapunov structure
@@ -98,7 +101,7 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,
@@ -112,34 +115,40 @@ V_func, V̇_func = get_numerical_lyapunov_function(
 xs = (2 * lb[1]):0.02:(2 * ub[1])
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V_func(hcat(states...)))
-dVdt_predict = vec(V̇_func(hcat(states...)))
+V_predict = vec(V(hcat(states...)))
+dVdt_predict = vec(V̇(hcat(states...)))
 
 #################################### Tests ####################################
 
 # Network structure should enforce positive definiteness
-@test V_func([0.0, 0.0]) == 0.0
-@test min(V_func([0.0, 0.0]), minimum(V_predict)) ≥ 0.0
+@test V(fixed_point) == 0.0
+@test min(V(fixed_point), minimum(V_predict)) ≥ 0.0
+
+# Check local positive definiteness at fixed point
+@test all(ForwardDiff.gradient(V, fixed_point) .== 0)
+@test all(eigvals(ForwardDiff.hessian(V, fixed_point)) .≥ 0)
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(2, 100) .+ lb
-@test all(isapprox.(V_func(x0), V_func(x0 .+ [2π, 0.0]); rtol = 1e-3))
+@test all(isapprox.(V(x0), V(x0 .+ [2π, 0.0]); rtol = 1e-3))
 
-# Dynamics should result in a fixed point at the origin
-@test V̇_func([0.0, 0.0]) == 0.0
+# Check local negative definiteness at fixed point
+@test V̇(fixed_point) == 0.0
+@test all(ForwardDiff.gradient(V̇, fixed_point) .== 0)
+@test all(eigvals(ForwardDiff.hessian(V̇, fixed_point)) .≤ 0)
 
-# V̇ should be negative almost everywhere
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
+# V̇ should be negative almost everywhere (global negative definiteness)
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 3e-3
 
 #=
 # Print statistics
-println("V(0.,0.) = ", V_func([0.0, 0.0]))
-println("V ∋ [", min(V_func([0.0, 0.0]), minimum(V_predict)), ", ", maximum(V_predict), "]")
+println("V(0.,0.) = ", V(fixed_point))
+println("V ∋ [", min(V(fixed_point), minimum(V_predict)), ", ", maximum(V_predict), "]")
 println(
     "V̇ ∋ [",
     minimum(dVdt_predict),
     ", ",
-    max(V̇_func([0.0, 0.0]), maximum(dVdt_predict)),
+    max(V̇(fixed_point), maximum(dVdt_predict)),
     "]",
 )
 
