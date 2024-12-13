@@ -175,7 +175,8 @@ function NeuralLyapunovPDESystem(
     else
         (f, _), x, params = ModelingToolkit.generate_control_function(
             dynamics;
-            simplify = true
+            simplify = true,
+            split = false
         )
         (f, x, params, true)
     end

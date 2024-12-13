@@ -106,7 +106,7 @@ net = discretization.phi
 _θ = res.u.depvar
 
 (open_loop_pendulum_dynamics, _), state_order, p_order =
-    ModelingToolkit.generate_control_function(driven_pendulum; simplify = true)
+    ModelingToolkit.generate_control_function(driven_pendulum; simplify = true, split = false)
 p = [defaults[param] for param in p_order]
 
 V, V̇ = get_numerical_lyapunov_function(

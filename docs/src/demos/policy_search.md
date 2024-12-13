@@ -116,7 +116,7 @@ net = discretization.phi
 _θ = res.u.depvar
 
 (open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    driven_pendulum; simplify = true)
+    driven_pendulum; simplify = true, split = false)
 p = [defaults[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
@@ -281,7 +281,7 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(driven_pendulum; simplify = true)
+(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(driven_pendulum; simplify = true, split = false)
 p = [defaults[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
