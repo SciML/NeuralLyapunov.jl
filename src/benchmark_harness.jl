@@ -114,7 +114,11 @@ function benchmark(
     f, params = if isempty(ModelingToolkit.unbound_inputs(dynamics))
         ODEFunction(dynamics), parameters(dynamics)
     else
-        (_f, _), _, _p = ModelingToolkit.generate_control_function(dynamics, simplify = true)
+        (_f, _), _, _p = ModelingToolkit.generate_control_function(
+            dynamics,
+            simplify = true,
+            split = false
+        )
         _f, _p
     end
 

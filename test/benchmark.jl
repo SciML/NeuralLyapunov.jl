@@ -120,7 +120,7 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
-strategy = StochasticTraining(5000)
+strategy = StochasticTraining(10000)
 
 # Define neural Lyapunov structure
 periodic_pos_def = function (state, fixed_point)
