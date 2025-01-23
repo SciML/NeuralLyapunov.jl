@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, NeuralLyapunov
+using NeuralPDE, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Lux, LuxCUDA, ComponentArrays
