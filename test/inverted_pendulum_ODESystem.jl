@@ -6,7 +6,7 @@ using Test, LinearAlgebra, ForwardDiff
 
 Random.seed!(200)
 
-println("Inverted Pendulum - Policy Search 2")
+println("Inverted Pendulum - Policy Search (ODESystem)")
 
 ######################### Define dynamics and domain ##########################
 
