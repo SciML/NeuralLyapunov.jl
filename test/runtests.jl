@@ -1,28 +1,47 @@
 using SafeTestsets
 
+const GROUP = lowercase(get(ENV, "GROUP", "all"))
+
 @time begin
-    @time @safetestset "Damped simple harmonic oscillator" begin
-        include("damped_sho.jl")
+    if GROUP == "all" || GROUP == "core"
+        @time @safetestset "Damped simple harmonic oscillator" begin
+            include("damped_sho.jl")
+        end
+        @time @safetestset "Damped pendulum" begin
+            include("damped_pendulum.jl")
+        end
     end
-    @time @safetestset "Damped pendulum" begin
-        include("damped_pendulum.jl")
+
+    if GROUP == "all" || GROUP == "policy_search"
+        @time @safetestset "Policy search - inverted pendulum" begin
+            include("inverted_pendulum.jl")
+        end
+        @time @safetestset "Policy search - inverted pendulum (ODESystem)" begin
+            include("inverted_pendulum_ODESystem.jl")
+        end
     end
-    @time @safetestset "Region of attraction estimation" begin
-        include("roa_estimation.jl")
+
+    if GROUP == "all" || GROUP == "roa"
+        @time @safetestset "Region of attraction estimation" begin
+            include("roa_estimation.jl")
+        end
     end
-    @time @safetestset "Policy search - inverted pendulum" begin
-        include("inverted_pendulum.jl")
+
+    if GROUP == "all" || GROUP == "local_lyapunov"
+        @time @safetestset "Local Lyapunov function search" begin
+            include("local_lyapunov.jl")
+        end
     end
-    @time @safetestset "Policy search - inverted pendulum 2" begin
-        include("inverted_pendulum_ODESystem.jl")
+
+    if GROUP == "all" || GROUP == "unimplemented"
+        @time @safetestset "Errors for partially-implemented extensions" begin
+            include("unimplemented.jl")
+        end
     end
-    @time @safetestset "Local Lyapunov function search" begin
-        include("local_lyapunov.jl")
-    end
-    @time @safetestset "Errors for partially-implemented extensions" begin
-        include("unimplemented.jl")
-    end
-    @time @safetestset "Benchmarking tool" begin
-        include("benchmark.jl")
+
+    if GROUP == "all" || GROUP == "benchmarking"
+        @time @safetestset "Benchmarking tool" begin
+            include("benchmark.jl")
+        end
     end
 end
