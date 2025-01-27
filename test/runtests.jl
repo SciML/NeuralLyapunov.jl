@@ -33,7 +33,7 @@ const GROUP = lowercase(get(ENV, "GROUP", "all"))
         end
     end
 
-    if GROUP == "all" || GROUP == "cuda"
+    if GROUP == "gpu"
         @time @safetestset "CUDA test - Damped SHO" begin
             include("damped_sho_CUDA.jl")
         end
