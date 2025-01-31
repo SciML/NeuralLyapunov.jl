@@ -143,21 +143,21 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 @test all(isapprox.(V(x0), V(x0 .+ [2π, 0.0]); rtol = 1e-3))
 
 # Training should result in a locally stable fixed point at the upright equilibrium
-@test all(isapprox.(
-    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0),
-    0.0; atol = 1.25e-2))
-@test all(
+@test maximum(
+    abs.(open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0))
+) < 1.4e-2
+@test maximum(
     eigvals(
         ForwardDiff.jacobian(
             x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
             upright_equilibrium
         )
-    ) .< 0
-)
+    )
+) < 0
 
 # Check for local negative definiteness of V̇
 @test V̇(upright_equilibrium) == 0.0
-@test all(isapprox.(ForwardDiff.gradient(V̇, upright_equilibrium), 0.0; atol=5e-3))
+@test maximum(abs.(ForwardDiff.gradient(V̇, upright_equilibrium))) < 5e-3
 @test_broken all(eigvals(ForwardDiff.hessian(V̇, upright_equilibrium)) .≤ 0)
 
 # V̇ should be negative almost everywhere

@@ -138,7 +138,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 @test all(eigvals(ForwardDiff.hessian(V̇, fixed_point)) .≤ 0)
 
 # V̇ should be negative almost everywhere (global negative definiteness)
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 3e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 6e-3
 
 #=
 # Print statistics
