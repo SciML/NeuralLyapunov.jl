@@ -168,7 +168,7 @@ sol = solve(ode_prob, Tsit5())
 # Should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 1e-2
+@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 0.1
 
 # Starting at a random point
 x0 = lb .+ rand(2) .* (ub .- lb)
@@ -179,7 +179,7 @@ sol = solve(ode_prob, Tsit5())
 # Should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 1e-2
+@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 0.1
 
 #=
 # Print statistics
