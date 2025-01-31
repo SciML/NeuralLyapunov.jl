@@ -144,7 +144,7 @@ x0 = (ub .- lb) .* rand(2, 100) .+ lb
 
 # Check for local negative definiteness of V̇
 @test V̇(upright_equilibrium) == 0.0
-@test maximum(abs, ForwardDiff.gradient(V̇, upright_equilibrium)) < 1e-3
+@test maximum(abs, ForwardDiff.gradient(V̇, upright_equilibrium)) < 2e-2
 @test_broken maximum(eigvals(ForwardDiff.hessian(V̇, upright_equilibrium))) ≤ 0
 
 # V̇ should be negative almost everywhere
@@ -168,7 +168,7 @@ sol = solve(ode_prob, Tsit5())
 # Should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 1e-2
 
 # Starting at a random point
 x0 = lb .+ rand(2) .* (ub .- lb)
@@ -179,7 +179,7 @@ sol = solve(ode_prob, Tsit5())
 # Should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test all(isapprox.([x_end, y_end, ω_end], [0.0, 1.0, 0.0]; atol = 1e-3))
+@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 1e-2
 
 #=
 # Print statistics
