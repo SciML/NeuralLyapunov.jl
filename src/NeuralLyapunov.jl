@@ -8,6 +8,8 @@ import SciMLBase
 using NeuralPDE
 import OrdinaryDiffEq: Tsit5
 import EvalMetrics: ConfusionMatrix
+import LuxCore
+import StableRNGs: StableRNG
 
 include("conditions_specification.jl")
 include("structure_specification.jl")

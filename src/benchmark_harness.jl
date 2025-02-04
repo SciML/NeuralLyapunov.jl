@@ -85,6 +85,10 @@ arguments for each optimization pass.
     simulations, `actual` is the result of `endpoint_check` applied to `endpoints`,
     `predicted` is the result of `classifier` applied to `states`, `V_samples` is ``V``
     evaluated at `states`, and `V̇_samples` is ``V̇`` evaluated at `states`.
+  - `init_params`: initial parameters for the neural network; defaults to `nothing`, in which
+    case the initial parameters are generated using `Lux.initialparameters` and `rng`.
+  - `rng`: random number generator used to generate initial parameters; defaults to
+    `nothing`, in which case a `StableRNG` with seed `0` is used.
 """
 function benchmark(
     dynamics::ODESystem,
@@ -102,7 +106,9 @@ function benchmark(
     atol = 1e-6,
     endpoint_check = (x) -> ≈(x, fixed_point; atol=atol),
     classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
-    verbose = false
+    verbose = false,
+    init_params = nothing,
+    rng = nothing
 )
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
@@ -128,6 +134,12 @@ function benchmark(
     lb = [d.domain.left for d in bounds]
     ub = [d.domain.right for d in bounds]
 
+    init_params = if init_params === nothing
+        get_init_params(chain, rng)
+    else
+        init_params
+    end
+
     return _benchmark(
         pde_system,
         f,
@@ -146,7 +158,8 @@ function benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        verbose
+        verbose,
+        init_params
     )
 end
 
@@ -171,7 +184,9 @@ function benchmark(
     ode_solver_args = [],
     atol = 1e-6,
     endpoint_check = (x) -> ≈(x, fixed_point; atol=atol),
-    verbose = false
+    verbose = false,
+    init_params = nothing,
+    rng = nothing
 )
     # Build PDESystem
     @named pde_system = NeuralLyapunovPDESystem(
@@ -185,6 +200,12 @@ function benchmark(
         parameter_syms = parameter_syms,
         policy_search = policy_search
     )
+
+    init_params = if init_params === nothing
+        get_init_params(chain, rng)
+    else
+        init_params
+    end
 
     return _benchmark(
         pde_system,
@@ -204,7 +225,8 @@ function benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        verbose
+        verbose,
+        init_params
     )
 end
 
@@ -226,15 +248,19 @@ function _benchmark(
     ode_solver,
     ode_solver_args,
     endpoint_check,
-    verbose
+    verbose,
+    init_params
 )
-    t = @timed benchmark_solve(
-        pde_system,
-        chain,
-        strategy,
-        opt,
-        optimization_args
-    )
+    t = @timed begin
+        # Construct OptimizationProblem
+        discretization = PhysicsInformedNN(chain, strategy; init_params = init_params)
+        opt_prob = discretize(pde_system, discretization)
+
+        # Solve OptimizationProblem
+        θ = benchmark_solve(opt_prob, opt, optimization_args)
+        phi = discretization.phi
+        (θ, phi)
+    end
     solve_time = t.time
     θ, phi = t.value
 
@@ -289,23 +315,15 @@ function _benchmark(
     end
 end
 
-function benchmark_solve(pde_system, chain, strategy, opt, optimization_args)
-    # Construct OptimizationProblem
-    discretization = PhysicsInformedNN(chain, strategy)
-    prob = discretize(pde_system, discretization)
-
+function benchmark_solve(prob, opt, optimization_args)
     # Solve OptimizationProblem
     res = solve(prob, opt; optimization_args...)
 
-    # Return parameters θ and network phi
-    return res.u.depvar, discretization.phi
+    # Return parameters θ
+    return res.u.depvar
 end
 
-function benchmark_solve(pde_system, chain, strategy, opt::AbstractVector, optimization_args::AbstractVector{<:AbstractVector})
-    # Construct OptimizationProblem
-    discretization = PhysicsInformedNN(chain, strategy)
-    prob = discretize(pde_system, discretization)
-
+function benchmark_solve(prob, opt::AbstractVector, optimization_args::AbstractVector{<:AbstractVector})
     # Solve OptimizationProblem
     res = Ref{Any}()
     for i in eachindex(opt)
@@ -314,24 +332,21 @@ function benchmark_solve(pde_system, chain, strategy, opt::AbstractVector, optim
         res[] = _res
     end
 
-    # Return parameters θ and network phi
-    return res[].u.depvar, discretization.phi
+    # Return parameters θ
+    return res[].u.depvar
 end
 
-function benchmark_solve(pde_system, chain, strategy, opt::AbstractVector, optimization_args)
-    # Construct OptimizationProblem
-    discretization = PhysicsInformedNN(chain, strategy)
-    prob = discretize(pde_system, discretization)
-
+function benchmark_solve(prob, opt::AbstractVector, optimization_args)
     # Solve OptimizationProblem
-    res = for i in eachindex(opt)
+    res = Ref{Any}()
+    for i in eachindex(opt)
         _res = solve(prob, opt[i]; optimization_args...)
         prob = Optimization.remake(prob, u0 = _res.u)
-        _res
+        res[] = _res
     end
 
-    # Return parameters θ and network phi
-    return res.u.depvar, discretization.phi
+    # Return parameters
+    return res[].u.depvar
 end
 
 function eval_Lyapunov(lb, ub, n, V, V̇)
@@ -394,5 +409,21 @@ function build_confusion_matrix(
         (cm, states, endpoints, actual, predicted, V_samples, V̇_samples)
     else
         cm
+    end
+end
+
+function get_init_params(chain, rng)
+    rng = if rng === nothing
+        rng = StableRNG(0)
+    else
+        rng
+    end
+
+    return if chain isa AbstractArray
+        map(chain) do c
+            LuxCore.initialparameters(rng, c)
+        end
+    else
+        LuxCore.initialparameters(rng, chain)
     end
 end

@@ -1,14 +1,13 @@
 using NeuralPDE, NeuralLyapunov, Lux
 import Boltz.Layers: PeriodicEmbedding
 using OptimizationOptimisers, OptimizationOptimJL
-using Random
+using StableRNGs
 using Test
 
 ###################### Damped simple harmonic oscillator ######################
 @testset "Simple harmonic oscillator benchmarking" begin
 
 println("Benchmark: Damped SHO")
-Random.seed!(200)
 
 # Define dynamics and domain
 
@@ -87,8 +86,6 @@ end
 @testset "Policy search on inverted pendulum benchmarking" begin
 
 println("Benchmark: Inverted Pendulum - Policy Search")
-Random.seed!(200)
-
 # Define dynamics and domain
 function open_loop_pendulum_dynamics(x, u, p, t)
     θ, ω = x
@@ -108,19 +105,20 @@ parameter_syms = [:ζ, :ω_0]
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
 dim_state = length(lb)
-dim_hidden = 15
-dim_phi = 2
+dim_hidden = 25
+dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
              PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1, use_bias = false)
+             Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
+ps = Lux.initialparameters(StableRNG(0), chain)
 
 # Define neural network discretization
-strategy = StochasticTraining(10000)
+strategy = QuasiRandomTraining(10000)
 
 # Define neural Lyapunov structure
 periodic_pos_def = function (state, fixed_point)
@@ -162,7 +160,7 @@ discretization = PhysicsInformedNN(chain, strategy)
 sym_prob = symbolic_discretize(pde_system, discretization)
 
 # Define optimization parameters
-opt = [OptimizationOptimisers.Adam(), OptimizationOptimJL.BFGS()]
+opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
 optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
 # Run benchmark
@@ -183,7 +181,8 @@ optimization_args = [[:maxiters => 300], [:maxiters => 300]]
     parameter_syms,
     policy_search = true,
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3),
-    verbose = true
+    verbose = true,
+    init_params = ps
 )
 
 # Resulting controller should drive more states to equilibrium than not
@@ -198,7 +197,6 @@ end
 @testset "Damped pendulum benchmarking" begin
 
 println("Benchmark: Damped Pendulum")
-Random.seed!(200)
 
 # Define dynamics and domain
 @parameters ζ ω_0
@@ -234,7 +232,7 @@ chain = [Lux.Chain(
              PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1, use_bias = false)
+             Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 
 # Define neural network discretization
@@ -277,7 +275,8 @@ cm, time = benchmark(
     simulation_time = 300,
     n_grid = 20,
     optimization_args = optimization_args,
-    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol=1e-3)
+    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol=1e-3),
+    rng = StableRNG(0)
 )
 
 # Damped pendulum is globally asymptotically stable, except at upright equilibrium
