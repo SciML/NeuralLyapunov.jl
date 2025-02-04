@@ -1,9 +1,9 @@
 using NeuralPDE, Lux, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
-using Random
+using StableRNGs
 using Test, LinearAlgebra, ForwardDiff
 
-Random.seed!(200)
+rng = StableRNG(0)
 
 println("Damped Simple Harmonic Oscillator")
 
@@ -27,16 +27,17 @@ dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 # Define neural network discretization
 dim_state = length(lb)
 dim_hidden = 10
-dim_output = 3
+dim_output = 4
 chain = [Lux.Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
+ps = Lux.initialparameters(rng, chain)
 
 # Define training strategy
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
 structure = NonnegativeNeuralLyapunov(
@@ -114,8 +115,8 @@ end
 
 # Check local negative semidefiniteness of V̇ at fixed point
 @test V̇(fixed_point) == 0.0
-@test all(ForwardDiff.gradient(V̇, fixed_point) .== 0.0)
-@test all(eigvals(ForwardDiff.hessian(V̇, fixed_point)) .≤ 0.0)
+@test ForwardDiff.gradient(V̇, fixed_point) == zeros(2)
+@test maximum(eigvals(ForwardDiff.hessian(V̇, fixed_point))) ≤ 0.0
 
 # V̇ should be negative almost everywhere
 @test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-3

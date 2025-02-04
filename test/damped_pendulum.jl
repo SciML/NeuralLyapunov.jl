@@ -1,10 +1,10 @@
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
-using Random
+using StableRNGs
 using Test, LinearAlgebra, ForwardDiff
 
-Random.seed!(200)
+rng = StableRNG(0)
 
 println("Damped Pendulum")
 
@@ -49,12 +49,13 @@ chain = [Chain(
              PeriodicEmbedding([1], [2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1, use_bias = false)
+             Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
+ps = Lux.initialparameters(rng, chain)
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(
@@ -95,7 +96,7 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
@@ -125,20 +126,20 @@ dVdt_predict = vec(V̇(hcat(states...)))
 @test min(V(fixed_point), minimum(V_predict)) ≥ 0.0
 
 # Check local positive definiteness at fixed point
-@test all(ForwardDiff.gradient(V, fixed_point) .== 0)
-@test all(eigvals(ForwardDiff.hessian(V, fixed_point)) .≥ 0)
+@test ForwardDiff.gradient(V, fixed_point) == zeros(2)
+@test minimum(eigvals(ForwardDiff.hessian(V, fixed_point))) .≥ 0
 
 # Network structure should enforce periodicity in θ
-x0 = (ub .- lb) .* rand(2, 100) .+ lb
-@test all(isapprox.(V(x0), V(x0 .+ [2π, 0.0]); rtol = 1e-3))
+x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
+@test maximum(abs, V(x0 .+ [2π, 0.0]) .- V(x0)) .≤ 1e-3
 
 # Check local negative definiteness at fixed point
 @test V̇(fixed_point) == 0.0
-@test all(ForwardDiff.gradient(V̇, fixed_point) .== 0)
-@test all(eigvals(ForwardDiff.hessian(V̇, fixed_point)) .≤ 0)
+@test ForwardDiff.gradient(V̇, fixed_point) == zeros(2)
+@test maximum(eigvals(ForwardDiff.hessian(V̇, fixed_point))) ≤ 0
 
 # V̇ should be negative almost everywhere (global negative definiteness)
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 3e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
 
 #=
 # Print statistics
