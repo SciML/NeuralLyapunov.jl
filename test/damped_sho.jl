@@ -1,9 +1,10 @@
 using NeuralPDE, Lux, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
-using StableRNGs
+using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
 rng = StableRNG(0)
+Random.seed!(200)
 
 println("Damped Simple Harmonic Oscillator")
 

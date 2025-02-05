@@ -1,10 +1,11 @@
 using NeuralPDE, Lux, NeuralLyapunov
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
-using StableRNGs
+using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
 rng = StableRNG(0)
+Random.seed!(200)
 
 println("Inverted Pendulum - Policy Search")
 

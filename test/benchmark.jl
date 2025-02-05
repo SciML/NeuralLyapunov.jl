@@ -1,13 +1,15 @@
 using NeuralPDE, NeuralLyapunov, Lux
 import Boltz.Layers: PeriodicEmbedding
 using OptimizationOptimisers, OptimizationOptimJL
-using StableRNGs
+using StableRNGs, Random
 using Test
 
 ###################### Damped simple harmonic oscillator ######################
 @testset "Simple harmonic oscillator benchmarking" begin
 
 println("Benchmark: Damped SHO")
+
+Random.seed!(200)
 
 # Define dynamics and domain
 
@@ -86,6 +88,9 @@ end
 @testset "Policy search on inverted pendulum benchmarking" begin
 
 println("Benchmark: Inverted Pendulum - Policy Search")
+
+Random.seed!(200)
+
 # Define dynamics and domain
 function open_loop_pendulum_dynamics(x, u, p, t)
     θ, ω = x
