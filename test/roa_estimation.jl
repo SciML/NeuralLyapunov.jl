@@ -1,9 +1,9 @@
 using NeuralPDE, Lux, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
-using Random
+using StableRNGs
 using Test, LinearAlgebra, ForwardDiff
 
-Random.seed!(200)
+rng = StableRNG(0)
 
 println("Region of Attraction Estimation")
 
@@ -23,12 +23,13 @@ dim_output = 2
 chain = [Lux.Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1, use_bias = false)
+             Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
+ps = Lux.initialparameters(rng, chain)
 
 # Define training strategy
 strategy = QuadratureTraining()
-discretization = PhysicsInformedNN(chain, strategy)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(dim_output)
@@ -95,7 +96,7 @@ RoA = (first(RoA_states), last(RoA_states))
 @test ForwardDiff.hessian(V̇, fixed_point)[] ≤ 0
 
 # V̇ should be negative everywhere in the region of attraction except the fixed point
-@test all(V̇(transpose(RoA_states[RoA_states .!= fixed_point[]])) .< 0)
+@test maximum(V̇(transpose(RoA_states[RoA_states .!= fixed_point[]]))) < 0
 
 # The estimated region of attraction should be a subset of the real region of attraction
 @test first(RoA) ≥ -1.0 && last(RoA) ≤ 1.0
