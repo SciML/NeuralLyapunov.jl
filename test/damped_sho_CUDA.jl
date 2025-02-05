@@ -116,8 +116,8 @@ end
 
 # Check local negative semidefiniteness of V̇ at fixed point
 @test (V̇(fixed_point) |> cpud)[] == 0.0
-@test all(.≈(ForwardDiff.gradient(x -> (V̇(x) |> cpud)[], fixed_point), 0.0; atol=0.1))
-@test_broken all(eigvals(ForwardDiff.hessian(x -> (V̇(x) |> cpud)[], fixed_point)) .≤ 0.0)
+@test maximum(abs, ForwardDiff.gradient(x -> (V̇(x) |> cpud)[], fixed_point)) < 0.1
+@test_broken maximum(eigvals(ForwardDiff.hessian(x -> (V̇(x) |> cpud)[], fixed_point))) ≤ 0.0
 
 # V̇ should be negative almost everywhere
 @test sum(V̇_samples .> 0) / length(V̇_samples) < 5e-3
