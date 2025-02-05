@@ -79,11 +79,15 @@ function get_numerical_lyapunov_function(
             _deriv = deriv
 
             # Numerical time derivative of Lyapunov function
-            V̇(state::AbstractVector) = _deriv(
-                (δt) -> _V(state + δt * f_call(f, net, state, params, 0.0)),
-                0.0
-            )
-            V̇(states::AbstractMatrix) = mapslices(V̇, states, dims = [1])
+            function V̇(state::AbstractVector)
+                _deriv(
+                    (δt) -> _V(state + δt * f_call(f, net, state, params, 0.0)),
+                    0.0
+                )
+            end
+            function V̇(states::AbstractMatrix)
+                mapslices(V̇, states, dims = [1])
+            end
 
             return _V, V̇
         end
