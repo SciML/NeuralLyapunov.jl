@@ -87,8 +87,8 @@ arguments for each optimization pass.
     evaluated at `states`, and `V̇_samples` is ``V̇`` evaluated at `states`.
   - `init_params`: initial parameters for the neural network; defaults to `nothing`, in which
     case the initial parameters are generated using `Lux.initialparameters` and `rng`.
-  - `rng`: random number generator used to generate initial parameters; defaults to
-    `nothing`, in which case a `StableRNG` with seed `0` is used.
+  - `rng`: random number generator used to generate initial parameters; defaults to a
+    `StableRNG` with seed `0`.
 """
 function benchmark(
     dynamics::ODESystem,
@@ -108,7 +108,7 @@ function benchmark(
     classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
     verbose = false,
     init_params = nothing,
-    rng = nothing
+    rng = StableRNG(0)
 )
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
@@ -413,12 +413,6 @@ function build_confusion_matrix(
 end
 
 function get_init_params(chain, rng)
-    rng = if rng === nothing
-        rng = StableRNG(0)
-    else
-        rng
-    end
-
     return if chain isa AbstractArray
         map(chain) do c
             LuxCore.initialparameters(rng, c)
