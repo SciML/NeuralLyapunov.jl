@@ -138,11 +138,11 @@ x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
 # Check for nonpositive eigenvalues of the Jacobian
 @test maximum(
     eigvals(
-        ForwardDiff.jacobian(
-            x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
-            upright_equilibrium
-        )
-    )
+    ForwardDiff.jacobian(
+    x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
+    upright_equilibrium
+)
+)
 ) ≤ 0
 
 # Check for local negative definiteness of V̇

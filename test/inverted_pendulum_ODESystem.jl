@@ -107,8 +107,8 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-(open_loop_pendulum_dynamics, _), state_order, p_order =
-    ModelingToolkit.generate_control_function(driven_pendulum; simplify = true, split = false)
+(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
+    driven_pendulum; simplify = true, split = false)
 p = [defaults[param] for param in p_order]
 
 V, V̇ = get_numerical_lyapunov_function(
@@ -151,11 +151,11 @@ x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
 ) < 2.5e-3
 @test maximum(
     eigvals(
-        ForwardDiff.jacobian(
-            x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
-            upright_equilibrium
-        )
-    )
+    ForwardDiff.jacobian(
+    x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
+    upright_equilibrium
+)
+)
 ) ≤ 0
 
 # Check for local negative definiteness of V̇

@@ -84,12 +84,16 @@ function get_policy(
 )
     network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
 
-    policy(state::AbstractVector) = control_structure(network_func(state))
-    policy(states::AbstractMatrix) = mapslices(
+    function policy(state::AbstractVector)
+        control_structure(network_func(state))
+    end
+    function policy(states::AbstractMatrix)
+        mapslices(
             control_structure,
             network_func(states),
             dims = [1]
         )
+    end
 
     return policy
 end

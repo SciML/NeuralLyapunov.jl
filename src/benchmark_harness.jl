@@ -91,24 +91,24 @@ arguments for each optimization pass.
     `StableRNG` with seed `0`.
 """
 function benchmark(
-    dynamics::ODESystem,
-    bounds,
-    spec,
-    chain,
-    strategy,
-    opt;
-    n_grid,
-    fixed_point = zeros(length(bounds)),
-    optimization_args = [],
-    simulation_time,
-    ode_solver = Tsit5(),
-    ode_solver_args = [],
-    atol = 1e-6,
-    endpoint_check = (x) -> ≈(x, fixed_point; atol=atol),
-    classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
-    verbose = false,
-    init_params = nothing,
-    rng = StableRNG(0)
+        dynamics::ODESystem,
+        bounds,
+        spec,
+        chain,
+        strategy,
+        opt;
+        n_grid,
+        fixed_point = zeros(length(bounds)),
+        optimization_args = [],
+        simulation_time,
+        ode_solver = Tsit5(),
+        ode_solver_args = [],
+        atol = 1e-6,
+        endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
+        classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
+        verbose = false,
+        init_params = nothing,
+        rng = StableRNG(0)
 )
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
@@ -164,29 +164,29 @@ function benchmark(
 end
 
 function benchmark(
-    dynamics::Function,
-    lb,
-    ub,
-    spec,
-    chain,
-    strategy,
-    opt;
-    n_grid,
-    classifier = (V, V̇, x) -> V̇ < zero(V̇),
-    fixed_point = zeros(length(lb)),
-    p = SciMLBase.NullParameters(),
-    state_syms = [],
-    parameter_syms = [],
-    policy_search = false,
-    optimization_args = [],
-    simulation_time,
-    ode_solver = Tsit5(),
-    ode_solver_args = [],
-    atol = 1e-6,
-    endpoint_check = (x) -> ≈(x, fixed_point; atol=atol),
-    verbose = false,
-    init_params = nothing,
-    rng = nothing
+        dynamics::Function,
+        lb,
+        ub,
+        spec,
+        chain,
+        strategy,
+        opt;
+        n_grid,
+        classifier = (V, V̇, x) -> V̇ < zero(V̇),
+        fixed_point = zeros(length(lb)),
+        p = SciMLBase.NullParameters(),
+        state_syms = [],
+        parameter_syms = [],
+        policy_search = false,
+        optimization_args = [],
+        simulation_time,
+        ode_solver = Tsit5(),
+        ode_solver_args = [],
+        atol = 1e-6,
+        endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
+        verbose = false,
+        init_params = nothing,
+        rng = nothing
 )
     # Build PDESystem
     @named pde_system = NeuralLyapunovPDESystem(
@@ -231,25 +231,25 @@ function benchmark(
 end
 
 function _benchmark(
-    pde_system,
-    f,
-    lb,
-    ub,
-    spec,
-    chain,
-    strategy,
-    opt;
-    n_grid,
-    classifier,
-    fixed_point,
-    p,
-    optimization_args,
-    simulation_time,
-    ode_solver,
-    ode_solver_args,
-    endpoint_check,
-    verbose,
-    init_params
+        pde_system,
+        f,
+        lb,
+        ub,
+        spec,
+        chain,
+        strategy,
+        opt;
+        n_grid,
+        classifier,
+        fixed_point,
+        p,
+        optimization_args,
+        simulation_time,
+        ode_solver,
+        ode_solver_args,
+        endpoint_check,
+        verbose,
+        init_params
 )
     t = @timed begin
         # Construct OptimizationProblem
@@ -274,9 +274,10 @@ function _benchmark(
     )
 
     f = let fc = spec.structure.f_call, _f = f,
-            net = NeuralLyapunov.phi_to_net(phi, θ)
-            ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
-        end
+        net = NeuralLyapunov.phi_to_net(phi, θ)
+
+        ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
+    end
 
     states, V_samples, V̇_samples = eval_Lyapunov(lb, ub, n_grid, V, V̇)
 
@@ -295,7 +296,8 @@ function _benchmark(
             endpoint_check,
             verbose
         )
-        return ((cm, solve_time), (states, endpoints, actual, predicted, V_samples, V̇_samples))
+        return (cm, solve_time),
+        (states, endpoints, actual, predicted, V_samples, V̇_samples)
     else
         cm = build_confusion_matrix(
             collect(states),
@@ -323,7 +325,11 @@ function benchmark_solve(prob, opt, optimization_args)
     return res.u.depvar
 end
 
-function benchmark_solve(prob, opt::AbstractVector, optimization_args::AbstractVector{<:AbstractVector})
+function benchmark_solve(
+        prob,
+        opt::AbstractVector,
+        optimization_args::AbstractVector{<:AbstractVector}
+)
     # Solve OptimizationProblem
     res = Ref{Any}()
     for i in eachindex(opt)
@@ -362,12 +368,12 @@ function eval_Lyapunov(lb, ub, n, V, V̇)
 end
 
 function get_endpoint(
-    f::ODEFunction,
-    x0,
-    t_end;
-    p,
-    solver,
-    solver_args
+        f::ODEFunction,
+        x0,
+        t_end;
+        p,
+        solver,
+        solver_args
 )
     prob = ODEProblem(f, x0, t_end, p)
     sol = solve(prob, solver; solver_args...)
@@ -375,31 +381,29 @@ function get_endpoint(
 end
 
 function build_confusion_matrix(
-    states,
-    V_samples,
-    V̇_samples,
-    dynamics;
-    classifier,
-    fixed_point,
-    simulation_time,
-    p,
-    ode_solver,
-    ode_solver_args,
-    endpoint_check,
-    verbose
+        states,
+        V_samples,
+        V̇_samples,
+        dynamics;
+        classifier,
+        fixed_point,
+        simulation_time,
+        p,
+        ode_solver,
+        ode_solver_args,
+        endpoint_check,
+        verbose
 )
     predicted = classifier.(V_samples, V̇_samples, states)
 
-    endpoints = [
-        get_endpoint(
-            dynamics,
-            x,
-            simulation_time;
-            p = p,
-            solver = ode_solver,
-            solver_args = ode_solver_args
-        ) for x in states
-    ]
+    endpoints = [get_endpoint(
+                     dynamics,
+                     x,
+                     simulation_time;
+                     p = p,
+                     solver = ode_solver,
+                     solver_args = ode_solver_args
+                 ) for x in states]
 
     actual = endpoint_check.(endpoints)
 
