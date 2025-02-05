@@ -186,7 +186,7 @@ function benchmark(
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
         verbose = false,
         init_params = nothing,
-        rng = nothing
+        rng = StableRNG(0)
 )
     # Build PDESystem
     @named pde_system = NeuralLyapunovPDESystem(
