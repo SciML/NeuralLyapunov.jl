@@ -76,10 +76,21 @@ function check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)::Bool
 end
 
 """
-    check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)
+    check_zero_fixed_point(cond::AbstractLyapunovMinimizationCondition)
 
 Return `true` if `cond` specifies training for the Lyapunov function to equal zero at the
 fixed point, and `false` if `cond` specifies no training to meet this condition.
+"""
+function check_zero_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
+    error("check_zero_fixed_point not implemented for " *
+          "AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+end
+
+"""
+    check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)
+
+Return `true` if `cond` specifies training for the Lyapunov function to be a local minimum
+at the fixed point, and `false` if `cond` specifies no training to meet this condition.
 """
 function check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
     error("check_minimal_fixed_point not implemented for " *
