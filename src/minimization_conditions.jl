@@ -82,7 +82,7 @@ function get_minimization_condition(cond::LyapunovMinimizationCondition)
 end
 
 """
-    StrictlyPositiveDefinite(; C, check_fixed_point, rectifier)
+    StrictlyPositiveDefinite(; C, check_fixed_point, check_fixed_point_gradient, rectifier)
 
 Construct a [`LyapunovMinimizationCondition`](@ref) representing
     ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``.
@@ -111,7 +111,7 @@ function StrictlyPositiveDefinite(;
 end
 
 """
-    PositiveSemiDefinite(; check_fixed_point, rectifier)
+    PositiveSemiDefinite(; check_fixed_point, check_fixed_point_gradient, rectifier)
 
 Construct a [`LyapunovMinimizationCondition`](@ref) representing ``V(x) ≥ 0``.
 If `check_fixed_point == true` (as is the default), then training will also attempt to
@@ -137,7 +137,7 @@ function PositiveSemiDefinite(;
 end
 
 """
-    DontCheckNonnegativity(; check_fixed_point)
+    DontCheckNonnegativity(; check_fixed_point, check_fixed_point_gradient)
 
 Construct a [`LyapunovMinimizationCondition`](@ref) which represents not checking for
 nonnegativity of the Lyapunov function. This is appropriate in cases where this condition

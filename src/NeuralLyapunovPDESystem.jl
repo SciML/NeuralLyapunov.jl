@@ -282,6 +282,12 @@ function _NeuralLyapunovPDESystem(
         append!(bcs, Symbolics.gradient(_V, state) .~ 0.0)
     end
 
+    if check_maximal_fixed_point(decrease_condition)
+        _V̇ = V̇(fixed_point)
+        _V̇ = _V̇ isa AbstractVector ? _V̇[] : _V̇
+        append!(bcs, Symbolics.gradient(_V̇, state) .~ 0.0)
+    end
+
     if policy_search
         append!(bcs, f_call(dynamics, φ, fixed_point, params, 0.0) .~ zeros(state_dim))
     end
