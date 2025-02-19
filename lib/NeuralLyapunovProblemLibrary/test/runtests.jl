@@ -1,5 +1,5 @@
-using Test
+using SafeTestsets
 
-@testset "NeuralLyapunovProblemLibrary.jl" begin
+@time @safetestset "NeuralLyapunovProblemLibrary.jl" begin
     include("pendulum_test.jl")
 end
