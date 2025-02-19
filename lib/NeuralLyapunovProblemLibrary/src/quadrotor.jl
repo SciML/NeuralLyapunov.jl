@@ -27,7 +27,7 @@ position_world = [x; y; z]
 @variables φ(t) θ(t) ψ(t)
 attitude = [φ, θ, ψ]
 angular_velocity_body = Dt.(attitude)
-R = Array(RotZXY(roll=φ, pitch=θ, yaw=ψ))
+R = RotZXY(roll=φ, pitch=θ, yaw=ψ)
 angular_velocity_world = R * angular_velocity_body
 
 # Inputs
