@@ -16,13 +16,13 @@ G = [
     -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
     -m2 * g * lc2 * sin(θ1 + θ2)
 ]
-q = [θ1; θ2]
-u = [τ1; τ2]
-p = [I1, I2, l1, l2, m1, m2, g]
+q = [θ1, θ2]
+u = [τ1, τ2]
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
 ############################## Fully-actuated double pendulum ##############################
-B = [1 0; 0 1]
-eqs = M * DDt.(q) + C * Dt.(q) .~ G + B * u
+B = I(2)
+eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * u)
 
 @named double_pendulum = ODESystem(
     eqs,
@@ -32,8 +32,8 @@ eqs = M * DDt.(q) + C * Dt.(q) .~ G + B * u
 )
 
 ########################## Acrobot (underactuated double pendulum) #########################
-B = [1; 0]
-eqs = M * DDt.(q) + C * Dt.(q) .~ G + B * τ
+B = [1, 0]
+eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
 
 @named acrobot = ODESystem(
     eqs,
@@ -43,7 +43,7 @@ eqs = M * DDt.(q) + C * Dt.(q) .~ G + B * τ
 )
 
 ################################# Undriven double pendulum #################################
-eqs = M * DDt.(q) + C * Dt.(q) .~ G
+eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G)
 
 @named double_pendulum_undriven = ODESystem(
     eqs,
