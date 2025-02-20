@@ -20,15 +20,17 @@ Dt = Differential(t); DDt = Dt^2
 
 # Position (world frame)
 @variables x(t) y(t) z(t)
-position_world = [x; y; z]
+position_world = [x, y, z]
 
 # Attitude
 # φ-roll (around body x-axis), θ-pitch (around body y-axis), ψ-yaw (around body z-axis)
 @variables φ(t) θ(t) ψ(t)
 attitude = [φ, θ, ψ]
-angular_velocity_body = Dt.(attitude)
 R = RotZXY(roll=φ, pitch=θ, yaw=ψ)
-angular_velocity_world = R * angular_velocity_body
+
+# Angular velocity (world frame)
+@variables ωφ(t), ωθ(t), ωψ(t)
+angular_velocity_world = [ωφ, ωθ, ωψ]
 
 # Inputs
 # T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
@@ -37,23 +39,22 @@ F = T * R[3, :]
 τ = [τφ; τθ; τψ]
 
 # Parameters
-# m-mass, Ix-moment of inertia about body x-axis, Iy-moment of inertia about body y-axis,
-# Iz-moment of inertia about body z-axis, g-gravitational acceleration, l-distance from
-# center of mass to rotor
-@parameters m g I11 I12 I13 I21 I22 I23 I31 I32 I33
-params = [m, g, I11, I12, I13, I21, I22, I23, I31, I32, I33]
-g_vec = [0; 0; -g]
-I = [I11 I12 I13; I21 I22 I23; I31 I32 I33]
+# m-mass, g-gravitational accelerationz
+@parameters m g=9.81 Ixx Ixy Ixz Iyy Iyz Izz
+params = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
+g_vec = [0, 0, -g]
+inertia_matrix = [Ixx Ixy Ixz; Ixy Iyy Iyz; Ixz Ixy Izz]
 
 eqs = vcat(
     DDt.(position_world) .~ F / m + g_vec,
-    I * Dt.(angular_velocity_world) .~
-            τ - angular_velocity_world × (I * angular_velocity_world)
+    Dt.(angular_velocity_world) .~ inertia_matrix \
+            (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world)),
+    Dt.(attitude) .~ inv(R) * angular_velocity_world
 )
 
 @named quadrotor_3d = ODESystem(
     eqs,
     t,
-    vcat(position_world, attitude, T, τ),
+    vcat(position_world, attitude, angular_velocity_world, T, τ),
     params
 )
