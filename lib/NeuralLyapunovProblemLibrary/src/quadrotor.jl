@@ -2,15 +2,15 @@
 @independent_variables t
 Dt = Differential(t); DDt = Dt^2
 @variables x(t) y(t) θ(t) u1(t) u2(t)
-@parameters m I g r
+@parameters m I_quad g r
 
 eqs = [
     m * DDt(x) ~ -(u1 + u2) * sin(θ);
     m * DDt(y) ~ (u1 + u2) * cos(θ) - m * g;
-    I * DDt(θ) ~ r * (u1 - u2)
+    I_quad * DDt(θ) ~ r * (u1 - u2)
 ]
 
-@named quadrotor_planar = ODESystem(eqs, t, [x, y, θ, u1, u2], [m, I, g, r])
+@named quadrotor_planar = ODESystem(eqs, t, [x, y, θ, u1, u2], [m, I_quad, g, r])
 
 ####################################### 3D quadrotor #######################################
 # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
