@@ -26,11 +26,13 @@ function NeuralLyapunovProblemLibrary.plot_pendulum(θ, t; title="")
     y = -cos.(θ)
 
     return @animate for i in eachindex(t)
+        # Pendulum bar
         pend_x = [0, x[i]]
         pend_y = [0, y[i]]
         plot(pend_x, pend_y, legend=false, lw=3)
         scatter!(pend_x, pend_y)
 
+        # Trajectory so far
         traj_x = x[1:i]
         traj_y = y[1:i]
         plot!(traj_x, traj_y, color=:orange)
@@ -43,10 +45,10 @@ function NeuralLyapunovProblemLibrary.plot_pendulum(θ, t; title="")
             markerstrokecolor = :orange,
         )
 
+        # Plot settings and timestamp
         xlims!(-1.5, 1.5)
         ylims!(-1.5, 1.5)
         title!(title)
-
         annotate!(-0.75, 1.25, "time= $(rpad(round(t[i]; digits=1),4,"0"))")
     end
 end

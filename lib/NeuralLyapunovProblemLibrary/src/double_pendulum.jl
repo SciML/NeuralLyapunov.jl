@@ -2,7 +2,7 @@
 Dt = Differential(t); DDt = Dt^2
 
 @variables θ1(t) θ2(t) τ(t) [input = true] τ1(t) [input = true] τ2(t) [input = true]
-@parameters I1 I2 l1 l2 lc1 lc2 m1 m2 g
+@parameters I1 I2 l1 l2 lc1 lc2 m1 m2 g=9.81
 
 M = [
     I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
@@ -51,3 +51,5 @@ eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G)
     q,
     p
 )
+
+function plot_double_pendulum end

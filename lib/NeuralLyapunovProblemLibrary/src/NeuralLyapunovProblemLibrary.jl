@@ -10,6 +10,7 @@ export plot_pendulum
 
 include("double_pendulum.jl")
 export double_pendulum, acrobot, double_pendulum_undriven
+export plot_double_pendulum
 
 include("quadrotor.jl")
 export quadrotor_planar, quadrotor_3d
