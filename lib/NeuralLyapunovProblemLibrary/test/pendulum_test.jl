@@ -21,7 +21,11 @@ using Plots
 ############################# Feedback cancellation controller #############################
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
 
-_, x, p, pendulum_simplified = generate_control_function(pendulum; simplify=true, split=false)
+_, x, p, pendulum_simplified = generate_control_function(
+    pendulum;
+    simplify=true,
+    split=false
+)
 
 t = independent_variable(pendulum)
 Dt = Differential(t)
@@ -46,7 +50,7 @@ x0 = rand(2)
 p = rand(2)
 τ = 1 / prod(p)
 prob = ODEProblem(pendulum_feedback_cancellation, x0, 15τ, p)
-sol = solve(prob, Tsit5()); plot(sol)
+sol = solve(prob, Tsit5())
 x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
 @test sqrt(sum(abs2, [x_end, y_end] .- [0, 1])) ≈ 0 atol=1e-4
 @test ω_end ≈ 0 atol=1e-4
