@@ -23,3 +23,5 @@ eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0]
     [θ],
     [ζ, ω_0]
 )
+
+function plot_pendulum end

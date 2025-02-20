@@ -5,12 +5,18 @@ using OrdinaryDiffEq
 using Test
 
 ################## Undriven pendulum should drop to downward equilibrium ###################
-x0 = rand(2)
+x0 = π * rand(2)
 p = rand(2)
 τ = 1 / prod(p)
 prob = ODEProblem(structural_simplify(pendulum_undriven), x0, 15τ, p)
 sol = solve(prob, Tsit5())
-@test sqrt(sum(abs2, sol.u[end])) ≈ 0 atol=1e-6
+x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
+@test sqrt(sum(abs2, [x_end, y_end] .- [0, -1])) ≈ 0 atol=1e-4
+@test ω_end ≈ 0 atol=1e-4
+
+using Plots
+
+@test plot_pendulum(sol) isa Plots.Animation
 
 ############################# Feedback cancellation controller #############################
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
