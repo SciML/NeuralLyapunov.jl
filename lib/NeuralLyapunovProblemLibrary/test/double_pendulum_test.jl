@@ -2,8 +2,8 @@ using ModelingToolkit
 import ModelingToolkit: inputs, generate_control_function
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
-using Test
 using Plots
+using Test
 
 ############### Undriven double pendulum should drop to downward equilibrium ###############
 x0 = vcat(2π * rand(2) .- π, rand(2))
@@ -20,7 +20,7 @@ p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 prob = ODEProblem(structural_simplify(double_pendulum_undriven), x0, 100, p)
 sol = solve(prob, Tsit5())
 
-anim = plot_pendulum(sol)
+anim = plot_double_pendulum(sol, p)
 @test anim isa Plots.Animation
 # gif(anim, fps=50)
 

@@ -2,6 +2,7 @@ using ModelingToolkit
 import ModelingToolkit: inputs, generate_control_function
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
+using Plots
 using Test
 
 ################## Undriven pendulum should drop to downward equilibrium ###################
@@ -14,9 +15,9 @@ x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
 @test sqrt(sum(abs2, [x_end, y_end] .- [0, -1])) ≈ 0 atol=1e-4
 @test ω_end ≈ 0 atol=1e-4
 
-using Plots
-
-@test plot_pendulum(sol) isa Plots.Animation
+anim = plot_pendulum(sol)
+@test anim isa Plots.Animation
+# gif(anim, fps=50)
 
 ############################# Feedback cancellation controller #############################
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
