@@ -32,7 +32,7 @@ eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * u)
 )
 
 ########################## Acrobot (underactuated double pendulum) #########################
-B = [1, 0]
+B = [0, 1]
 eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
 
 @named acrobot = ODESystem(

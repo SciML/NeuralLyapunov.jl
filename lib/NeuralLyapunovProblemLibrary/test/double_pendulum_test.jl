@@ -3,6 +3,7 @@ import ModelingToolkit: inputs, generate_control_function
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
+using LinearAlgebra
 using Test
 
 ############### Undriven double pendulum should drop to downward equilibrium ###############
@@ -78,9 +79,23 @@ x0 = vcat(2π * rand(2) .- π, rand(2))
 
 prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100, p)
 sol = solve(prob, Tsit5())
-x1_end, y1_end, ω1_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][3]
-x2_end, y2_end, ω2_end = sin(sol.u[end][2]), -cos(sol.u[end][2]), sol.u[end][4]
+θ1_end, ω1_end = sol[:double_pendulum₊θ1][end], sol.u[end][3]
+x1_end, y1_end = sin(θ1_end), -cos(θ1_end)
+θ2_end, ω2_end = sol[:double_pendulum₊θ2][end], sol.u[end][4]
+x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
 @test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) ≈ 0 atol=1e-4
 @test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) ≈ 0 atol=1e-4
 @test ω1_end ≈ 0 atol=1e-4
 @test ω2_end ≈ 0 atol=1e-4
+
+#=
+gif(
+    plot_double_pendulum(
+        sol,
+        p;
+        angle1_symbol=:double_pendulum₊θ1,
+        angle2_symbol=:double_pendulum₊θ2
+    ),
+    fps=50
+)
+=#
