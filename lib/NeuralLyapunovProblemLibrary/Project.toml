@@ -15,6 +15,7 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 NeuralLyapunovProblemLibraryPlotsExt = "Plots"
 
 [compat]
+ControlSystemsBase = "1.14.4"
 LinearAlgebra = "1.11.0"
 ModelingToolkit = "9.62.0"
 OrdinaryDiffEq = "6.91.0"
@@ -24,10 +25,11 @@ SafeTestsets = "0.1.0"
 julia = "1.11"
 
 [extras]
+ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "OrdinaryDiffEq", "Plots", "SafeTestsets"]
+test = ["Test", "ControlSystemsBase", "OrdinaryDiffEq", "Plots", "SafeTestsets"]

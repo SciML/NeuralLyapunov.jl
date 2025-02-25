@@ -4,6 +4,7 @@ using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
 using LinearAlgebra
+using ControlSystemsBase: lqr, Continuous
 using Test
 
 ################################## Double pendulum energy ##################################
@@ -140,3 +141,85 @@ gif(
     fps=50
 )
 =#
+
+################################## LQR acrobot controller ##################################
+function acrobot_lqr_matrix(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    θ1, θ2 = x_eq[1:2]
+
+    # Assumes linearization around a fixed point
+    M = [
+        I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
+        I2 + m2 * l1 * lc2 * cos(θ2)                        I2
+    ]
+    B = [0, 1]
+    Jτ_g = [
+        -m1 * g * lc1 * cos(θ1) - m2 * g * (l1 * cos(θ1) + lc2 * cos(θ1 + θ2))  -m2 * g * lc2 * cos(θ1 + θ2);
+        -m2 * g * lc2 * cos(θ1 + θ2)                                            -m2 * g * lc2 * cos(θ1 + θ2)
+    ]
+
+    A_lin = [
+        zeros(2, 2)     I(2);
+        M \ Jτ_g        zeros(2, 2)
+    ]
+    B_lin = [zeros(2); M \ B]
+
+    return lqr(Continuous, A_lin, B_lin, Q, R)
+end
+
+function π_lqr(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
+    L = acrobot_lqr_matrix(p; x_eq, Q, R)
+    return let K = L, x0 = x_eq; (x) -> -K * (x .- x0) end
+end
+
+_, x, params, acrobot_simplified = generate_control_function(
+    acrobot;
+    simplify=true,
+    split=false
+)
+
+t = independent_variable(acrobot)
+Dt = Differential(t)
+
+params = map(Base.Fix1(getproperty, acrobot), toexpr.(params))
+u = map(
+        Base.Fix1(getproperty, acrobot),
+        toexpr.(getproperty.(inputs(acrobot_simplified), :f))
+)
+x = [acrobot.θ1, acrobot.θ2, Dt(acrobot.θ1), Dt(acrobot.θ2)]
+
+# Assume uniform rods of random mass and length
+m1, m2 = ones(2)
+l1, l2 = ones(2)
+lc1, lc2 = l1 /2, l2 / 2
+I1 = m1 * l1^2 / 3
+I2 = m2 * l2^2 / 3
+g = 1.0
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+
+@named lqr_controller = ODESystem(
+    u .~ π_lqr(p; x_eq=[π,π,0,0])(x),
+    t,
+    vcat(x, u),
+    params
+)
+@named acrobot_lqr = compose(lqr_controller, acrobot)
+acrobot_lqr = structural_simplify(acrobot_lqr)
+
+# Remain close to upward equilibrium
+x0 = [π, π, 0, 0] + 0.005 * vcat(2π * rand(2) .- π, 2 * rand(2) .- 1)
+tspan = 1000
+
+prob = ODEProblem(acrobot_lqr, Dict(x .=> x0), tspan, Dict(params .=> p))
+sol = solve(prob, Tsit5())
+
+anim = plot_double_pendulum(sol, p; angle1_symbol=:acrobot₊θ1, angle2_symbol=:acrobot₊θ2)
+@test anim isa Plots.Animation
+gif(anim, fps=50)
+
+x1_end, y1_end, ω1_end = sin(sol[acrobot.θ1][end]), -cos(sol[acrobot.θ1][end]), sol[Dt(acrobot.θ1)][end]
+x2_end, y2_end, ω2_end = sin(sol[acrobot.θ2][end]), -cos(sol[acrobot.θ2][end]), sol[Dt(acrobot.θ2)][end]
+@test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) ≈ 0 atol=1e-4
+@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) ≈ 0 atol=1e-4
+@test ω1_end ≈ 0 atol=1e-4
+@test ω2_end ≈ 0 atol=1e-4
