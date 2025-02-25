@@ -6,21 +6,59 @@ using Plots
 using LinearAlgebra
 using Test
 
-############### Undriven double pendulum should drop to downward equilibrium ###############
-x0 = vcat(2π * rand(2) .- π, rand(2))
+################################## Double pendulum energy ##################################
+function U(x, p)
+    θ1, θ2, _, _ = x
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    return -m1 * g * lc1 * cos(θ1) - m2 * g * (l1 * cos(θ1) + lc2 * cos(θ1 + θ2))
+end
+function T(x, p)
+    θ1, θ2, ω1, ω2 = x
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    M = [
+        I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
+        I2 + m2 * l1 * lc2 * cos(θ2)                        I2
+    ]
+    return 0.5 * dot([ω1, ω2], M, [ω1, ω2])
+end
+E(x, p) = T(x, p) + U(x, p)
+
+######################### Undriven double pendulum conserve energy #########################
+t = independent_variable(double_pendulum_undriven)
+Dt = Differential(t)
+θ1, θ2 = unknowns(double_pendulum_undriven)
+x0 = Dict([θ1, θ2, Dt(θ1), Dt(θ2)] .=> vcat(2π * rand(2) .- π, rand(2) .- 0.5))
 
 # Assume uniform rods of random mass and length
-m1, m2 = rand(2)
-l1, l2 = rand(2)
+m1, m2 = ones(2)
+l1, l2 = ones(2)
 lc1, lc2 = l1 /2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
-g = 1.0
+g = 10.0
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
 prob = ODEProblem(structural_simplify(double_pendulum_undriven), x0, 100, p)
-sol = solve(prob, Tsit5())
+sol = solve(prob, Tsit5(), abstol = 1e-10, reltol = 1e-10)
 
+# Test energy conservation
+x = vcat(sol[θ1]', sol[θ2]', sol[Dt(θ1)]', sol[Dt(θ2)]')
+potential_energy = vec(mapslices(Base.Fix2(U, p), x; dims=1))
+kinetic_energy = vec(mapslices(Base.Fix2(T, p), x; dims=1))
+total_energy = vec(mapslices(Base.Fix2(E, p), x; dims=1))
+
+plot(
+    sol.t,
+    [potential_energy, kinetic_energy, total_energy],
+    labels=["Potential energy" "Kinetic Energy" "Total Energy"],
+    xlabel="Time",
+    ylabel="Energy"
+)
+
+avg_energy = sum(total_energy) / length(total_energy)
+@test maximum(abs, total_energy .- avg_energy) / abs(avg_energy) < 1e-4
+
+# Test plotting extension
 anim = plot_double_pendulum(sol, p)
 @test anim isa Plots.Animation
 # gif(anim, fps=50)
@@ -28,7 +66,7 @@ anim = plot_double_pendulum(sol, p)
 ########################### Feedback cancellation, PD controller ###########################
 function π_cancellation(x, p)
     θ1, θ2, ω1, ω2 = x
-    I1, I2, l1, _, lc1, lc2, m1, m2, g = p
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
     M = [
         I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
         I2 + m2 * l1 * lc2 * cos(θ2)                        I2

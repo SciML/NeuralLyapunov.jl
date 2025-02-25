@@ -42,6 +42,17 @@ eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
     p
 )
 
+######################### Pendubot (underactuated double pendulum) #########################
+B = [1, 0]
+eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
+
+@named pendubot = ODESystem(
+    eqs,
+    t,
+    vcat(q, τ),
+    p
+)
+
 ################################# Undriven double pendulum #################################
 eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G)
 
