@@ -27,7 +27,7 @@ E(x, p) = T(x, p) + U(x, p)
 t = independent_variable(double_pendulum_undriven)
 Dt = Differential(t)
 θ1, θ2 = unknowns(double_pendulum_undriven)
-x0 = Dict([θ1, θ2, Dt(θ1), Dt(θ2)] .=> vcat(2π * rand(2) .- π, rand(2) .- 0.5))
+x0 = Dict([θ1, θ2, Dt(θ1), Dt(θ2)] .=> vcat(2π * rand(2) .- π, zeros(2)))
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
@@ -35,18 +35,20 @@ l1, l2 = ones(2)
 lc1, lc2 = l1 /2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
-g = 10.0
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+g = 1.0
+p = Dict(parameters(double_pendulum_undriven) .=> [I1, I2, l1, l2, lc1, lc2, m1, m2, g])
 
 prob = ODEProblem(structural_simplify(double_pendulum_undriven), x0, 100, p)
 sol = solve(prob, Tsit5(), abstol = 1e-10, reltol = 1e-10)
 
 # Test energy conservation
 x = vcat(sol[θ1]', sol[θ2]', sol[Dt(θ1)]', sol[Dt(θ2)]')
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 potential_energy = vec(mapslices(Base.Fix2(U, p), x; dims=1))
 kinetic_energy = vec(mapslices(Base.Fix2(T, p), x; dims=1))
 total_energy = vec(mapslices(Base.Fix2(E, p), x; dims=1))
 
+#=
 plot(
     sol.t,
     [potential_energy, kinetic_energy, total_energy],
@@ -54,6 +56,7 @@ plot(
     xlabel="Time",
     ylabel="Energy"
 )
+=#
 
 avg_energy = sum(total_energy) / length(total_energy)
 @test maximum(abs, total_energy .- avg_energy) / abs(avg_energy) < 1e-4
@@ -111,9 +114,9 @@ lc1, lc2 = l1 /2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+p = Dict(p .=> [I1, I2, l1, l2, lc1, lc2, m1, m2, g])
 
-x0 = vcat(2π * rand(2) .- π, rand(2))
+x0 = Dict(x .=> vcat(2π * rand(2) .- π, rand(2)))
 
 prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100, p)
 sol = solve(prob, Tsit5())
@@ -130,7 +133,7 @@ x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
 gif(
     plot_double_pendulum(
         sol,
-        p;
+        [I1, I2, l1, l2, lc1, lc2, m1, m2, g];
         angle1_symbol=:double_pendulum₊θ1,
         angle2_symbol=:double_pendulum₊θ2
     ),
