@@ -1,3 +1,19 @@
+function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
+    sol,
+    p;
+    title="",
+    N = 500,
+    x_symbol=:x,
+    y_symbol=:y,
+    θ_symbol=:θ
+)
+    t = LinRange(sol.t[1], sol.t[end], N)
+    x = sol(t)[x_symbol]
+    y = sol(t)[y_symbol]
+    θ = sol(t)[θ_symbol]
+    return plot_quadrotor_planar(x, y, θ, p, t; title=title)
+end
+
 function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, p, t; title="")
     function quadrotor_body(x, y, θ, r; aspect_ratio=10)
         pos = [x, y]
