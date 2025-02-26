@@ -13,6 +13,7 @@ function π_vertical_only(x, p; y_goal=0.0, k_p=1.0, k_d=1.0)
     m, I_quad, g, r = p
     T0 = m * g / 2
     T = T0 - k_p * m * g / r * (y - y_goal) - k_d * m * sqrt(g / r) * ẏ
+    T = max(T, 0.0)
     return [T, T]
 end
 
@@ -61,5 +62,13 @@ p = Dict(params .=> [m, I_quad, g, r])
 prob = ODEProblem(quadrotor_planar_vertical_only, x0, 15τ, p)
 sol = solve(prob, Tsit5())
 
-anim = plot_quadrotor_planar(sol, [m, I_quad, g, r]; x_symbol=q[1], y_symbol=q[2], θ_symbol=q[3])
+anim = plot_quadrotor_planar(
+    sol,
+    [m, I_quad, g, r];
+    x_symbol=q[1],
+    y_symbol=q[2],
+    θ_symbol=q[3],
+    u1_symbol=u[1],
+    u2_symbol=u[2]
+)
 gif(anim, fps = 50)
