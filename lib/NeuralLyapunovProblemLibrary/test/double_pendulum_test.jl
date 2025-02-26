@@ -169,7 +169,7 @@ end
 
 function π_lqr(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
     L = acrobot_lqr_matrix(p; x_eq, Q, R)
-    return let K = L, x0 = x_eq; (x) -> -K * (x .- x0) end
+    return (x) -> -L * (x .- x_eq)
 end
 
 _, x, params, acrobot_simplified = generate_control_function(
