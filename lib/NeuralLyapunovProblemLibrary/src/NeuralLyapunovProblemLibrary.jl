@@ -14,5 +14,6 @@ export plot_double_pendulum
 
 include("quadrotor.jl")
 export quadrotor_planar, quadrotor_3d
+export plot_quadrotor_planar, plot_quadrotor_3d
 
 end

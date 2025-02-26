@@ -1,7 +1,8 @@
 ##################################### Planar quadrotor #####################################
 @independent_variables t
 Dt = Differential(t); DDt = Dt^2
-@variables x(t) y(t) θ(t) u1(t) u2(t)
+@variables x(t) y(t) θ(t)
+@variables u1(t) [input=true, bounds=(0, Inf)] u2(t) [input=true, bounds=(0, Inf)]
 @parameters m I_quad g r
 
 eqs = [
@@ -34,7 +35,8 @@ angular_velocity_world = [ωφ, ωθ, ωψ]
 
 # Inputs
 # T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
-@variables T(t) [input=true] τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
+@variables T(t) [input=true, bounds=(0, Inf)]
+@variables τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
 F = T * R[3, :]
 τ = [τφ; τθ; τψ]
 
@@ -58,3 +60,6 @@ eqs = vcat(
     vcat(position_world, attitude, angular_velocity_world, T, τ),
     params
 )
+
+function plot_quadrotor_planar end
+function plot_quadrotor_3d end
