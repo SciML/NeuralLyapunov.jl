@@ -49,7 +49,7 @@ x = vcat(q, Dt.(q))
 quadrotor_planar_vertical_only = structural_simplify(quadrotor_planar_vertical_only)
 
 # Hovering
-# Assume rotors are negligible mass whne calculating the moment of inertia
+# Assume rotors are negligible mass when calculating the moment of inertia
 x0 = Dict(x .=> zeros(6))
 x0[q[2]] = rand()
 x0[x[5]] = rand()
@@ -128,7 +128,7 @@ q = map(
 )
 x = vcat(q, Dt.(q))
 
-# Assume rotors are negligible mass whne calculating the moment of inertia
+# Assume rotors are negligible mass when calculating the moment of inertia
 m, r = ones(2)
 g = 1.0
 I_quad = m * r^2 / 12
