@@ -5,9 +5,13 @@ using OrdinaryDiffEq
 using Plots
 using LinearAlgebra
 using ControlSystemsBase: lqr, Continuous
-using Test
+using Test, StableRNGs
+
+rng = StableRNG(0)
 
 #################################### Hovering quadrotor ####################################
+println("Planar quadrotor vertical only test")
+
 function π_vertical_only(x, p; y_goal=0.0, k_p=1.0, k_d=1.0)
     y, ẏ = x[2], x[5]
     m, I_quad, g, r = p
@@ -23,7 +27,7 @@ _, _, p, quadrotor_planar_simplified = generate_control_function(
     split=false
 )
 
-t = independent_variable(quadrotor_planar)
+t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
@@ -51,8 +55,8 @@ quadrotor_planar_vertical_only = structural_simplify(quadrotor_planar_vertical_o
 # Hovering
 # Assume rotors are negligible mass when calculating the moment of inertia
 x0 = Dict(x .=> zeros(6))
-x0[q[2]] = rand()
-x0[x[5]] = rand()
+x0[q[2]] = rand(rng)
+x0[x[5]] = rand(rng)
 m, r = ones(2)
 g = 1.0
 I_quad = m * r^2 / 12
@@ -84,6 +88,8 @@ anim = plot_quadrotor_planar(
 # gif(anim, fps = 50)
 
 ############################## LQR planar quadrotor controller #############################
+println("Planar quadrotor LQR test")
+
 function quadrotor_planar_lqr_matrix(p; Q = I(6), R = I(2))
     m, I_quad, g, r = p
 
@@ -113,7 +119,7 @@ _, _, p, quadrotor_planar_simplified = generate_control_function(
     split=false
 )
 
-t = independent_variable(quadrotor_planar)
+t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
@@ -145,7 +151,7 @@ p = [m, I_quad, g, r]
 quadrotor_planar_lqr = structural_simplify(quadrotor_planar_lqr)
 
 # Fly to origin
-x0 = Dict(x .=> 2 * rand(6) .- 1)
+x0 = Dict(x .=> 2 * rand(rng, 6) .- 1)
 p = Dict(params .=> [m, I_quad, g, r])
 τ = sqrt(r / g)
 

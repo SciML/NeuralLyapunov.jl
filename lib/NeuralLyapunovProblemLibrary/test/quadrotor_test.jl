@@ -5,9 +5,13 @@ using OrdinaryDiffEq
 using Plots
 using LinearAlgebra
 using ControlSystemsBase: lqr, Continuous
-using Test
+using Test, StableRNGs
+
+rng = StableRNG(0)
 
 #################################### Hovering quadrotor ####################################
+println("3D quadrotor vertical only test")
+
 function π_vertical_only(x, p; z_goal=0.0, k_p=1.0, k_d=1.0)
     z = x[3]
     ż = x[9]
@@ -31,7 +35,7 @@ _, _, p, quadrotor_3d_simplified = generate_control_function(
     split=false
 )
 
-t = independent_variable(quadrotor_3d)
+t, = independent_variables(quadrotor_3d)
 Dt = Differential(t)
 x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
@@ -68,9 +72,9 @@ p = Dict(params .=> [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz])
 τ = sqrt(L / g)
 
 x0 = Dict(x .=> zeros(12))
-x0[q[3]] = rand()
-x0[q̇[3]] = rand()
-x0[q̇[6]] = rand()
+x0[q[3]] = rand(rng)
+x0[q̇[3]] = rand(rng)
+x0[q̇[6]] = rand(rng)
 
 prob = ODEProblem(quadrotor_3d_vertical_only, x0, 15τ, p)
 sol = solve(prob, Tsit5())
@@ -107,6 +111,8 @@ anim = plot_quadrotor_3d(
 # gif(anim, fps = 50)
 
 ############################## LQR planar quadrotor controller #############################
+println("3D quadrotor LQR test")
+
 function quadrotor_3d_lqr_matrix(
     p;
     x_eq = zeros(12),
@@ -146,7 +152,7 @@ _, _, p, quadrotor_3d_simplified = generate_control_function(
     split=false
 )
 
-t = independent_variable(quadrotor_3d)
+t, = independent_variables(quadrotor_3d)
 Dt = Differential(t)
 x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
@@ -182,8 +188,8 @@ quadrotor_3d_lqr = structural_simplify(quadrotor_3d_lqr)
 # Fly to origin
 p = Dict(params .=> p)
 δ = 0.5
-x0 = Dict(x .=> δ .* (2 .* rand(12) .- 1))
-τ = sqrt(r / g)
+x0 = Dict(x .=> δ .* (2 .* rand(rng, 12) .- 1))
+τ = sqrt(L / g)
 
 prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p)
 sol = solve(prob, Tsit5())

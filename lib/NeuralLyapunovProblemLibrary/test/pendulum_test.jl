@@ -3,11 +3,15 @@ import ModelingToolkit: inputs, generate_control_function
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
-using Test
+using Test, StableRNGs
+
+rng = StableRNG(0)
 
 ################## Undriven pendulum should drop to downward equilibrium ###################
-x0 = π * rand(2)
-p = rand(2)
+println("Undriven pendulum test")
+
+x0 = π * rand(rng, 2)
+p = rand(rng, 2)
 τ = 1 / prod(p)
 prob = ODEProblem(structural_simplify(pendulum_undriven), x0, 15τ, p)
 sol = solve(prob, Tsit5())
@@ -20,6 +24,8 @@ anim = plot_pendulum(sol)
 # gif(anim, fps=50)
 
 ############################# Feedback cancellation controller #############################
+println("Simple pendulum feedback cancellation test")
+
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
 
 _, x, p, pendulum_simplified = generate_control_function(
@@ -28,7 +34,7 @@ _, x, p, pendulum_simplified = generate_control_function(
     split=false
 )
 
-t = independent_variable(pendulum)
+t, = independent_variables(pendulum)
 Dt = Differential(t)
 
 p = map(Base.Fix1(getproperty, pendulum), toexpr.(p))
@@ -47,8 +53,8 @@ u = map(
 pendulum_feedback_cancellation = structural_simplify(pendulum_feedback_cancellation)
 
 # Swing up to upward equilibrium
-x0 = rand(2)
-p = rand(2)
+x0 = rand(rng, 2)
+p = rand(rng, 2)
 τ = 1 / prod(p)
 prob = ODEProblem(pendulum_feedback_cancellation, x0, 15τ, p)
 sol = solve(prob, Tsit5())

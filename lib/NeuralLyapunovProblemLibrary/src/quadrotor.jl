@@ -5,7 +5,7 @@ Dt = Differential(t); DDt = Dt^2
 @variables u1(t) [input=true] u2(t) [input=true]
 @parameters m I_quad g r
 
-# Thrusts must be positive
+# Thrusts must be nonnegative
 ũ1 = max(0, u1)
 ũ2 = max(0, u2)
 
@@ -46,7 +46,7 @@ angular_velocity_world = [ωφ, ωθ, ωψ]
 @variables T(t) [input=true]
 @variables τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
 
-# Individual rotor thrusts must be positive
+# Individual rotor thrusts must be nonnegative
 f = ([1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * [T; τφ; τθ; τψ]) ./ 4
 f̃ = max.(0, f)
 T̃ = [1 1 1 1; 0 1 0 -1; -1 0 1 0; -1 1 -1 1] * f̃
