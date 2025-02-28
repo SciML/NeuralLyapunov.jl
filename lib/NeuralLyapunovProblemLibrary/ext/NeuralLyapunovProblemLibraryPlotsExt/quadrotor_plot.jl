@@ -202,7 +202,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
 
     # Calculate thrusts (rescaled as lengths)
     τ = transpose(hcat(T, τφ ./ L, τθ ./ L, τψ ./ k))
-    F = [1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * τ ./ (m * g) .* L ./ 10
+    F = [1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * τ ./ (m * g) .* L ./ 3
 
     return @animate for i in eachindex(t)
         # CoM position (world coordinates)
@@ -293,5 +293,16 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
 
         # Plot settings and timestamp
         title!(title)
+        xl, yl, zl = xlims(), ylims(), zlims()
+        xrange = xl[2] - xl[1]
+        yrange = yl[2] - yl[1]
+        zrange = zl[2] - zl[1]
+        range = maximum([xrange, yrange, zrange])
+        x̄ = (xl[1] + xl[2]) / 2
+        ȳ = (yl[1] + yl[2]) / 2
+        z̄ = (zl[1] + zl[2]) / 2
+        xlims!(x̄ - range / 2, x̄ + range / 2)
+        ylims!(ȳ - range / 2, ȳ + range / 2)
+        zlims!(z̄ - range / 2, z̄ + range / 2)
     end
 end

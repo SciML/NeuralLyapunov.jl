@@ -185,7 +185,8 @@ quadrotor_3d_lqr = structural_simplify(quadrotor_3d_lqr)
 
 # Fly to origin
 p = Dict(params .=> p)
-x0 = Dict(x .=> (0.2 .* rand(12) .- 0.1))
+δ = 0.5
+x0 = Dict(x .=> δ .* (2 .* rand(12) .- 1))
 τ = sqrt(r / g)
 
 prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p)
