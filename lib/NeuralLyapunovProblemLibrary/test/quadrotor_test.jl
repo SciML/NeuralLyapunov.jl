@@ -34,27 +34,18 @@ _, _, p, quadrotor_3d_simplified = generate_control_function(
 
 t = independent_variable(quadrotor_3d)
 Dt = Differential(t)
-q = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))[1:6]
-q̇ = vcat(Dt.(q[1:3]), setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))[7:9])
-x = vcat(q, q̇)
+x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
 params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(p))
 u = map(
         Base.Fix1(getproperty, quadrotor_3d),
         toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
 )
-q = map(
+x = map(
         Base.Fix1(getproperty, quadrotor_3d),
-        toexpr.(getproperty.(q, :f))
+        toexpr.(getproperty.(x, :f))
 )
-q̇ = vcat(
-        Dt.(q[1:3]),
-        map(
-            Base.Fix1(getproperty, quadrotor_3d),
-            toexpr.(getproperty.(q̇[4:6], :f))
-        )
-)
-x = vcat(q, q̇)
+q, q̇ = x[1:6], x[7:12]
 
 @named vertical_only_controller = ODESystem(
     u .~ π_vertical_only(x, params),
@@ -85,14 +76,19 @@ x0[q̇[6]] = rand()
 prob = ODEProblem(quadrotor_3d_vertical_only, x0, 15τ, p)
 sol = solve(prob, Tsit5())
 
-x_end, y_end, z_end = sol[q][end]
-v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
+x_end, y_end, z_end, φ_end, θ_end, ψ_end = sol[q][end]
+vx_end, vy_end, vz_end, ωφ_end, ωθ_end, ωψ_end = sol[q̇][end]
 @test x_end ≈ 0.0 atol=1e-4
 @test y_end ≈ 0.0 atol=1e-4
+@test z_end ≈ 0.0 atol=1e-4
+@test φ_end ≈ 0.0 atol=1e-4
 @test θ_end ≈ 0.0 atol=1e-4
-@test v_x_end ≈ 0.0 atol=1e-4
-@test v_y_end ≈ 0.0 atol=1e-4
-@test v_θ_end ≈ 0.0 atol=1e-4
+@test vx_end ≈ 0.0 atol=1e-4
+@test vy_end ≈ 0.0 atol=1e-4
+@test vz_end ≈ 0.0 atol=1e-4
+@test ωφ_end ≈ 0.0 atol=1e-4
+@test ωθ_end ≈ 0.0 atol=1e-4
+@test ωψ_end ≈ x0[q̇[6]] atol=1e-4
 
 anim = plot_quadrotor_3d(
     sol,
@@ -109,4 +105,120 @@ anim = plot_quadrotor_3d(
     τψ_symbol=u[4]
 )
 @test anim isa Plots.Animation
-gif(anim, fps = 50)
+# gif(anim, fps = 50)
+
+############################## LQR planar quadrotor controller #############################
+function quadrotor_3d_lqr_matrix(
+    p;
+    x_eq = zeros(12),
+    u_eq = [p[1]*p[2], 0, 0, 0],
+    Q = I(12),
+    R = I(4)
+)
+    u = inputs(quadrotor_3d)
+    x = setdiff(unknowns(quadrotor_3d), u)
+    params = parameters(quadrotor_3d)
+
+    op = Dict(vcat(x .=> x_eq, u .=> u_eq, params .=> p))
+
+    mats, sys = linearize(quadrotor_3d, u, x; op)
+
+    # Create permutation matrices Px : x_new = Px * x and Pu : u_new = Pu * u
+    x_new = unknowns(sys)
+    u_new = inputs(sys)
+
+    Px = (x_new .- x') .=== 0
+    Pu = (u_new .- u') .=== 0
+
+    A_lin = Px' * mats[:A] * Px
+    B_lin = Px' * mats[:B] * Pu
+
+    return lqr(Continuous, A_lin, B_lin, Q, R)
+end
+
+function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R = I(4))
+    L = quadrotor_3d_lqr_matrix(p; Q, R, x_eq, u_eq)
+    return function (x)
+        u = -L * (x .- x_eq) + u_eq
+        return vcat(max(0.0, u[1]), u[2:end])
+    end
+end
+
+_, _, p, quadrotor_3d_simplified = generate_control_function(
+    quadrotor_3d;
+    simplify=true,
+    split=false
+)
+
+t = independent_variable(quadrotor_3d)
+Dt = Differential(t)
+x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
+
+params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(p))
+u = map(
+        Base.Fix1(getproperty, quadrotor_3d),
+        toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
+)
+x = map(
+        Base.Fix1(getproperty, quadrotor_3d),
+        toexpr.(getproperty.(x, :f))
+)
+q, q̇ = x[1:6], x[7:12]
+
+# Assume rotors are negligible mass when calculating the moment of inertia
+m, L = ones(2)
+g = 1.0
+Ixx = Iyy = m * L^2 / 6
+Izz = m * L^2 / 3
+Ixy = Ixz = Iyz = 0.0
+p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
+
+@named lqr_controller = ODESystem(
+    u .~ π_lqr(p)(x),
+    t,
+    vcat(x, u),
+    params
+)
+
+@named quadrotor_3d_lqr = compose(lqr_controller, quadrotor_3d)
+quadrotor_3d_lqr = structural_simplify(quadrotor_3d_lqr)
+
+# Fly to origin
+p = Dict(params .=> p)
+x0 = Dict(x .=> (0.2 .* rand(12) .- 0.1))
+τ = sqrt(r / g)
+
+prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p)
+sol = solve(prob, Tsit5())
+
+x_end, y_end, z_end, φ_end, θ_end, ψ_end = sol[q][end]
+vx_end, vy_end, vz_end, ωφ_end, ωθ_end, ωψ_end = sol[q̇][end]
+@test x_end ≈ 0.0 atol=1e-4
+@test y_end ≈ 0.0 atol=1e-4
+@test z_end ≈ 0.0 atol=1e-4
+@test φ_end ≈ 0.0 atol=1e-4
+@test θ_end ≈ 0.0 atol=1e-4
+@test ψ_end ≈ 0.0 atol=1e-4
+@test vx_end ≈ 0.0 atol=1e-4
+@test vy_end ≈ 0.0 atol=1e-4
+@test vz_end ≈ 0.0 atol=1e-4
+@test ωφ_end ≈ 0.0 atol=1e-4
+@test ωθ_end ≈ 0.0 atol=1e-4
+@test ωψ_end ≈ 0.0 atol=1e-4
+
+anim = plot_quadrotor_3d(
+    sol,
+    [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz];
+    x_symbol=q[1],
+    y_symbol=q[2],
+    z_symbol=q[3],
+    φ_symbol=q[4],
+    θ_symbol=q[5],
+    ψ_symbol=q[6],
+    T_symbol=u[1],
+    τφ_symbol=u[2],
+    τθ_symbol=u[3],
+    τψ_symbol=u[4]
+)
+@test anim isa Plots.Animation
+# gif(anim, fps = 50)

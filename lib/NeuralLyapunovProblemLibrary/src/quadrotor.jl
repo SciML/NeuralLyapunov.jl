@@ -23,6 +23,10 @@ Dt = Differential(t); DDt = Dt^2
 @variables x(t) y(t) z(t)
 position_world = [x, y, z]
 
+# Velocity (world frame)
+@variables vx(t) vy(t) vz(t)
+velocity_world = [vx, vy, vz]
+
 # Attitude
 # φ-roll (around body x-axis), θ-pitch (around body y-axis), ψ-yaw (around body z-axis)
 @variables φ(t) θ(t) ψ(t)
@@ -48,16 +52,17 @@ g_vec = [0, 0, -g]
 inertia_matrix = [Ixx Ixy Ixz; Ixy Iyy Iyz; Ixz Ixy Izz]
 
 eqs = vcat(
-    DDt.(position_world) .~ F / m + g_vec,
+    Dt.(position_world) .~ velocity_world,
+    Dt.(velocity_world) .~ F / m + g_vec,
+    Dt.(attitude) .~ inv(R) * angular_velocity_world,
     Dt.(angular_velocity_world) .~ inertia_matrix \
-            (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world)),
-    Dt.(attitude) .~ inv(R) * angular_velocity_world
+            (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world))
 )
 
 @named quadrotor_3d = ODESystem(
     eqs,
     t,
-    vcat(position_world, attitude, angular_velocity_world, T, τ),
+    vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τ),
     params
 )
 
