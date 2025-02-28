@@ -22,7 +22,6 @@ function π_vertical_only(x, p; z_goal=0.0, k_p=1.0, k_d=1.0)
     # PD controller for vertical motion, limited to nonnegative thrust
     T0 = m * g
     T = T0 - k_p * (z - z_goal) - k_d * ż
-    T = max(T, 0.0)
     return [T, 0, 0, 0]
 end
 
@@ -138,10 +137,7 @@ end
 
 function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R = I(4))
     L = quadrotor_3d_lqr_matrix(p; Q, R, x_eq, u_eq)
-    return function (x)
-        u = -L * (x .- x_eq) + u_eq
-        return vcat(max(0.0, u[1]), u[2:end])
-    end
+    return (x) -> -L * (x - x_eq) + u_eq
 end
 
 _, _, p, quadrotor_3d_simplified = generate_control_function(

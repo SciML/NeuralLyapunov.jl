@@ -2,13 +2,17 @@
 @independent_variables t
 Dt = Differential(t); DDt = Dt^2
 @variables x(t) y(t) θ(t)
-@variables u1(t) [input=true, bounds=(0, Inf)] u2(t) [input=true, bounds=(0, Inf)]
+@variables u1(t) [input=true] u2(t) [input=true]
 @parameters m I_quad g r
 
+# Thrusts must be positive
+ũ1 = max(0, u1)
+ũ2 = max(0, u2)
+
 eqs = [
-    m * DDt(x) ~ -(u1 + u2) * sin(θ);
-    m * DDt(y) ~ (u1 + u2) * cos(θ) - m * g;
-    I_quad * DDt(θ) ~ r * (u1 - u2)
+    m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
+    m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
+    I_quad * DDt(θ) ~ r * (ũ1 - ũ2)
 ]
 
 @named quadrotor_planar = ODESystem(eqs, t, [x, y, θ, u1, u2], [m, I_quad, g, r])
@@ -39,10 +43,16 @@ angular_velocity_world = [ωφ, ωθ, ωψ]
 
 # Inputs
 # T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
-@variables T(t) [input=true, bounds=(0, Inf)]
+@variables T(t) [input=true]
 @variables τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
-F = T * R[3, :]
-τ = [τφ; τθ; τψ]
+
+# Individual rotor thrusts must be positive
+f = ([1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * [T; τφ; τθ; τψ]) ./ 4
+f̃ = max.(0, f)
+T̃ = [1 1 1 1; 0 1 0 -1; -1 0 1 0; -1 1 -1 1] * f̃
+
+F = T̃[1] .* R[3, :]
+τ = T̃[2:4]
 
 # Parameters
 # m-mass, g-gravitational accelerationz
@@ -53,7 +63,7 @@ inertia_matrix = [Ixx Ixy Ixz; Ixy Iyy Iyz; Ixz Ixy Izz]
 
 eqs = vcat(
     Dt.(position_world) .~ velocity_world,
-    Dt.(velocity_world) .~ F / m + g_vec,
+    Dt.(velocity_world) .~ F ./ m .+ g_vec,
     Dt.(attitude) .~ inv(R) * angular_velocity_world,
     Dt.(angular_velocity_world) .~ inertia_matrix \
             (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world))
@@ -62,7 +72,7 @@ eqs = vcat(
 @named quadrotor_3d = ODESystem(
     eqs,
     t,
-    vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τ),
+    vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τφ, τθ, τψ),
     params
 )
 
