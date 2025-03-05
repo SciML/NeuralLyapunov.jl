@@ -16,8 +16,9 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
-using Random
+using Random, StableRNGs
 
+rng = StableRNG(0)
 Random.seed!(200)
 
 ######################### Define dynamics and domain ##########################
@@ -25,7 +26,8 @@ Random.seed!(200)
 @parameters ζ ω_0
 defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 
-@variables t θ(t) τ(t) [input = true]
+@independent_variables t
+@variables θ(t) τ(t) [input = true]
 Dt = Differential(t)
 DDt = Dt^2
 
@@ -52,7 +54,7 @@ upright_equilibrium = [π, 0.0]
 # We use an input layer that is periodic with period 2π with respect to θ
 dim_state = length(bounds)
 dim_hidden = 20
-dim_phi = 3
+dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
@@ -61,28 +63,29 @@ chain = [Chain(
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
+ps = Lux.initialparameters(rng, chain)
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(1_250)
-discretization = PhysicsInformedNN(chain, strategy)
+strategy = QuasiRandomTraining(5000)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
-structure = add_policy_search(
-    structure,
-    dim_u
-)
+structure = add_policy_search(structure, dim_u)
+
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability()
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -106,7 +109,7 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 400)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
@@ -150,7 +153,8 @@ using ModelingToolkit
 @parameters ζ ω_0
 defaults = Dict([ζ => 0.5, ω_0 => 1.0])
 
-@variables t θ(t) τ(t) [input = true]
+@independent_variables t
+@variables θ(t) τ(t) [input = true]
 Dt = Differential(t)
 DDt = Dt^2
 
@@ -182,12 +186,16 @@ For more on that aspect, see the [NeuralPDE documentation](https://docs.sciml.ai
 ```@example policy_search
 using Lux
 import Boltz.Layers: PeriodicEmbedding
+using StableRNGs
+
+# Stable random number generator for doc stability
+rng = StableRNG(0)
 
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
 dim_state = length(bounds)
 dim_hidden = 20
-dim_phi = 3
+dim_phi = 2
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
@@ -196,14 +204,16 @@ chain = [Chain(
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
+ps = Lux.initialparameters(rng, chain)
 ```
 
 ```@example policy_search
 using NeuralPDE
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(1250)
-discretization = PhysicsInformedNN(chain, strategy)
+strategy = QuasiRandomTraining(5000)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+nothing # hide
 ```
 
 We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we'll be using.
@@ -219,24 +229,25 @@ We'll modify the second factor to be ``2\pi``-periodic in ``\theta``:
 using NeuralLyapunov
 
 # Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
+nothing # hide
 ```
 
 In addition to representing the neural Lyapunov function, our neural network must also represent the controller.
 For this, we use the [`add_policy_search`](@ref) function, which tells NeuralLyapunov to expect dynamics with a control input and to treat the last `dim_u` dimensions of the neural network as the output of our controller.
 
 ```@example policy_search
-structure = add_policy_search(
-    structure,
-    dim_u
-)
+structure = add_policy_search(structure, dim_u)
+nothing # hide
 ```
 
 Since our Lyapunov candidate structurally enforces positive definiteness, we use [`DontCheckNonnegativity`](@ref).
@@ -245,7 +256,7 @@ Since our Lyapunov candidate structurally enforces positive definiteness, we use
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-decrease_condition = AsymptoticStability()
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -270,7 +281,7 @@ prob = discretize(pde_system, discretization)
 
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 400)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
@@ -294,6 +305,7 @@ V_func, V̇_func = get_numerical_lyapunov_function(
 )
 
 u = get_policy(net, _θ, dim_output, dim_u)
+nothing # hide
 ```
 
 Now, let's evaluate our controller.
@@ -394,7 +406,7 @@ closed_loop_dynamics = ODEFunction(
     sys = SciMLBase.SymbolCache(state_syms, Symbol.(p_order))
 )
 
-using DifferentialEquations
+using OrdinaryDiffEq: Tsit5
 
 # Starting still at bottom ...
 downward_equilibrium = zeros(2)
