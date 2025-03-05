@@ -63,4 +63,24 @@ eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G)
     p
 )
 
+"""
+    plot_double_pendulum(θ1, θ2, p, t; title)
+    plot_double_pendulum(sol, p; title, N, angle_symbol)
+
+Plot the pendulum's trajectory.
+
+# Arguments
+  - `θ1`: The angle of the first pendulum link at each time step.
+  - `θ2`: The angle of the second pendulum link at each time step.
+  - `t`: The time steps.
+  - `sol`: The solution to the ODE problem.
+  - `p`: The parameters of the double pendulum.
+
+# Keyword arguments
+  - `title`: The title of the plot; defaults to no title (i.e., `title=""`).
+  - `N`: The number of points to plot; when using `θ` and `t`, uses `length(t)`; defaults to
+    500 when using `sol`.
+  - `angle1_symbol`: The symbol of the angle of the first link in `sol`; defaults to `:θ1`.
+  - `angle2_symbol`: The symbol of the angle of the second link in `sol`; defaults to `:θ2`.
+"""
 function plot_double_pendulum end

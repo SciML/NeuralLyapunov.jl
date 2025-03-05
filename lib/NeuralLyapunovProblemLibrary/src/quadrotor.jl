@@ -76,5 +76,74 @@ eqs = vcat(
     params
 )
 
+"""
+    plot_quadrotor_planar(x, y, θ, [u1, u2,] p, t; title)
+    plot_quadrotor_planar(sol, p; title, N, x_symbol, y_symbol, θ_symbol)
+
+Plot the planar quadrotor's trajectory.
+
+When thrusts are supplied, the arrows scale with thrust, otherwise the arrows are of
+constant length.
+
+# Arguments
+  - `x`: The x-coordinate of the quadrotor at each time step.
+  - `y`: The y-coordinate of the quadrotor at each time step.
+  - `θ`: The angle of the quadrotor at each time step.
+  - `u1`: The thrust of the first rotor at each time step.
+  - `u2`: The thrust of the second rotor at each time step.
+  - `t`: The time steps.
+  - `sol`: The solution to the ODE problem.
+  - `p`: The parameters of the quadrotor.
+
+# Keyword arguments
+  - `title`: The title of the plot; defaults to no title (i.e., `title=""`).
+  - `N`: The number of points to plot; when using `x`, `y`, `θ`, and `t`, uses `length(t)`; defaults to
+    500 when using `sol`.
+  - `x_symbol`: The symbol of the x-coordinate in `sol`; defaults to `:x`.
+  - `y_symbol`: The symbol of the y-coordinate in `sol`; defaults to `:y`.
+  - `θ_symbol`: The symbol of the angle in `sol`; defaults to `:θ`.
+  - `u1_symbol`: The symbol of the thrust of the first rotor in `sol`; defaults to `:u1`.
+  - `u2_symbol`: The symbol of the thrust of the second rotor in `sol`; defaults to `:u2`.
+"""
 function plot_quadrotor_planar end
+
+"""
+    plot_quadrotor_3d(x, y, z, φ, θ, ψ, [T, τφ, τθ, τψ,] p, t; title)
+    plot_quadrotor_3d(sol, p; title, N, x_symbol, y_symbol, z_symbol, φ_symbol, θ_symbol, ψ_symbol, T_symbol, τφ_symbol, τθ_symbol, τψ_symbol)
+
+Plot the 3D quadrotor's trajectory.
+
+When thrusts are supplied, the arrows scale with thrust, otherwise the arrows are of
+constant length.
+
+# Arguments
+  - `x`: The x-coordinate of the quadrotor at each time step.
+  - `y`: The y-coordinate of the quadrotor at each time step.
+  - `z`: The z-coordinate of the quadrotor at each time step.
+  - `φ`: The roll of the quadrotor at each time step.
+  - `θ`: The pitch of the quadrotor at each time step.
+  - `ψ`: The yaw of the quadrotor at each time step.
+  - `T`: The thrust of the quadrotor at each time step.
+  - `τφ`: The roll torque of the quadrotor at each time step.
+  - `τθ`: The pitch torque of the quadrotor at each time step.
+  - `τψ`: The yaw torque of the quadrotor at each time step.
+  - `t`: The time steps.
+  - `sol`: The solution to the ODE problem.
+  - `p`: The parameters of the quadrotor.
+
+# Keyword arguments
+  - `title`: The title of the plot; defaults to no title (i.e., `title=""`).
+  - `N`: The number of points to plot; when using `x`, `y`, `z`, etc., uses `length(t)`;
+    defaults to 500 when using `sol`.
+  - `x_symbol`: The symbol of the x-coordinate in `sol`; defaults to `:x`.
+  - `y_symbol`: The symbol of the y-coordinate in `sol`; defaults to `:y`.
+  - `z_symbol`: The symbol of the z-coordinate in `sol`; defaults to `:z`.
+  - `φ_symbol`: The symbol of the roll in `sol`; defaults to `:φ`.
+  - `θ_symbol`: The symbol of the pitch in `sol`; defaults to `:θ`.
+  - `ψ_symbol`: The symbol of the yaw in `sol`; defaults to `:ψ`.
+  - `T_symbol`: The symbol of the thrust in `sol`; defaults to `:T`.
+  - `τφ_symbol`: The symbol of the roll torque in `sol`; defaults to `:τφ`.
+  - `τθ_symbol`: The symbol of the pitch torque in `sol`; defaults to `:τθ`.
+  - `τψ_symbol`: The symbol of the yaw torque in `sol`; defaults to `:τψ`.
+"""
 function plot_quadrotor_3d end

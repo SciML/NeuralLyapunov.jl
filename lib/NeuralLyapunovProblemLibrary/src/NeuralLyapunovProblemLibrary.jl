@@ -9,7 +9,7 @@ export pendulum, pendulum_undriven
 export plot_pendulum
 
 include("double_pendulum.jl")
-export double_pendulum, acrobot, double_pendulum_undriven
+export double_pendulum, acrobot, pendubot, double_pendulum_undriven
 export plot_double_pendulum
 
 include("quadrotor.jl")
