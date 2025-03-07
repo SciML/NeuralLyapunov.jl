@@ -83,8 +83,8 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, u1, u2, p,
     end
 
     m, _, g, r = p
-    u1 = u1 ./ (m * g / 2)
-    u2 = u2 ./ (m * g / 2)
+    u1 = max.(0.0, u1 ./ (m * g / 2))
+    u2 = max.(0.0, u2 ./ (m * g / 2))
     return @animate for i in eachindex(t)
         # Quadcopter body
         plot(quadrotor_body(x[i], y[i], θ[i], r), aspect_ratio=1, legend=false)
@@ -202,7 +202,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
 
     # Calculate thrusts (rescaled as lengths)
     τ = transpose(hcat(T, τφ ./ L, τθ ./ L, τψ ./ k))
-    F = [1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * τ ./ (m * g) .* L ./ 3
+    F = max.(0.0, [1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * τ ./ (m * g) .* L ./ 3)
 
     return @animate for i in eachindex(t)
         # CoM position (world coordinates)
