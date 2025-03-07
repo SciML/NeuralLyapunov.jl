@@ -1,6 +1,6 @@
 ##################################### Planar quadrotor #####################################
 """
-    QuadrotorPlanar(; name)
+    QuadrotorPlanar(; name, defaults)
 
 Create an `ODESystem` representing a planar approximation of the quadrotor (technically a
 birotor).
@@ -31,8 +31,11 @@ The name of the `ODESystem` is `name`.
   - `g`: gravitational acceleration in the direction of the negative ``y``-axis (defaults to
     9.81).
   - `r`: distance from center of mass to each rotor.
+
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[m, I_quad, g, r]`.
 """
-function QuadrotorPlanar(; name)
+function QuadrotorPlanar(; name, defaults=NullParameters())
     @independent_variables t
     Dt = Differential(t); DDt = Dt^2
     @variables x(t) y(t) θ(t)
@@ -49,13 +52,20 @@ function QuadrotorPlanar(; name)
         I_quad * DDt(θ) ~ r * (ũ1 - ũ2)
     ]
 
-    return ODESystem(eqs, t, [x, y, θ, u1, u2], [m, I_quad, g, r]; name)
+    params = [m, I_quad, g, r]
+    kwargs = if defaults == NullParameters()
+        (; name = name)
+    else
+        (; name = name, defaults = Dict(params .=> defaults))
+    end
+
+    return ODESystem(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
 end
 
 ####################################### 3D quadrotor #######################################
 
 """
-    Quadrotor3D(; name)
+    Quadrotor3D(; name, defaults)
 
 Create an `ODESystem` representing a quadrotor in 3D space.
 
@@ -99,8 +109,11 @@ The model calculates individual rotor thrusts and replaces any negative values w
             I_{xz} & I_{yz} & I_{zz}
         \\end{pmatrix}.
     ```
+
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
 """
-function Quadrotor3D(; name)
+function Quadrotor3D(; name, defaults=NullParameters())
     # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
     # https://doi.org/10.1109/ICRA.2011.5980409
     @independent_variables t
@@ -152,12 +165,18 @@ function Quadrotor3D(; name)
                 (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world))
     )
 
+    kwargs = if defaults == NullParameters()
+        (; name = name)
+    else
+        (; name = name, defaults = Dict(params .=> defaults))
+    end
+
     return ODESystem(
         eqs,
         t,
         vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τφ, τθ, τψ),
         params;
-        name
+        kwargs...
     )
 end
 

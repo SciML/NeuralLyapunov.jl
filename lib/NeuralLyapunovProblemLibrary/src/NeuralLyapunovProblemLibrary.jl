@@ -1,6 +1,7 @@
 module NeuralLyapunovProblemLibrary
 
 using ModelingToolkit
+using SciMLBase: NullParameters
 using LinearAlgebra
 using Rotations: RotZXY
 

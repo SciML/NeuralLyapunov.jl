@@ -1,5 +1,5 @@
 """
-    Pendulum(; driven = true, name)
+    Pendulum(; driven = true, name, defaults)
 
 Create an `ODESystem` representing a damped, driven or undriven pendulum, depending on the
 value of driven (defaults to `true`, i.e., driven pendulum).
@@ -12,6 +12,9 @@ divided by the moment of inertia of the pendulum around the pivot (`driven = fal
 ``τ ≡ 0``).
 
 The name of the `ODESystem` is `name`.
+
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[ζ, ω_0]`.
 
 # Example
 
@@ -35,37 +38,32 @@ sqrt(sum(abs2, [x_end, y_end, ω_end] .- [0, -1, 0])) < 1e-4
 true
 ```
 """
-function Pendulum(; driven = true, name)
+function Pendulum(; driven = true, name, defaults=NullParameters())
     @independent_variables t
     Dt = Differential(t); DDt = Dt^2
 
     @variables θ(t) τ(t) [input = true]
     @parameters ζ ω_0
 
-    if driven
-        ################################# Driven pendulum ##################################
-        eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
-
-        return ODESystem(
-            eqs,
-            t,
-            [θ, τ],
-            [ζ, ω_0];
-            name
-        )
+    params = [ζ, ω_0]
+    kwargs = if defaults == NullParameters()
+        (; name = name)
     else
-        ################################ Undriven pendulum #################################
-        eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0]
-
-        return ODESystem(
-            eqs,
-            t,
-            [θ],
-            [ζ, ω_0];
-            name
-        )
-        return pendulum_undriven
+        (; name = name, defaults = Dict(params .=> defaults))
     end
+
+    torque = if driven; τ else 0 end
+    variables = if driven; [θ, τ] else [θ] end
+
+    eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ torque]
+
+    return ODESystem(
+        eqs,
+        t,
+        variables,
+        params;
+        kwargs...
+    )
 end
 
 """

@@ -1,5 +1,5 @@
 """
-    DoublePendulum(; actuation=:fully_actuated, name)
+    DoublePendulum(; actuation=:fully_actuated, name, defaults)
 
 Create an `ODESystem` representing an undamped double pendulum.
 
@@ -39,8 +39,11 @@ The four actuation modes are described in the table below and selected via `actu
   - `m1`: mass of the first pendulum.
   - `m2`: mass of the second pendulum.
   - `g`: gravitational acceleration (defaults to 9.81).
+
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
 """
-function DoublePendulum(; actuation=:fully_actuated, name)
+function DoublePendulum(; actuation=:fully_actuated, name, defaults=NullParameters())
     @independent_variables t
     Dt = Differential(t); DDt = Dt^2
 
@@ -62,17 +65,23 @@ function DoublePendulum(; actuation=:fully_actuated, name)
     q = [θ1, θ2]
     params = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
+    kwargs = if defaults == NullParameters()
+        (; name = name)
+    else
+        (; name = name, defaults = Dict(params .=> defaults))
+    end
+
     if actuation == :fully_actuated
         ########################## Fully-actuated double pendulum ##########################
         @variables τ1(t) [input = true] τ2(t) [input = true]
         u = [τ1, τ2]
 
         eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + u)
-        return ODESystem(eqs, t, vcat(q, u), params; name)
+        return ODESystem(eqs, t, vcat(q, u), params; kwargs...)
     elseif actuation == :undriven
         ############################# Undriven double pendulum #############################
         eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G)
-        return ODESystem(eqs, t, q, params; name)
+        return ODESystem(eqs, t, q, params; kwargs...)
     else
         ########################## Underactuated double pendulum ###########################
         @variables τ(t) [input = true]
@@ -82,13 +91,13 @@ function DoublePendulum(; actuation=:fully_actuated, name)
             B = [0, 1]
             eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
 
-            return ODESystem(eqs, t, vcat(q, τ), params; name)
+            return ODESystem(eqs, t, vcat(q, τ), params; kwargs...)
         elseif actuation == :pendubot
             ################################### Pendubot ###################################
             B = [1, 0]
             eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
 
-            return ODESystem(eqs, t, vcat(q, τ), params; name)
+            return ODESystem(eqs, t, vcat(q, τ), params; kwargs...)
         else
             error(
                 "Invalid actuation for DoublePendulum. Received actuation = :",
@@ -99,18 +108,22 @@ function DoublePendulum(; actuation=:fully_actuated, name)
 end
 
 """
-    Acrobot(; name)
+    Acrobot(; name, defaults)
 
-Alias for [`DoublePendulum(; actuation = :acrobot, name)`](@ref).
+Alias for [`DoublePendulum(; actuation = :acrobot, name, defaults)`](@ref).
 """
-Acrobot(; name) = DoublePendulum(; actuation = :acrobot, name)
+function Acrobot(; name, defaults=NullParameters())
+    return DoublePendulum(; actuation = :acrobot, name, defaults)
+end
 
 """
-    Pendubot(; name)
+    Pendubot(; name, defaults)
 
-Alias for [`DoublePendulum(; actuation = :pendubot, name)`](@ref).
+Alias for [`DoublePendulum(; actuation = :pendubot, name, defaults)`](@ref).
 """
-Pendubot(; name) = DoublePendulum(; actuation = :pendubot, name)
+function Pendubot(; name, defaults=NullParameters())
+    DoublePendulum(; actuation = :pendubot, name, defaults)
+end
 
 """
     plot_double_pendulum(θ1, θ2, p, t; title)
