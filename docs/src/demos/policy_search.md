@@ -14,6 +14,8 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 
 ```julia
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using ModelingToolkit: inputs
+using NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random, StableRNGs
@@ -23,27 +25,15 @@ Random.seed!(200)
 
 ######################### Define dynamics and domain ##########################
 
-@parameters ζ ω_0
-defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+@named pendulum = Pendulum(; defaults = [0.5, 1.0])
 
-@independent_variables t
-@variables θ(t) τ(t) [input = true]
+t, = independent_variables(pendulum)
 Dt = Differential(t)
-DDt = Dt^2
-
-eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
-
-@named driven_pendulum = ODESystem(
-    eqs,
-    t,
-    [θ, τ],
-    [ζ, ω_0];
-    defaults = defaults
-)
+θ, = setdiff(unknowns(pendulum), inputs(pendulum))
 
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-10.0, 10.0)
+    Dt(θ) ∈ (-2.0, 2.0)
 ]
 
 upright_equilibrium = [π, 0.0]
@@ -97,7 +87,7 @@ spec = NeuralLyapunovSpecification(
 ############################# Construct PDESystem #############################
 
 @named pde_system = NeuralLyapunovPDESystem(
-    driven_pendulum,
+    pendulum,
     bounds,
     spec;
     fixed_point = upright_equilibrium
@@ -119,8 +109,8 @@ net = discretization.phi
 _θ = res.u.depvar
 
 (open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    driven_pendulum; simplify = true, split = false)
-p = [defaults[param] for param in p_order]
+    pendulum; simplify = true, split = false)
+p = [defaults(pendulum)[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
     net,
@@ -128,7 +118,7 @@ V_func, V̇_func = get_numerical_lyapunov_function(
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
-    p = p
+    p
 )
 
 u = get_policy(net, _θ, dim_output, dim_u)
@@ -142,38 +132,26 @@ using Random
 Random.seed!(200)
 ```
 
-In this example, we'll set up the dynamics using a ModelingToolkit `ODESystem`.
-Since the torque ``\tau`` is our control input, we use the `[input = true]` flag for it.
+In this example, we'll use the [`Pendulum`](@ref) model in [NeuralLyaupnovProblemLibrary.jl](../lib.md).
 
 Since the angle ``\theta`` is periodic with period ``2\pi``, our box domain will be one period in ``\theta`` and an interval in ``\frac{d\theta}{dt}``.
 
 ```@example policy_search
-using ModelingToolkit
+using ModelingToolkit, NeuralLyapunovProblemLibrary
+using ModelingToolkit: inputs
 
-@parameters ζ ω_0
-defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+@named pendulum = Pendulum(; defaults = [0.5, 1.0])
 
-@independent_variables t
-@variables θ(t) τ(t) [input = true]
+t, = independent_variables(pendulum)
 Dt = Differential(t)
-DDt = Dt^2
-
-eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
+θ, = setdiff(unknowns(pendulum), inputs(pendulum))
 
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-10.0, 10.0)
+    Dt(θ) ∈ (-2.0, 2.0)
 ]
 
 upright_equilibrium = [π, 0.0]
-
-@named driven_pendulum = ODESystem(
-    eqs,
-    t,
-    [θ, τ],
-    [ζ, ω_0];
-    defaults = defaults
-)
 ```
 
 We'll use an architecture that's ``2\pi``-periodic in ``\theta`` so that we can train on just one period of ``\theta`` and don't need to add any periodic boundary conditions.
@@ -267,7 +245,7 @@ spec = NeuralLyapunovSpecification(
 
 # Construct PDESystem 
 @named pde_system = NeuralLyapunovPDESystem(
-    driven_pendulum,
+    pendulum,
     bounds,
     spec;
     fixed_point = upright_equilibrium
@@ -292,8 +270,8 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(driven_pendulum; simplify = true, split = false)
-p = [defaults[param] for param in p_order]
+(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(pendulum; simplify = true, split = false)
+p = [defaults(pendulum)[param] for param in p_order]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
     net,
@@ -312,8 +290,8 @@ Now, let's evaluate our controller.
 First, we'll get the usual summary statistics on the Lyapunov function and plot ``V``, ``\dot{V}``, and the violations of the decrease condition.
 
 ```@example policy_search
-lb = [0.0, -10.0];
-ub = [2π, 10.0];
+lb = [0.0, -2.0];
+ub = [2π, 2.0];
 xs = (-2π):0.1:(2π)
 ys = lb[2]:0.1:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
