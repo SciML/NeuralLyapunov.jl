@@ -29,6 +29,8 @@ function π_vertical_only(x, p; z_goal=0.0, k_p=1.0, k_d=1.0)
     return [T, 0, 0, 0]
 end
 
+@named quadrotor_3d = Quadrotor3D()
+
 _, _, p, quadrotor_3d_simplified = generate_control_function(
     quadrotor_3d;
     simplify=true,
@@ -145,6 +147,8 @@ function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R =
     L = quadrotor_3d_lqr_matrix(p; Q, R, x_eq, u_eq)
     return (x) -> -L * (x - x_eq) + u_eq
 end
+
+@named quadrotor_3d = Quadrotor3D()
 
 _, _, p, quadrotor_3d_simplified = generate_control_function(
     quadrotor_3d;

@@ -1,80 +1,165 @@
 ##################################### Planar quadrotor #####################################
-@independent_variables t
-Dt = Differential(t); DDt = Dt^2
-@variables x(t) y(t) θ(t)
-@variables u1(t) [input=true] u2(t) [input=true]
-@parameters m I_quad g r
+"""
+    QuadrotorPlanar(; name)
 
-# Thrusts must be nonnegative
-ũ1 = max(0, u1)
-ũ2 = max(0, u2)
+Create an `ODESystem` representing a planar approximation of the quadrotor (technically a
+birotor).
 
-eqs = [
-    m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
-    m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
-    I_quad * DDt(θ) ~ r * (ũ1 - ũ2)
-]
+This birotor is a rigid body with two rotors in line with the center of mass.
+The location of the center of mass is determined by `x` and `y`.
+Its orientation is determined by `θ`, measured counter-clockwise from the ``x``-axis.
+The thrust from the right rotor (on the positive ``x``-axis when ``θ = 0``) is the input
+`u1`.
+The thrust from the other rotor is `u2`.
+Note that these thrusts should be nonnegative and if a negative input is provided, the model
+replaces it with 0.
 
-@named quadrotor_planar = ODESystem(eqs, t, [x, y, θ, u1, u2], [m, I_quad, g, r])
+The equations governing the planar quadrotor are:
+```math
+\\begin{align}
+    mẍ &= -(u_1 + u_2)\\sin(θ), \\\\
+    mÿ &= (u_1 + u_2)\\cos(θ) - mg, \\\\
+    I_{quad} \\ddot{θ} &= r (u_1 - u_2).
+\\end{align}
+```
+
+The name of the `ODESystem` is `name`.
+
+# ODESystem Parameters
+  - `m`: mass of the quadrotor.
+  - `I_quad`: moment of inertia of the quadrotor around its center of mass.
+  - `g`: gravitational acceleration in the direction of the negative ``y``-axis (defaults to
+    9.81).
+  - `r`: distance from center of mass to each rotor.
+"""
+function QuadrotorPlanar(; name)
+    @independent_variables t
+    Dt = Differential(t); DDt = Dt^2
+    @variables x(t) y(t) θ(t)
+    @variables u1(t) [input=true] u2(t) [input=true]
+    @parameters m I_quad g r
+
+    # Thrusts must be nonnegative
+    ũ1 = max(0, u1)
+    ũ2 = max(0, u2)
+
+    eqs = [
+        m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
+        m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
+        I_quad * DDt(θ) ~ r * (ũ1 - ũ2)
+    ]
+
+    return ODESystem(eqs, t, [x, y, θ, u1, u2], [m, I_quad, g, r]; name)
+end
 
 ####################################### 3D quadrotor #######################################
-# Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
-# https://doi.org/10.1109/ICRA.2011.5980409
-@independent_variables t
-Dt = Differential(t); DDt = Dt^2
 
-# Position (world frame)
-@variables x(t) y(t) z(t)
-position_world = [x, y, z]
+"""
+    Quadrotor3D(; name)
 
-# Velocity (world frame)
-@variables vx(t) vy(t) vz(t)
-velocity_world = [vx, vy, vz]
+Create an `ODESystem` representing a quadrotor in 3D space.
 
-# Attitude
-# φ-roll (around body x-axis), θ-pitch (around body y-axis), ψ-yaw (around body z-axis)
-@variables φ(t) θ(t) ψ(t)
-attitude = [φ, θ, ψ]
-R = RotZXY(roll=φ, pitch=θ, yaw=ψ)
+The quadrotor is a rigid body in an X-shape (90°-angles between the rotors).
+The equations governing the quadrotor can be found in [quadrotor](@cite).
 
-# Angular velocity (world frame)
-@variables ωφ(t), ωθ(t), ωψ(t)
-angular_velocity_world = [ωφ, ωθ, ωψ]
+# ODESystem State Variables
+  - `x`: ``x``-position (world frame).
+  - `y`: ``y``-position (world frame).
+  - `z`: ``z``-position (world frame).
+  - `φ`: roll around body ``x``-axis (Z-X-Y Euler angles).
+  - `θ`: pitch around body ``y``-axis (Z-X-Y Euler angles).
+  - `ψ`: yaw around body ``z``-axis (Z-X-Y Euler angles).
+  - `vx`: ``x``-velocity (world frame).
+  - `vy`: ``y``-velocity (world frame).
+  - `vz`: ``z``-velocity (world frame).
+  - `ωφ`: roll angular velocity (world frame).
+  - `ωθ`: pitch angular velocity (world frame).
+  - `ωψ`: yaw angular velocity (world frame).
 
-# Inputs
-# T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
-@variables T(t) [input=true]
-@variables τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
+# ODESystem Input Variables
+  - `T`: thrust (should be nonnegative).
+  - `τφ`: roll torque.
+  - `τθ`: pitch torque.
+  - `τψ`: yaw torque.
 
-# Individual rotor thrusts must be nonnegative
-f = ([1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * [T; τφ; τθ; τψ]) ./ 4
-f̃ = max.(0, f)
-T̃ = [1 1 1 1; 0 1 0 -1; -1 0 1 0; -1 1 -1 1] * f̃
+Not only should the aggregate thrust be nonnegative, but the torques should have been
+generated from nonnegative individual rotor thrusts.
+The model calculates individual rotor thrusts and replaces any negative values with 0.
 
-F = T̃[1] .* R[3, :]
-τ = T̃[2:4]
+# ODESystem Parameters
+  - `m`: mass of the quadrotor.
+  - `g`: gravitational acceleration in the direction of the negative ``z``-axis (defaults to
+    9.81).
+  - `Ixx`,`Ixy`,`Ixz`,`Iyy`,`Iyz`,`Izz`: components of the moment of inertia matrix of the
+    quadrotor around its center of mass:
+    ```math
+    I = \\begin{pmatrix}
+            I_{xx} & I_{xy} & I_{xz} \\\\
+            I_{xy} & I_{yy} & I_{yz} \\\\
+            I_{xz} & I_{yz} & I_{zz}
+        \\end{pmatrix}.
+    ```
+"""
+function Quadrotor3D(; name)
+    # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
+    # https://doi.org/10.1109/ICRA.2011.5980409
+    @independent_variables t
+    Dt = Differential(t)
 
-# Parameters
-# m-mass, g-gravitational accelerationz
-@parameters m g=9.81 Ixx Ixy Ixz Iyy Iyz Izz
-params = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
-g_vec = [0, 0, -g]
-inertia_matrix = [Ixx Ixy Ixz; Ixy Iyy Iyz; Ixz Ixy Izz]
+    # Position (world frame)
+    @variables x(t) y(t) z(t)
+    position_world = [x, y, z]
 
-eqs = vcat(
-    Dt.(position_world) .~ velocity_world,
-    Dt.(velocity_world) .~ F ./ m .+ g_vec,
-    Dt.(attitude) .~ inv(R) * angular_velocity_world,
-    Dt.(angular_velocity_world) .~ inertia_matrix \
-            (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world))
-)
+    # Velocity (world frame)
+    @variables vx(t) vy(t) vz(t)
+    velocity_world = [vx, vy, vz]
 
-@named quadrotor_3d = ODESystem(
-    eqs,
-    t,
-    vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τφ, τθ, τψ),
-    params
-)
+    # Attitude
+    # φ-roll (around body x-axis), θ-pitch (around body y-axis), ψ-yaw (around body z-axis)
+    @variables φ(t) θ(t) ψ(t)
+    attitude = [φ, θ, ψ]
+    R = RotZXY(roll=φ, pitch=θ, yaw=ψ)
+
+    # Angular velocity (world frame)
+    @variables ωφ(t), ωθ(t), ωψ(t)
+    angular_velocity_world = [ωφ, ωθ, ωψ]
+
+    # Inputs
+    # T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
+    @variables T(t) [input=true]
+    @variables τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
+
+    # Individual rotor thrusts must be nonnegative
+    f = ([1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * [T; τφ; τθ; τψ]) ./ 4
+    f̃ = max.(0, f)
+    T̃ = [1 1 1 1; 0 1 0 -1; -1 0 1 0; -1 1 -1 1] * f̃
+
+    F = T̃[1] .* R[3, :]
+    τ = T̃[2:4]
+
+    # Parameters
+    # m-mass, g-gravitational accelerationz
+    @parameters m g=9.81 Ixx Ixy Ixz Iyy Iyz Izz
+    params = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
+    g_vec = [0, 0, -g]
+    inertia_matrix = [Ixx Ixy Ixz; Ixy Iyy Iyz; Ixz Ixy Izz]
+
+    eqs = vcat(
+        Dt.(position_world) .~ velocity_world,
+        Dt.(velocity_world) .~ F ./ m .+ g_vec,
+        Dt.(attitude) .~ inv(R) * angular_velocity_world,
+        Dt.(angular_velocity_world) .~ inertia_matrix \
+                (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world))
+    )
+
+    return ODESystem(
+        eqs,
+        t,
+        vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τφ, τθ, τψ),
+        params;
+        name
+    )
+end
 
 """
     plot_quadrotor_planar(x, y, θ, [u1, u2,] p, t; title)

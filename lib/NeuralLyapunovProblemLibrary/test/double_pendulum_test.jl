@@ -29,6 +29,8 @@ E(x, p) = T(x, p) + U(x, p)
 ######################### Undriven double pendulum conserve energy #########################
 println("Undriven double pendulum energy conservation test")
 
+@named double_pendulum_undriven = DoublePendulum(; actuation=:undriven)
+
 t, = independent_variables(double_pendulum_undriven)
 Dt = Differential(t)
 θ1, θ2 = unknowns(double_pendulum_undriven)
@@ -73,6 +75,8 @@ anim = plot_double_pendulum(sol, p)
 
 ########################### Feedback cancellation, PD controller ###########################
 println("Double pendulum feedback cancellation test")
+
+@named double_pendulum = DoublePendulum()
 
 function π_cancellation(x, p)
     θ1, θ2, ω1, ω2 = x
@@ -179,6 +183,8 @@ function π_lqr(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
     L = acrobot_lqr_matrix(p; x_eq, Q, R)
     return (x) -> -L * (x .- x_eq)
 end
+
+@named acrobot = Acrobot()
 
 _, x, params, acrobot_simplified = generate_control_function(
     acrobot;

@@ -1,28 +1,72 @@
-@independent_variables t
-Dt = Differential(t); DDt = Dt^2
+"""
+    Pendulum(; driven = true, name)
 
-@variables θ(t) τ(t) [input = true]
-@parameters ζ ω_0
+Create an `ODESystem` representing a damped, driven or undriven pendulum, depending on the
+value of driven (defaults to `true`, i.e., driven pendulum).
 
-eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
+The equation used in this model is
+``\\ddot{θ} + 2 ζ ω_0 \\dot{θ} + ω_0^2 \\sin(θ) = τ,``
+where ``θ`` is the angle counter-clockwise from the downward equilibrium, ``ζ`` is the
+damping parameter, ``ω_0`` is the resonant angular frequency, and ``τ`` is the input torque
+divided by the moment of inertia of the pendulum around the pivot (`driven = false` sets
+``τ ≡ 0``).
 
-##################################### Driven pendulum ######################################
-@named pendulum = ODESystem(
-    eqs,
-    t,
-    [θ, τ],
-    [ζ, ω_0]
-)
+The name of the `ODESystem` is `name`.
 
-eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0]
+# Example
 
-#################################### Undriven pendulum #####################################
-@named pendulum_undriven = ODESystem(
-    eqs,
-    t,
-    [θ],
-    [ζ, ω_0]
-)
+```jldoctest; output = false
+@named pendulum = Pendulum(driven = false)
+pendulum = structural_simplify(pendulum)
+
+x0 = π * rand(2)
+p = rand(2)
+τ = 1 / prod(p)
+
+prob = ODEProblem(pendulum, x0, 15τ, p)
+sol = solve(prob, Tsit5())
+
+# Check that the undriven pendulum fell to the downward equilibrium
+θ_end, ω_end = sol.u[end]
+x_end, y_end = sin(θ_end), -cos(θ_end)
+
+sqrt(sum(abs2, [x_end, y_end, ω_end] .- [0, -1, 0])) < 1e-4
+# output
+true
+```
+"""
+function Pendulum(; driven = true, name)
+    @independent_variables t
+    Dt = Differential(t); DDt = Dt^2
+
+    @variables θ(t) τ(t) [input = true]
+    @parameters ζ ω_0
+
+    if driven
+        ################################# Driven pendulum ##################################
+        eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
+
+        return ODESystem(
+            eqs,
+            t,
+            [θ, τ],
+            [ζ, ω_0];
+            name
+        )
+    else
+        ################################ Undriven pendulum #################################
+        eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0]
+
+        return ODESystem(
+            eqs,
+            t,
+            [θ],
+            [ζ, ω_0];
+            name
+        )
+        return pendulum_undriven
+    end
+end
 
 """
     plot_pendulum(θ, t; title)

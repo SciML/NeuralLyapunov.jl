@@ -12,12 +12,13 @@ rng = StableRNG(0)
 #################################### Hovering quadrotor ####################################
 println("Planar quadrotor vertical only test")
 
+@named quadrotor_planar = QuadrotorPlanar()
+
 function π_vertical_only(x, p; y_goal=0.0, k_p=1.0, k_d=1.0)
     y, ẏ = x[2], x[5]
     m, I_quad, g, r = p
     T0 = m * g / 2
     T = T0 - k_p * m * g / r * (y - y_goal) - k_d * m * sqrt(g / r) * ẏ
-    T = max(T, 0.0)
     return [T, T]
 end
 
@@ -110,8 +111,10 @@ function π_lqr(p; x_eq = zeros(6), Q = I(6), R = I(2))
     L = quadrotor_planar_lqr_matrix(p; Q, R)
     m, _, g, _ = p
     T0 = m * g / 2
-    return (x) -> max.(0.0, -L * (x .- x_eq) + [T0, T0])
+    return (x) -> -L * (x - x_eq) + [T0, T0]
 end
+
+@named quadrotor_planar = QuadrotorPlanar()
 
 _, _, p, quadrotor_planar_simplified = generate_control_function(
     quadrotor_planar;

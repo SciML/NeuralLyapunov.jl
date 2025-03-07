@@ -10,6 +10,8 @@ rng = StableRNG(0)
 ################## Undriven pendulum should drop to downward equilibrium ###################
 println("Undriven pendulum test")
 
+@named pendulum_undriven = Pendulum(; driven = false)
+
 x0 = π * rand(rng, 2)
 p = rand(rng, 2)
 τ = 1 / prod(p)
@@ -25,6 +27,8 @@ anim = plot_pendulum(sol)
 
 ############################# Feedback cancellation controller #############################
 println("Simple pendulum feedback cancellation test")
+
+@named pendulum = Pendulum()
 
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
 
