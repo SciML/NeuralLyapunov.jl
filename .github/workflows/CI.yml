@@ -12,6 +12,31 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
+  tests:
+    name: "Tests"
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'
+          - 'nightly'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
+        include:
+          - version: '1.10'
+            allow_failure: false
+          - version: 'nightly'
+            allow_failure: true
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      project: "${{ matrix.project }}"
+    secrets: "inherit"
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
