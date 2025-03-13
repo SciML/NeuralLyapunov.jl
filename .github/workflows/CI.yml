@@ -36,6 +36,7 @@ jobs:
     with:
       julia-version: "${{ matrix.version }}"
       project: "${{ matrix.project }}"
+      group: "all"
     secrets: "inherit"
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
