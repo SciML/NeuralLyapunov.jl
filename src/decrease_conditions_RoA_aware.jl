@@ -65,7 +65,7 @@ In any of these cases, the rectified linear unit `rectifier = (t) -> max(zero(t)
 exactly represents the inequality, but differentiable approximations of this function may be
 employed.
 
-See also: [`LyapunovDecreaseCondition`](@ref)
+See also: [`AbstractLyapunovDecreaseCondition`](@ref), [`LyapunovDecreaseCondition`](@ref)
 """
 struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
     cond::AbstractLyapunovDecreaseCondition
