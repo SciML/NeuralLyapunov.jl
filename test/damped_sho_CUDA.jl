@@ -7,7 +7,7 @@ using Test, LinearAlgebra, ForwardDiff, StableRNGs
 rng = StableRNG(0)
 Random.seed!(200)
 
-println("Damped Simple Harmonic Oscillator")
+println("Damped Simple Harmonic Oscillator (CUDA)")
 
 ######################### Define dynamics and domain ##########################
 
