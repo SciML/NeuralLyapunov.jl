@@ -31,7 +31,8 @@ end
 Represents the minimization condition in a neural Lyapunov problem
 
 All concrete `AbstractLyapunovMinimizationCondition` subtypes should define the
-`check_nonnegativity`, `check_fixed_point`, and `get_minimization_condition` functions.
+`check_nonnegativity`, `check_zero_fixed_point`, `check_minimal_fixed_point`, and
+`get_minimization_condition` functions.
 """
 abstract type AbstractLyapunovMinimizationCondition end
 
@@ -41,7 +42,7 @@ abstract type AbstractLyapunovMinimizationCondition end
 Represents the decrease condition in a neural Lyapunov problem
 
 All concrete `AbstractLyapunovDecreaseCondition` subtypes should define the
-`check_decrease` and `get_decrease_condition` functions.
+`check_decrease`, `check_maximal_fixed_point` and `get_decrease_condition` functions.
 """
 abstract type AbstractLyapunovDecreaseCondition end
 
@@ -76,10 +77,21 @@ function check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)::Bool
 end
 
 """
-    check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)
+    check_zero_fixed_point(cond::AbstractLyapunovMinimizationCondition)
 
 Return `true` if `cond` specifies training for the Lyapunov function to equal zero at the
 fixed point, and `false` if `cond` specifies no training to meet this condition.
+"""
+function check_zero_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
+    error("check_zero_fixed_point not implemented for " *
+          "AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+end
+
+"""
+    check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)
+
+Return `true` if `cond` specifies training for the Lyapunov function to have a local minimum
+at the fixed point, and `false` if `cond` specifies no training to meet this condition.
 """
 function check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
     error("check_minimal_fixed_point not implemented for " *
@@ -110,6 +122,18 @@ Return `true` if `cond` specifies training to meet the Lyapunov decrease conditi
 function check_decrease(cond::AbstractLyapunovDecreaseCondition)::Bool
     error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type " *
           string(typeof(cond)))
+end
+
+"""
+    check_maximal_fixed_point(cond::AbstractLyapunovMinimizationCondition)
+
+Return `true` if `cond` specifies training for the Lyapunov decrease function to have a
+local maximum at the fixed point, and `false` if `cond` specifies no training to meet this
+condition.
+"""
+function check_maximal_fixed_point(cond::AbstractLyapunovDecreaseCondition)::Bool
+    error("check_maximal_fixed_point not implemented for " *
+          "AbstractLyapunovDecreaseCondition of type $(typeof(cond))")
 end
 
 """
