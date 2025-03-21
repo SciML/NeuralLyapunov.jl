@@ -1,5 +1,5 @@
 """
-    LyapunovMinimizationCondition(check_nonnegativity, strength, rectifier, check_fixed_point)
+    LyapunovMinimizationCondition(check_nonnegativity, strength, rectifier, check_fixed_point, check_fixed_point_gradient)
 
 Specifies the form of the Lyapunov minimization condition to be used.
 

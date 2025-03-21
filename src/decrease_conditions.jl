@@ -13,6 +13,7 @@ Specifies the form of the Lyapunov decrease condition to be used.
     `check_decrease == true`.
   - `rectifier::Function`: positive when the input is positive and (approximately) zero when
     the input is negative.
+  - `check_fixed_point_gradient`: whether or not to train for ``∇V̇(x_0) = 0``.
 
 # Training conditions
 

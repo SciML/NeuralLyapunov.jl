@@ -31,7 +31,8 @@ end
 Represents the minimization condition in a neural Lyapunov problem
 
 All concrete `AbstractLyapunovMinimizationCondition` subtypes should define the
-`check_nonnegativity`, `check_fixed_point`, and `get_minimization_condition` functions.
+`check_nonnegativity`, `check_zero_fixed_point`, `check_minimal_fixed_point`, and
+`get_minimization_condition` functions.
 """
 abstract type AbstractLyapunovMinimizationCondition end
 
@@ -41,7 +42,7 @@ abstract type AbstractLyapunovMinimizationCondition end
 Represents the decrease condition in a neural Lyapunov problem
 
 All concrete `AbstractLyapunovDecreaseCondition` subtypes should define the
-`check_decrease` and `get_decrease_condition` functions.
+`check_decrease`, `check_maximal_fixed_point` and `get_decrease_condition` functions.
 """
 abstract type AbstractLyapunovDecreaseCondition end
 
