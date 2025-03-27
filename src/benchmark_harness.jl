@@ -2,8 +2,8 @@
     benchmark(dynamics, bounds, spec, chain, strategy, opt; <keyword_arguments>)
     benchmark(dynamics, lb, ub, spec, chain, strategy, opt; <keyword_arguments>)
 
-Evaluate the specified neural Lyapunov method on the given system. Return the confusion
-matrix and optimization time.
+Evaluate the specified neural Lyapunov method on the given system. Return a `NamedTuple`
+containing the confusion matrix, optimization time, and other metrics listed below.
 
 Train a neural Lyapunov function as specified, then discretize the domain using a grid
 discretization and use the neural Lyapnov function to and the provided `classifier` to
@@ -45,7 +45,9 @@ arguments for each optimization pass.
   - `n_grid`: number or grid points in each dimension used for evaluating the neural
     Lyapunov classifier.
   - `classifier`: function of ``V(x)``, ``V̇(x)``, and ``x`` that predicts whether ``x`` is
-    in the region of attraction; defaults to `(V, V̇, x) -> V̇ < 0 || endpoint_check(x)`.
+    in the region of attraction; when constructing the confusion matrix, a point is
+    predicted to be in the region of attraction if `classifier` or `endpoint_check` returns
+    `true`; defaults to `(V, V̇, x) -> V̇ < 0`.
   - `fixed_point`: the equilibrium being analyzed; defaults to the origin.
   - `p`: the values of the parameters of the dynamical system being analyzed; defaults to
     `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
@@ -78,17 +80,20 @@ arguments for each optimization pass.
     endpoint is approximately the fixed point and `false` otherwise; defaults to
     `(x) -> ≈(x, fixed_point; atol=atol)`.
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
-  - `verbose`: enable verbose output. Instead of outputting
-    `(confusion_matrix, training_time)`, output
-    `((confusion_matrix, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples))`,
-    where `states` is the grid of evaluation points, `endpoints` is the endpoints of the
-    simulations, `actual` is the result of `endpoint_check` applied to `endpoints`,
-    `predicted` is the result of `classifier` applied to `states`, `V_samples` is ``V``
-    evaluated at `states`, and `V̇_samples` is ``V̇`` evaluated at `states`.
   - `init_params`: initial parameters for the neural network; defaults to `nothing`, in which
     case the initial parameters are generated using `Lux.initialparameters` and `rng`.
   - `rng`: random number generator used to generate initial parameters; defaults to a
     `StableRNG` with seed `0`.
+
+# Output Fields
+  - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
+  - `training_time`: time taken to train the neural Lyapunov function.
+  - `states`: grid of evaluation points.
+  - `endpoints`: endpoints of the simulations.
+  - `actual`: result of `endpoint_check` applied to `endpoints`.
+  - `predicted`: result of `classifier` applied to `states`.
+  - `V_samples`: `V` evaluated at `states`.
+  - `V̇_samples`: `V̇` evaluated at `states`.
 """
 function benchmark(
         dynamics::ODESystem,
@@ -105,8 +110,7 @@ function benchmark(
         ode_solver_args = [],
         atol = 1e-6,
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
-        classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
-        verbose = false,
+        classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
         rng = StableRNG(0)
 )
@@ -140,6 +144,8 @@ function benchmark(
         init_params
     end
 
+    _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
+
     return _benchmark(
         pde_system,
         f,
@@ -150,7 +156,7 @@ function benchmark(
         strategy,
         opt;
         n_grid,
-        classifier,
+        classifier = _classifier,
         fixed_point,
         p,
         optimization_args,
@@ -158,7 +164,6 @@ function benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        verbose,
         init_params
     )
 end
@@ -184,7 +189,6 @@ function benchmark(
         ode_solver_args = [],
         atol = 1e-6,
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
-        verbose = false,
         init_params = nothing,
         rng = StableRNG(0)
 )
@@ -207,6 +211,8 @@ function benchmark(
         init_params
     end
 
+    _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
+
     return _benchmark(
         pde_system,
         dynamics,
@@ -217,7 +223,7 @@ function benchmark(
         strategy,
         opt;
         n_grid,
-        classifier,
+        classifier = _classifier,
         fixed_point,
         p,
         optimization_args,
@@ -225,7 +231,6 @@ function benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        verbose,
         init_params
     )
 end
@@ -248,7 +253,6 @@ function _benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        verbose,
         init_params
 )
     t = @timed begin
@@ -261,7 +265,7 @@ function _benchmark(
         phi = discretization.phi
         (θ, phi)
     end
-    solve_time = t.time
+    training_time = t.time
     θ, phi = t.value
 
     V, V̇ = get_numerical_lyapunov_function(
@@ -281,40 +285,20 @@ function _benchmark(
 
     states, V_samples, V̇_samples = eval_Lyapunov(lb, ub, n_grid, V, V̇)
 
-    if verbose
-        cm, states, endpoints, actual, predicted, V_samples, V̇_samples = build_confusion_matrix(
-            collect(states),
-            V_samples,
-            V̇_samples,
-            f;
-            classifier,
-            fixed_point,
-            simulation_time,
-            p,
-            ode_solver,
-            ode_solver_args,
-            endpoint_check,
-            verbose
-        )
-        return (cm, solve_time),
-        (states, endpoints, actual, predicted, V_samples, V̇_samples)
-    else
-        cm = build_confusion_matrix(
-            collect(states),
-            V_samples,
-            V̇_samples,
-            f;
-            classifier,
-            fixed_point,
-            simulation_time,
-            p,
-            ode_solver,
-            ode_solver_args,
-            endpoint_check,
-            verbose
-        )
-        return (cm, solve_time)
-    end
+    out = build_confusion_matrix(
+        collect(states),
+        V_samples,
+        V̇_samples,
+        f;
+        classifier,
+        simulation_time,
+        p,
+        ode_solver,
+        ode_solver_args,
+        endpoint_check
+    )
+
+    return merge(out, (; training_time))
 end
 
 function benchmark_solve(prob, opt, optimization_args)
@@ -386,13 +370,11 @@ function build_confusion_matrix(
         V̇_samples,
         dynamics;
         classifier,
-        fixed_point,
         simulation_time,
         p,
         ode_solver,
         ode_solver_args,
-        endpoint_check,
-        verbose
+        endpoint_check
 )
     predicted = classifier.(V_samples, V̇_samples, states)
 
@@ -407,13 +389,9 @@ function build_confusion_matrix(
 
     actual = endpoint_check.(endpoints)
 
-    cm = ConfusionMatrix(vec(actual), vec(predicted))
+    confusion_matrix = ConfusionMatrix(vec(actual), vec(predicted))
 
-    if verbose
-        (cm, states, endpoints, actual, predicted, V_samples, V̇_samples)
-    else
-        cm
-    end
+    return (; confusion_matrix, states, endpoints, actual, predicted, V_samples, V̇_samples)
 end
 
 function get_init_params(chain, rng)

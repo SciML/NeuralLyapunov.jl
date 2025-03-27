@@ -61,7 +61,7 @@ using Test
     optimization_args = [:maxiters => 450]
 
     # Run benchmark
-    cm, time = benchmark(
+    out = benchmark(
         sho,
         lb,
         ub,
@@ -74,6 +74,7 @@ using Test
         p = p,
         optimization_args = optimization_args
     )
+    cm = out.confusion_matrix
 
     # SHO is globally asymptotically stable
     @test cm.n == 0
@@ -153,7 +154,7 @@ end
 
     # Run benchmark
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
-    (cm, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples) = benchmark(
+    out = benchmark(
         open_loop_pendulum_dynamics,
         lb,
         ub,
@@ -171,9 +172,9 @@ end
         policy_search = true,
         endpoint_check,
         classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
-        verbose = true,
         init_params = ps
     )
+    cm = out.confusion_matrix
 
     # Resulting controller should drive more states to equilibrium than not
     @test cm.p > cm.n
@@ -252,7 +253,7 @@ end
     optimization_args = [:maxiters => 600]
 
     # Run benchmark
-    cm, time = benchmark(
+    out = benchmark(
         damped_pendulum,
         bounds,
         spec,
@@ -265,6 +266,7 @@ end
         endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol = 1e-3),
         rng = StableRNG(0)
     )
+    cm = out.confusion_matrix
 
     # Damped pendulum is globally asymptotically stable, except at upright equilibrium
     @test cm.n == 2
