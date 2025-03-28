@@ -72,7 +72,7 @@ optimization_args = [[:maxiters =&gt; 300], [:maxiters =&gt; 300]]
 
 # Run benchmark
 endpoint_check = (x) -&gt; ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
-cm, time = benchmark(
+benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -89,7 +89,6 @@ cm, time = benchmark(
     parameter_syms,
     policy_search = true,
     endpoint_check,
-    classifier = (V, V̇, x) -&gt; V̇ &lt; zero(V̇) || endpoint_check(x),
     init_params = ps
 )</code></pre><h2 id="Detailed-Description"><a class="docs-heading-anchor" href="#Detailed-Description">Detailed Description</a><a id="Detailed-Description-1"></a><a class="docs-heading-anchor-permalink" href="#Detailed-Description" title="Permalink"></a></h2><p>Much of the set up is the same as in the <a href="../policy_search/">policy search demo</a>, so see that page for details.</p><pre><code class="language-julia hljs">using NeuralPDE, NeuralLyapunov, Lux
 import Boltz.Layers: PeriodicEmbedding
@@ -159,7 +158,7 @@ spec = NeuralLyapunovSpecification(
 # Define optimization parameters
 opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
 optimization_args = [[:maxiters =&gt; 300], [:maxiters =&gt; 300]]</code></pre><p>Finally, we can run the <a href="../../man/benchmarking/#NeuralLyapunov.benchmark"><code>benchmark</code></a> function.</p><pre><code class="language-julia hljs">endpoint_check = (x) -&gt; ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
-(confusion_matrix, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples) = benchmark(
+benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -176,11 +175,9 @@ optimization_args = [[:maxiters =&gt; 300], [:maxiters =&gt; 300]]</code></pre><
     parameter_syms,
     policy_search = true,
     endpoint_check,
-    classifier = (V, V̇, x) -&gt; V̇ &lt; zero(V̇) || endpoint_check(x),
-    verbose = true,
     init_params = ps
 );</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [Matrix{Float64}]: A [Base.ReshapedArray{Float32, 2, SubArray{Float32, 1, Vector{Float32}, Tuple{UnitRange{Int64}}, true}, Tuple{}}] x B [Matrix{Float64}]). Falling back to generic implementation. This may be slow.
-<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/QOpXZ/src/impl/matmul.jl:165</span></code></pre><p>In this case, we used the <code>verbose = true</code> option to demonstrate the outputs of that option, but if you only want the confusion matrix and training time, leave that option off (<code>verbose</code> defaults to <code>false</code>) and change the first line to:</p><pre><code class="language-julia hljs">confusion_matrix, training_time = benchmark(</code></pre><p>We can observe the confusion matrix and training time:</p><pre><code class="language-julia hljs">confusion_matrix</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌────────────┬───────────┬───────────┐
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/EnsP3/src/impl/matmul.jl:190</span></code></pre><p>We can observe the confusion matrix and training time:</p><pre><code class="language-julia hljs">benchmarking_results.confusion_matrix</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌────────────┬───────────┬───────────┐
 │ Tot = 441  │ Actual │ Actual │
 │            │ positives │ negatives │
 ├────────────┼───────────┼───────────┤
@@ -190,5 +187,5 @@ optimization_args = [[:maxiters =&gt; 300], [:maxiters =&gt; 300]]</code></pre><
 │ Prediced │ 20 │ 0 │
 │ negatives │           │           │
 └────────────┴───────────┴───────────┘
-</code></pre><pre><code class="language-julia hljs">training_time</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">666.858138546</code></pre><p>The returned <code>actual</code> labels are just <code>endpoint_check</code> applied to <code>endpoints</code>, which are the results of simulating from each element of <code>states</code>.</p><pre><code class="language-julia hljs">all(endpoint_check.(endpoints) .== actual)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><p>Similarly, the <code>predicted</code> labels are the results of the neural Lyapunov classifier.</p><pre><code class="language-julia hljs">classifier = (V, V̇, x) -&gt; V̇ &lt; zero(V̇) || endpoint_check(x)
-all(classifier.(V_samples, V̇_samples, states) .== predicted)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../policy_search/">« Policy Search on the Driven Inverted Pendulum</a><a class="docs-footer-nextpage" href="../../lib/">NeuralLyapunovProblemLibrary.jl »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Thursday 20 March 2025 21:47">Thursday 20 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre><pre><code class="language-julia hljs">benchmarking_results.training_time</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">376.770784975</code></pre><p>The returned <code>actual</code> labels are just <code>endpoint_check</code> applied to <code>endpoints</code>, which are the results of simulating from each element of <code>states</code>.</p><pre><code class="language-julia hljs">all(endpoint_check.(benchmarking_results.endpoints) .== benchmarking_results.actual)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><p>Similarly, the <code>predicted</code> labels are the results of the neural Lyapunov classifier.</p><pre><code class="language-julia hljs">classifier = (V, V̇, x) -&gt; V̇ &lt; zero(V̇) || endpoint_check(x)
+all(classifier.(benchmarking_results.V_samples, benchmarking_results.V̇_samples, benchmarking_results.states) .== benchmarking_results.predicted)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../policy_search/">« Policy Search on the Driven Inverted Pendulum</a><a class="docs-footer-nextpage" href="../../lib/">NeuralLyapunovProblemLibrary.jl »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Friday 28 March 2025 20:45">Friday 28 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
