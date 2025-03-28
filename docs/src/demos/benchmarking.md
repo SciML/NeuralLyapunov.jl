@@ -82,7 +82,7 @@ optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
 # Run benchmark
 endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
-cm, time = benchmark(
+benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -99,7 +99,6 @@ cm, time = benchmark(
     parameter_syms,
     policy_search = true,
     endpoint_check,
-    classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
     init_params = ps
 )
 ```
@@ -193,7 +192,7 @@ Finally, we can run the [`benchmark`](@ref) function.
 
 ```@example benchmarking
 endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
-(confusion_matrix, training_time), (states, endpoints, actual, predicted, V_samples, V̇_samples) = benchmark(
+benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
     ub,
@@ -210,38 +209,30 @@ endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
     parameter_syms,
     policy_search = true,
     endpoint_check,
-    classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
-    verbose = true,
     init_params = ps
 );
 nothing # hide
 ```
 
-In this case, we used the `verbose = true` option to demonstrate the outputs of that option, but if you only want the confusion matrix and training time, leave that option off (`verbose` defaults to `false`) and change the first line to:
-
-```julia
-confusion_matrix, training_time = benchmark(
-```
-
 We can observe the confusion matrix and training time:
 
 ```@example benchmarking
-confusion_matrix
+benchmarking_results.confusion_matrix
 ```
 
 ```@example benchmarking
-training_time
+benchmarking_results.training_time
 ```
 
 The returned `actual` labels are just `endpoint_check` applied to `endpoints`, which are the results of simulating from each element of `states`.
 
 ```@example benchmarking
-all(endpoint_check.(endpoints) .== actual)
+all(endpoint_check.(benchmarking_results.endpoints) .== benchmarking_results.actual)
 ```
 
 Similarly, the `predicted` labels are the results of the neural Lyapunov classifier.
 
 ```@example benchmarking
 classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
-all(classifier.(V_samples, V̇_samples, states) .== predicted)
+all(classifier.(benchmarking_results.V_samples, benchmarking_results.V̇_samples, benchmarking_results.states) .== benchmarking_results.predicted)
 ```
