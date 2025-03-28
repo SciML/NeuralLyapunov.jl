@@ -30,7 +30,9 @@ one when the input is nonnegative and exactly zero when the input is negative.
 
 If the dynamics truly have a fixed point at ``x_0`` and ``V̇(x)`` is truly the rate of
 decrease of ``V(x)`` along the dynamics, then ``V̇(x_0)`` will be ``0`` and there is no need
-to train for ``V̇(x_0) = 0``.
+to train for ``V̇(x_0) = 0``. So, if `check_maximal_fixed_point` evaluates to `true`, then
+training will also attempt to enforce the local maximality of the fixed point via
+``∇V̇(x_0) = 0``.
 
 # Examples:
 
@@ -75,6 +77,10 @@ struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
 end
 
 check_decrease(cond::RoAAwareDecreaseCondition)::Bool = check_decrease(cond.cond)
+
+function check_maximal_fixed_point(cond::RoAAwareDecreaseCondition)::Bool
+    return check_maximal_fixed_point(cond.cond)
+end
 
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
     if check_decrease(cond)
