@@ -91,7 +91,7 @@ benchmarking_results = benchmark(
     strategy,
     opt;
     simulation_time = 200,
-    n_grid = 20,
+    n = 200,
     fixed_point = upright_equilibrium,
     p,
     optimization_args,
@@ -201,7 +201,7 @@ benchmarking_results = benchmark(
     strategy,
     opt;
     simulation_time = 200,
-    n_grid = 20,
+    n = 200,
     fixed_point = upright_equilibrium,
     p,
     optimization_args,
