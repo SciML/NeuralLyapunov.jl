@@ -234,5 +234,8 @@ Similarly, the `predicted` labels are the results of the neural Lyapunov classif
 
 ```@example benchmarking
 classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
-all(classifier.(benchmarking_results.V_samples, benchmarking_results.V̇_samples, benchmarking_results.states) .== benchmarking_results.predicted)
+V_samples = eachcol(benchmarking_results.V_samples)
+V̇_samples = eachcol(benchmarking_results.V̇_samples)
+states = eachcol(benchmarking_results.states)
+all(classifier.(V_samples, V̇_samples, states) .== benchmarking_results.predicted)
 ```
