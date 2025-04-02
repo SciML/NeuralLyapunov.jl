@@ -42,8 +42,11 @@ arguments for each optimization pass.
   - `opt`: optimizer to use in training the neural Lyapunov function.
 
 # Keyword Arguments
-  - `n_grid`: number or grid points in each dimension used for evaluating the neural
-    Lyapunov classifier.
+  - `n`: number of samples used for evaluating the neural Lyapunov classifier.
+  - `sample_alg`: sampling algorithm used for generating the evaluation data; defaults to
+    `LatinHypercubeSample(rng)`; see the
+    [QuasiMonteCarlo.jl docs](https://docs.sciml.ai/QuasiMonteCarlo/stable/samplers/) for
+    more information.
   - `classifier`: function of ``V(x)``, ``V̇(x)``, and ``x`` that predicts whether ``x`` is
     in the region of attraction; when constructing the confusion matrix, a point is
     predicted to be in the region of attraction if `classifier` or `endpoint_check` returns
@@ -88,7 +91,9 @@ arguments for each optimization pass.
 # Output Fields
   - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
   - `training_time`: time taken to train the neural Lyapunov function.
-  - `states`: grid of evaluation points.
+  - `V`: the neural Lyapunov function.
+  - `V̇`: the Lyapunov decrease function.
+  - `states`: evaluation samples matrix (each column is a sample).
   - `endpoints`: endpoints of the simulations.
   - `actual`: result of `endpoint_check` applied to `endpoints`.
   - `predicted`: result of `classifier` applied to `states`.
@@ -102,7 +107,7 @@ function benchmark(
         chain,
         strategy,
         opt;
-        n_grid,
+        n,
         fixed_point = zeros(length(bounds)),
         optimization_args = [],
         simulation_time,
@@ -112,7 +117,8 @@ function benchmark(
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
-        rng = StableRNG(0)
+        rng = StableRNG(0),
+        sample_alg = LatinHypercubeSample(rng)
 )
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
@@ -155,7 +161,8 @@ function benchmark(
         chain,
         strategy,
         opt;
-        n_grid,
+        n,
+        sample_alg,
         classifier = _classifier,
         fixed_point,
         p,
@@ -176,7 +183,7 @@ function benchmark(
         chain,
         strategy,
         opt;
-        n_grid,
+        n,
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         fixed_point = zeros(length(lb)),
         p = SciMLBase.NullParameters(),
@@ -190,7 +197,8 @@ function benchmark(
         atol = 1e-6,
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
         init_params = nothing,
-        rng = StableRNG(0)
+        rng = StableRNG(0),
+        sample_alg = LatinHypercubeSample(rng)
 )
     # Build PDESystem
     @named pde_system = NeuralLyapunovPDESystem(
@@ -222,7 +230,8 @@ function benchmark(
         chain,
         strategy,
         opt;
-        n_grid,
+        n,
+        sample_alg,
         classifier = _classifier,
         fixed_point,
         p,
@@ -244,7 +253,8 @@ function _benchmark(
         chain,
         strategy,
         opt;
-        n_grid,
+        n,
+        sample_alg,
         classifier,
         fixed_point,
         p,
@@ -283,12 +293,15 @@ function _benchmark(
         ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
     end
 
-    states, V_samples, V̇_samples = eval_Lyapunov(lb, ub, n_grid, V, V̇)
+    # Sample Lyapunov function and decrease function
+    states = sample(n, lb, ub, sample_alg)
+    V_samples = V(states)
+    V̇_samples = V̇(states)
 
     out = build_confusion_matrix(
-        collect(states),
-        V_samples,
-        V̇_samples,
+        eachcol(states),
+        eachcol(V_samples),
+        eachcol(V̇_samples),
         f;
         classifier,
         simulation_time,
@@ -298,7 +311,7 @@ function _benchmark(
         endpoint_check
     )
 
-    return merge(out, (; training_time))
+    return merge(out, (; training_time, states, V_samples, V̇_samples, V, V̇))
 end
 
 function benchmark_solve(prob, opt, optimization_args)
@@ -337,18 +350,6 @@ function benchmark_solve(prob, opt::AbstractVector, optimization_args)
 
     # Return parameters
     return res[].u.depvar
-end
-
-function eval_Lyapunov(lb, ub, n, V, V̇)
-    Δ = @. (ub - lb) / n
-
-    ranges = collect(l:δ:u for (l, δ, u) in zip(lb, Δ, ub))
-    states = Iterators.map(collect, Iterators.product(ranges...))
-
-    V_samples = V.(states)
-    V̇_samples = V̇.(states)
-
-    return (states, V_samples, V̇_samples)
 end
 
 function get_endpoint(
@@ -391,7 +392,7 @@ function build_confusion_matrix(
 
     confusion_matrix = ConfusionMatrix(vec(actual), vec(predicted))
 
-    return (; confusion_matrix, states, endpoints, actual, predicted, V_samples, V̇_samples)
+    return (; confusion_matrix, endpoints, actual, predicted)
 end
 
 function get_init_params(chain, rng)

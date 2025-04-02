@@ -70,7 +70,7 @@ using Test
         strategy,
         opt;
         simulation_time = 100,
-        n_grid = 20,
+        n = 200,
         p = p,
         optimization_args = optimization_args
     )
@@ -163,7 +163,7 @@ end
         strategy,
         opt;
         simulation_time = 200,
-        n_grid = 20,
+        n = 200,
         fixed_point = upright_equilibrium,
         p,
         optimization_args,
@@ -261,7 +261,7 @@ end
         strategy,
         opt;
         simulation_time = 300,
-        n_grid = 20,
+        n = 200,
         optimization_args = optimization_args,
         endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol = 1e-3),
         rng = StableRNG(0)
@@ -269,7 +269,7 @@ end
     cm = out.confusion_matrix
 
     # Damped pendulum is globally asymptotically stable, except at upright equilibrium
-    @test cm.n == 2
+    @test cm.n == 0
 
     # Should accurately classify
     @test cm.fn / cm.p < 0.5
