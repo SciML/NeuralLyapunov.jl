@@ -10,6 +10,7 @@ import OrdinaryDiffEq: Tsit5
 import EvalMetrics: ConfusionMatrix
 import LuxCore
 import StableRNGs: StableRNG
+import QuasiMonteCarlo: sample, LatinHypercubeSample
 
 include("conditions_specification.jl")
 include("structure_specification.jl")

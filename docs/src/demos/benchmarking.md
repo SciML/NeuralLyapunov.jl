@@ -91,7 +91,7 @@ benchmarking_results = benchmark(
     strategy,
     opt;
     simulation_time = 200,
-    n_grid = 20,
+    n = 1000,
     fixed_point = upright_equilibrium,
     p,
     optimization_args,
@@ -201,7 +201,7 @@ benchmarking_results = benchmark(
     strategy,
     opt;
     simulation_time = 200,
-    n_grid = 20,
+    n = 1000,
     fixed_point = upright_equilibrium,
     p,
     optimization_args,
@@ -224,6 +224,16 @@ benchmarking_results.confusion_matrix
 benchmarking_results.training_time
 ```
 
+The `benchmark` function also outputs the Lyapunov function ``V`` and its time-derivative ``V̇``, along with the evaluation samples `states` (each sample is a column in the matrix) and the corresponding samples of ``V`` (`V_samples`) and ``V̇`` (`V̇_samples`).
+
+```@example benchmarking
+all(benchmarking_results.V(benchmarking_results.states) .== benchmarking_results.V_samples)
+```
+
+```@example benchmarking
+all(benchmarking_results.V̇(benchmarking_results.states) .== benchmarking_results.V̇_samples)
+```
+
 The returned `actual` labels are just `endpoint_check` applied to `endpoints`, which are the results of simulating from each element of `states`.
 
 ```@example benchmarking
@@ -234,5 +244,8 @@ Similarly, the `predicted` labels are the results of the neural Lyapunov classif
 
 ```@example benchmarking
 classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
-all(classifier.(benchmarking_results.V_samples, benchmarking_results.V̇_samples, benchmarking_results.states) .== benchmarking_results.predicted)
+V_samples = eachcol(benchmarking_results.V_samples)
+V̇_samples = eachcol(benchmarking_results.V̇_samples)
+states = eachcol(benchmarking_results.states)
+all(classifier.(V_samples, V̇_samples, states) .== benchmarking_results.predicted)
 ```
