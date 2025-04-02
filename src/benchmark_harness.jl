@@ -91,6 +91,8 @@ arguments for each optimization pass.
 # Output Fields
   - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
   - `training_time`: time taken to train the neural Lyapunov function.
+  - `V`: the neural Lyapunov function.
+  - `V̇`: the Lyapunov decrease function.
   - `states`: evaluation samples matrix (each column is a sample).
   - `endpoints`: endpoints of the simulations.
   - `actual`: result of `endpoint_check` applied to `endpoints`.
@@ -309,7 +311,7 @@ function _benchmark(
         endpoint_check
     )
 
-    return merge(out, (; training_time, states, V_samples, V̇_samples))
+    return merge(out, (; training_time, states, V_samples, V̇_samples, V, V̇))
 end
 
 function benchmark_solve(prob, opt, optimization_args)
