@@ -6,11 +6,12 @@ using LinearAlgebra
 using ModelingToolkit
 import SciMLBase
 using NeuralPDE
-import OrdinaryDiffEq: Tsit5
-import EvalMetrics: ConfusionMatrix
+using OrdinaryDiffEq: Tsit5
+using EvalMetrics: ConfusionMatrix
 import LuxCore
-import StableRNGs: StableRNG
-import QuasiMonteCarlo: sample, LatinHypercubeSample
+using StableRNGs: StableRNG
+using QuasiMonteCarlo: sample, LatinHypercubeSample
+using Optimization: remake
 
 include("conditions_specification.jl")
 include("structure_specification.jl")
