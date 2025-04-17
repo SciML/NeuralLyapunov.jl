@@ -329,8 +329,8 @@ function benchmark_solve(
 )
     # Solve OptimizationProblem
     res = Ref{Any}()
-    for i in eachindex(opt)
-        _res = solve(prob, opt[i]; optimization_args[i]...)
+    for (_opt, args) in zip(opt, optimization_args)
+        _res = solve(prob, _opt; args...)
         prob = remake(prob, u0 = _res.u)
         res[] = _res
     end
@@ -342,8 +342,8 @@ end
 function benchmark_solve(prob, opt::AbstractVector, optimization_args)
     # Solve OptimizationProblem
     res = Ref{Any}()
-    for i in eachindex(opt)
-        _res = solve(prob, opt[i]; optimization_args...)
+    for _opt in opt
+        _res = solve(prob, _opt; optimization_args...)
         prob = remake(prob, u0 = _res.u)
         res[] = _res
     end
