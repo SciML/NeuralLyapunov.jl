@@ -83,8 +83,8 @@ arguments for each optimization pass.
     endpoint is approximately the fixed point and `false` otherwise; defaults to
     `(x) -> ≈(x, fixed_point; atol=atol)`.
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
-  - `init_params`: initial parameters for the neural network; defaults to `nothing`, in which
-    case the initial parameters are generated using `Lux.initialparameters` and `rng`.
+  - `init_params`: initial parameters for the neural network; defaults to `nothing`, in
+    which case the initial parameters are generated using `Lux.initialparameters` and `rng`.
   - `rng`: random number generator used to generate initial parameters; defaults to a
     `StableRNG` with seed `0`.
 
@@ -267,7 +267,7 @@ function _benchmark(
 )
     t = @timed begin
         # Construct OptimizationProblem
-        discretization = PhysicsInformedNN(chain, strategy; init_params = init_params)
+        discretization = PhysicsInformedNN(chain, strategy; init_params)
         opt_prob = discretize(pde_system, discretization)
 
         # Solve OptimizationProblem
@@ -284,7 +284,7 @@ function _benchmark(
         spec.structure,
         f,
         fixed_point;
-        p = p
+        p
     )
 
     f = let fc = spec.structure.f_call, _f = f,
