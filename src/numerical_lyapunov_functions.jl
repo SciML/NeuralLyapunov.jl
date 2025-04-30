@@ -10,9 +10,10 @@ These functions can operate on a state vector or columnwise on a matrix of state
 # Positional Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output.
-  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the
-    first neural network output (even if there is only one), `θ[:φ2]` the parameters of the
-    second (if there are multiple), and so on.
+  - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
+    `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
+    parameters of the second (if there are multiple), and so on. If the nerual network has a
+    single output, `θ` should be the parameters of the network.
   - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the
     neural Lyapunov function.
   - `dynamics`: the system dynamics, as a function to be used in conjunction with
@@ -102,16 +103,15 @@ Return the network as a function of state alone.
 # Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output.
-  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the
-    first neural network output (even if there is only one), `θ[:φ2]` the parameters of the
-    second (if there are multiple), and so on.
+  - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
+    `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
+    parameters of the second (if there are multiple), and so on. If the nerual network has a
+    single output, `θ` should be the parameters of the network.
   - `idx`: the neural network outputs to include in the returned function; defaults to all
     and only applicable when `phi isa Vector`.
 """
 function phi_to_net(phi, θ)
-    let _θ = θ, φ = phi
-        return (x) -> φ(x, _θ[:φ1])
-    end
+    return Base.Fix2(phi, θ)
 end
 
 function phi_to_net(phi::Vector, θ; idx = eachindex(phi))
