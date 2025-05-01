@@ -29,7 +29,7 @@ E(x, p) = T(x, p) + U(x, p)
 ######################### Undriven double pendulum conserve energy #########################
 println("Undriven double pendulum energy conservation test")
 
-@named double_pendulum_undriven = DoublePendulum(; actuation=:undriven)
+@named double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
 
 t, = independent_variables(double_pendulum_undriven)
 Dt = Differential(t)
@@ -39,7 +39,7 @@ x0 = Dict([θ1, θ2, Dt(θ1), Dt(θ2)] .=> vcat(2π * rand(rng, 2) .- π, zeros(
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
 l1, l2 = ones(2)
-lc1, lc2 = l1 /2, l2 / 2
+lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
@@ -51,9 +51,9 @@ sol = solve(prob, Tsit5(), abstol = 1e-10, reltol = 1e-10)
 # Test energy conservation
 x = vcat(sol[θ1]', sol[θ2]', sol[Dt(θ1)]', sol[Dt(θ2)]')
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
-potential_energy = vec(mapslices(Base.Fix2(U, p), x; dims=1))
-kinetic_energy = vec(mapslices(Base.Fix2(T, p), x; dims=1))
-total_energy = vec(mapslices(Base.Fix2(E, p), x; dims=1))
+potential_energy = vec(mapslices(Base.Fix2(U, p), x; dims = 1))
+kinetic_energy = vec(mapslices(Base.Fix2(T, p), x; dims = 1))
+total_energy = vec(mapslices(Base.Fix2(E, p), x; dims = 1))
 
 #=
 plot(
@@ -94,8 +94,8 @@ end
 
 _, x, p, double_pendulum_simplified = generate_control_function(
     double_pendulum;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(double_pendulum)
@@ -103,8 +103,8 @@ Dt = Differential(t)
 
 p = map(Base.Fix1(getproperty, double_pendulum), toexpr.(p))
 u = map(
-        Base.Fix1(getproperty, double_pendulum),
-        toexpr.(getproperty.(inputs(double_pendulum_simplified), :f))
+    Base.Fix1(getproperty, double_pendulum),
+    toexpr.(getproperty.(inputs(double_pendulum_simplified), :f))
 )
 x = [double_pendulum.θ1, double_pendulum.θ2, Dt(double_pendulum.θ1), Dt(double_pendulum.θ2)]
 
@@ -114,14 +114,15 @@ x = [double_pendulum.θ1, double_pendulum.θ2, Dt(double_pendulum.θ1), Dt(doubl
     u,
     p
 )
-@named double_pendulum_feedback_cancellation = compose(cancellation_controller, double_pendulum)
+@named double_pendulum_feedback_cancellation = compose(
+    cancellation_controller, double_pendulum)
 double_pendulum_feedback_cancellation = structural_simplify(double_pendulum_feedback_cancellation)
 
 # Swing up to upward equilibrium
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
 l1, l2 = ones(2)
-lc1, lc2 = l1 /2, l2 / 2
+lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
@@ -135,10 +136,10 @@ sol = solve(prob, Tsit5())
 x1_end, y1_end = sin(θ1_end), -cos(θ1_end)
 θ2_end, ω2_end = sol[:double_pendulum₊θ2][end], sol.u[end][4]
 x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
-@test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) ≈ 0 atol=1e-4
-@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) ≈ 0 atol=1e-4
-@test ω1_end ≈ 0 atol=1e-4
-@test ω2_end ≈ 0 atol=1e-4
+@test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1]))≈0 atol=1e-4
+@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1]))≈0 atol=1e-4
+@test ω1_end≈0 atol=1e-4
+@test ω2_end≈0 atol=1e-4
 
 #=
 gif(
@@ -188,8 +189,8 @@ end
 
 _, x, params, acrobot_simplified = generate_control_function(
     acrobot;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(acrobot)
@@ -197,22 +198,22 @@ Dt = Differential(t)
 
 params = map(Base.Fix1(getproperty, acrobot), toexpr.(params))
 u = map(
-        Base.Fix1(getproperty, acrobot),
-        toexpr.(getproperty.(inputs(acrobot_simplified), :f))
+    Base.Fix1(getproperty, acrobot),
+    toexpr.(getproperty.(inputs(acrobot_simplified), :f))
 )
 x = [acrobot.θ1, acrobot.θ2, Dt(acrobot.θ1), Dt(acrobot.θ2)]
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
 l1, l2 = ones(2)
-lc1, lc2 = l1 /2, l2 / 2
+lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
 @named lqr_controller = ODESystem(
-    u .~ π_lqr(p; x_eq=[π,π,0,0])(x),
+    u .~ π_lqr(p; x_eq = [π, π, 0, 0])(x),
     t,
     vcat(x, u),
     params
@@ -227,13 +228,16 @@ tspan = 1000
 prob = ODEProblem(acrobot_lqr, Dict(x .=> x0), tspan, Dict(params .=> p))
 sol = solve(prob, Tsit5())
 
-anim = plot_double_pendulum(sol, p; angle1_symbol=:acrobot₊θ1, angle2_symbol=:acrobot₊θ2)
+anim = plot_double_pendulum(
+    sol, p; angle1_symbol = :acrobot₊θ1, angle2_symbol = :acrobot₊θ2)
 @test anim isa Plots.Animation
 # gif(anim, fps=50)
 
-x1_end, y1_end, ω1_end = sin(sol[acrobot.θ1][end]), -cos(sol[acrobot.θ1][end]), sol[Dt(acrobot.θ1)][end]
-x2_end, y2_end, ω2_end = sin(sol[acrobot.θ2][end]), -cos(sol[acrobot.θ2][end]), sol[Dt(acrobot.θ2)][end]
-@test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) ≈ 0 atol=1e-4
-@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) ≈ 0 atol=1e-4
-@test ω1_end ≈ 0 atol=1e-4
-@test ω2_end ≈ 0 atol=1e-4
+x1_end, y1_end, ω1_end = sin(sol[acrobot.θ1][end]), -cos(sol[acrobot.θ1][end]),
+sol[Dt(acrobot.θ1)][end]
+x2_end, y2_end, ω2_end = sin(sol[acrobot.θ2][end]), -cos(sol[acrobot.θ2][end]),
+sol[Dt(acrobot.θ2)][end]
+@test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1]))≈0 atol=1e-4
+@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1]))≈0 atol=1e-4
+@test ω1_end≈0 atol=1e-4
+@test ω2_end≈0 atol=1e-4

@@ -38,9 +38,10 @@ sqrt(sum(abs2, [x_end, y_end, ω_end] .- [0, -1, 0])) < 1e-4
 true
 ```
 """
-function Pendulum(; driven = true, name, defaults=NullParameters())
+function Pendulum(; driven = true, name, defaults = NullParameters())
     @independent_variables t
-    Dt = Differential(t); DDt = Dt^2
+    Dt = Differential(t)
+    DDt = Dt^2
 
     @variables θ(t) τ(t) [input = true]
     @parameters ζ ω_0
@@ -52,8 +53,16 @@ function Pendulum(; driven = true, name, defaults=NullParameters())
         (; name = name, defaults = Dict(params .=> defaults))
     end
 
-    torque = if driven; τ else 0 end
-    variables = if driven; [θ, τ] else [θ] end
+    torque = if driven
+        τ
+    else
+        0
+    end
+    variables = if driven
+        [θ, τ]
+    else
+        [θ]
+    end
 
     eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ torque]
 

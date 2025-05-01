@@ -14,7 +14,7 @@ println("Planar quadrotor vertical only test")
 
 @named quadrotor_planar = QuadrotorPlanar()
 
-function π_vertical_only(x, p; y_goal=0.0, k_p=1.0, k_d=1.0)
+function π_vertical_only(x, p; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
     y, ẏ = x[2], x[5]
     m, I_quad, g, r = p
     T0 = m * g / 2
@@ -24,8 +24,8 @@ end
 
 _, _, p, quadrotor_planar_simplified = generate_control_function(
     quadrotor_planar;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(quadrotor_planar)
@@ -34,12 +34,12 @@ q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
 params = map(Base.Fix1(getproperty, quadrotor_planar), toexpr.(p))
 u = map(
-        Base.Fix1(getproperty, quadrotor_planar),
-        toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
+    Base.Fix1(getproperty, quadrotor_planar),
+    toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
 )
 q = map(
-        Base.Fix1(getproperty, quadrotor_planar),
-        toexpr.(getproperty.(q, :f))
+    Base.Fix1(getproperty, quadrotor_planar),
+    toexpr.(getproperty.(q, :f))
 )
 x = vcat(q, Dt.(q))
 
@@ -69,21 +69,21 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, θ_end = sol[q][end]
 v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
-@test x_end ≈ 0.0 atol=1e-4
-@test y_end ≈ 0.0 atol=1e-4
-@test θ_end ≈ 0.0 atol=1e-4
-@test v_x_end ≈ 0.0 atol=1e-4
-@test v_y_end ≈ 0.0 atol=1e-4
-@test v_θ_end ≈ 0.0 atol=1e-4
+@test x_end≈0.0 atol=1e-4
+@test y_end≈0.0 atol=1e-4
+@test θ_end≈0.0 atol=1e-4
+@test v_x_end≈0.0 atol=1e-4
+@test v_y_end≈0.0 atol=1e-4
+@test v_θ_end≈0.0 atol=1e-4
 
 anim = plot_quadrotor_planar(
     sol,
     [m, I_quad, g, r];
-    x_symbol=q[1],
-    y_symbol=q[2],
-    θ_symbol=q[3],
-    u1_symbol=u[1],
-    u2_symbol=u[2]
+    x_symbol = q[1],
+    y_symbol = q[2],
+    θ_symbol = q[3],
+    u1_symbol = u[1],
+    u2_symbol = u[2]
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)
@@ -97,12 +97,12 @@ function quadrotor_planar_lqr_matrix(p; Q = I(6), R = I(2))
     # Assumes linearization around a fixed point
     # x_eq = (x*, y*, 0, 0, 0, 0), u_eq = (mg / 2, mg / 2)
     A_lin = zeros(6, 6)
-    A_lin[1:3,4:6] .= I(3)
-    A_lin[4,3] = -g
+    A_lin[1:3, 4:6] .= I(3)
+    A_lin[4, 3] = -g
 
     B_lin = zeros(6, 2)
-    B_lin[5,:] .= 1 / m
-    B_lin[6,:] .= r / I_quad, -r / I_quad
+    B_lin[5, :] .= 1 / m
+    B_lin[6, :] .= r / I_quad, -r / I_quad
 
     return lqr(Continuous, A_lin, B_lin, Q, R)
 end
@@ -118,8 +118,8 @@ end
 
 _, _, p, quadrotor_planar_simplified = generate_control_function(
     quadrotor_planar;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(quadrotor_planar)
@@ -128,12 +128,12 @@ q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
 params = map(Base.Fix1(getproperty, quadrotor_planar), toexpr.(p))
 u = map(
-        Base.Fix1(getproperty, quadrotor_planar),
-        toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
+    Base.Fix1(getproperty, quadrotor_planar),
+    toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
 )
 q = map(
-        Base.Fix1(getproperty, quadrotor_planar),
-        toexpr.(getproperty.(q, :f))
+    Base.Fix1(getproperty, quadrotor_planar),
+    toexpr.(getproperty.(q, :f))
 )
 x = vcat(q, Dt.(q))
 
@@ -163,21 +163,21 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, θ_end = sol[q][end]
 v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
-@test x_end ≈ 0.0 atol=1e-4
-@test y_end ≈ 0.0 atol=1e-4
-@test θ_end ≈ 0.0 atol=1e-4
-@test v_x_end ≈ 0.0 atol=1e-4
-@test v_y_end ≈ 0.0 atol=1e-4
-@test v_θ_end ≈ 0.0 atol=1e-4
+@test x_end≈0.0 atol=1e-4
+@test y_end≈0.0 atol=1e-4
+@test θ_end≈0.0 atol=1e-4
+@test v_x_end≈0.0 atol=1e-4
+@test v_y_end≈0.0 atol=1e-4
+@test v_θ_end≈0.0 atol=1e-4
 
 anim = plot_quadrotor_planar(
     sol,
     [m, I_quad, g, r];
-    x_symbol=q[1],
-    y_symbol=q[2],
-    θ_symbol=q[3],
-    u1_symbol=u[1],
-    u2_symbol=u[2]
+    x_symbol = q[1],
+    y_symbol = q[2],
+    θ_symbol = q[3],
+    u1_symbol = u[1],
+    u2_symbol = u[2]
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)

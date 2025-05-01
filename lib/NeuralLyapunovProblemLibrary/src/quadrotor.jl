@@ -35,22 +35,21 @@ The name of the `ODESystem` is `name`.
 Users may optionally provide default values of the parameters through `defaults`: a vector
 of the default values for `[m, I_quad, g, r]`.
 """
-function QuadrotorPlanar(; name, defaults=NullParameters())
+function QuadrotorPlanar(; name, defaults = NullParameters())
     @independent_variables t
-    Dt = Differential(t); DDt = Dt^2
+    Dt = Differential(t)
+    DDt = Dt^2
     @variables x(t) y(t) θ(t)
-    @variables u1(t) [input=true] u2(t) [input=true]
+    @variables u1(t) [input = true] u2(t) [input = true]
     @parameters m I_quad g r
 
     # Thrusts must be nonnegative
     ũ1 = max(0, u1)
     ũ2 = max(0, u2)
 
-    eqs = [
-        m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
-        m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
-        I_quad * DDt(θ) ~ r * (ũ1 - ũ2)
-    ]
+    eqs = [m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
+           m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
+           I_quad * DDt(θ) ~ r * (ũ1 - ũ2)]
 
     params = [m, I_quad, g, r]
     kwargs = if defaults == NullParameters()
@@ -113,7 +112,7 @@ The model calculates individual rotor thrusts and replaces any negative values w
 Users may optionally provide default values of the parameters through `defaults`: a vector
 of the default values for `[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
 """
-function Quadrotor3D(; name, defaults=NullParameters())
+function Quadrotor3D(; name, defaults = NullParameters())
     # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
     # https://doi.org/10.1109/ICRA.2011.5980409
     @independent_variables t
@@ -131,7 +130,7 @@ function Quadrotor3D(; name, defaults=NullParameters())
     # φ-roll (around body x-axis), θ-pitch (around body y-axis), ψ-yaw (around body z-axis)
     @variables φ(t) θ(t) ψ(t)
     attitude = [φ, θ, ψ]
-    R = RotZXY(roll=φ, pitch=θ, yaw=ψ)
+    R = RotZXY(roll = φ, pitch = θ, yaw = ψ)
 
     # Angular velocity (world frame)
     @variables ωφ(t), ωθ(t), ωψ(t)
@@ -139,8 +138,8 @@ function Quadrotor3D(; name, defaults=NullParameters())
 
     # Inputs
     # T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
-    @variables T(t) [input=true]
-    @variables τφ(t) [input=true] τθ(t) [input=true] τψ(t) [input=true]
+    @variables T(t) [input = true]
+    @variables τφ(t) [input = true] τθ(t) [input = true] τψ(t) [input = true]
 
     # Individual rotor thrusts must be nonnegative
     f = ([1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * [T; τφ; τθ; τψ]) ./ 4
@@ -162,7 +161,9 @@ function Quadrotor3D(; name, defaults=NullParameters())
         Dt.(velocity_world) .~ F ./ m .+ g_vec,
         Dt.(attitude) .~ inv(R) * angular_velocity_world,
         Dt.(angular_velocity_world) .~ inertia_matrix \
-                (τ - angular_velocity_world × (inertia_matrix * angular_velocity_world))
+                                       (τ -
+                                        angular_velocity_world ×
+                                        (inertia_matrix * angular_velocity_world))
     )
 
     kwargs = if defaults == NullParameters()
@@ -174,7 +175,8 @@ function Quadrotor3D(; name, defaults=NullParameters())
     return ODESystem(
         eqs,
         t,
-        vcat(position_world, attitude, velocity_world, angular_velocity_world, T, τφ, τθ, τψ),
+        vcat(position_world, attitude, velocity_world,
+            angular_velocity_world, T, τφ, τθ, τψ),
         params;
         kwargs...
     )
