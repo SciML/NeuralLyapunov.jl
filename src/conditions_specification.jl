@@ -46,14 +46,14 @@ All concrete `AbstractLyapunovDecreaseCondition` subtypes should define the
 abstract type AbstractLyapunovDecreaseCondition end
 
 """
-    NeuralLyapunovSpecification(structure, minimzation_condition, decrease_condition)
+    NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 Specifies a neural Lyapunov problem.
 
 # Fields
   - `structure`: a [`NeuralLyapunovStructure`](@ref) specifying the relationship between the
     neural network and the candidate Lyapunov function.
-  - `minimzation_condition`: an [`AbstractLyapunovMinimizationCondition`](@ref) specifying
+  - `minimization_condition`: an [`AbstractLyapunovMinimizationCondition`](@ref) specifying
     how the minimization condition will be enforced.
   - `decrease_condition`: an [`AbstractLyapunovDecreaseCondition`](@ref) specifying how the
     decrease condition will be enforced.

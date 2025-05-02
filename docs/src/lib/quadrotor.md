@@ -10,7 +10,7 @@ Depth = 2:3
 
 ## Planar Approximation
 
-The planar quadrotor ([`QuadrotorPlanar`](@ref), technicaly a birotor) is a rigid body with two rotors in line with the center of mass.
+The planar quadrotor ([`QuadrotorPlanar`](@ref), technically a birotor) is a rigid body with two rotors in line with the center of mass.
 
 ![Planar quadrotor animation](../imgs/quadrotor_planar.gif)
 

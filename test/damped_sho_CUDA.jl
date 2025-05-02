@@ -127,7 +127,7 @@ end
 # Print statistics
 println("V(0.,0.) = ", V(fixed_point))
 println("V ∋ [", V_min, ", ", maximum(V_samples), "]")
-println("Minimial sample of V is at ", state_min)
+println("Minimal sample of V is at ", state_min)
 println(
     "V̇ ∋ [",
     minimum(V̇_samples),
