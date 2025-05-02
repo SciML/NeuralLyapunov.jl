@@ -12,7 +12,7 @@ These functions can operate on a state vector or columnwise on a matrix of state
     output, or a `Vector` of the same with one entry per neural network output.
   - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
     `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
-    parameters of the second (if there are multiple), and so on. If the nerual network has a
+    parameters of the second (if there are multiple), and so on. If the neural network has a
     single output, `θ` should be the parameters of the network.
   - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the
     neural Lyapunov function.
@@ -105,7 +105,7 @@ Return the network as a function of state alone.
     output, or a `Vector` of the same with one entry per neural network output.
   - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
     `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
-    parameters of the second (if there are multiple), and so on. If the nerual network has a
+    parameters of the second (if there are multiple), and so on. If the neural network has a
     single output, `θ` should be the parameters of the network.
   - `idx`: the neural network outputs to include in the returned function; defaults to all
     and only applicable when `phi isa Vector`.
