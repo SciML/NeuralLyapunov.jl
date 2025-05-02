@@ -271,8 +271,11 @@ function _benchmark(
         opt_prob = discretize(pde_system, discretization)
 
         # Solve OptimizationProblem
-        θ = benchmark_solve(opt_prob, opt, optimization_args)
+        u = benchmark_solve(opt_prob, opt, optimization_args)
+
+        # Get parameters from optimization result
         phi = discretization.phi
+        θ = phi isa AbstractArray ? u.depvar : u
         (θ, phi)
     end
     training_time = t.time
@@ -318,8 +321,8 @@ function benchmark_solve(prob, opt, optimization_args)
     # Solve OptimizationProblem
     res = solve(prob, opt; optimization_args...)
 
-    # Return parameters θ
-    return res.u.depvar
+    # Return optimization result
+    return res.u
 end
 
 function benchmark_solve(
@@ -335,8 +338,8 @@ function benchmark_solve(
         res[] = _res
     end
 
-    # Return parameters θ
-    return res[].u.depvar
+    # Return optimization result
+    return res[].u
 end
 
 function benchmark_solve(prob, opt::AbstractVector, optimization_args)
@@ -348,8 +351,8 @@ function benchmark_solve(prob, opt::AbstractVector, optimization_args)
         res[] = _res
     end
 
-    # Return parameters
-    return res[].u.depvar
+    # Return optimization result
+    return res[].u
 end
 
 function get_endpoint(
