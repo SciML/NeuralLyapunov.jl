@@ -18,8 +18,8 @@ p = rand(rng, 2)
 prob = ODEProblem(structural_simplify(pendulum_undriven), x0, 15τ, p)
 sol = solve(prob, Tsit5())
 x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
-@test sqrt(sum(abs2, [x_end, y_end] .- [0, -1])) ≈ 0 atol=1e-4
-@test ω_end ≈ 0 atol=1e-4
+@test sqrt(sum(abs2, [x_end, y_end] .- [0, -1]))≈0 atol=1e-4
+@test ω_end≈0 atol=1e-4
 
 anim = plot_pendulum(sol)
 @test anim isa Plots.Animation
@@ -34,8 +34,8 @@ println("Simple pendulum feedback cancellation test")
 
 _, x, p, pendulum_simplified = generate_control_function(
     pendulum;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(pendulum)
@@ -43,8 +43,8 @@ Dt = Differential(t)
 
 p = map(Base.Fix1(getproperty, pendulum), toexpr.(p))
 u = map(
-        Base.Fix1(getproperty, pendulum),
-        toexpr.(getproperty.(inputs(pendulum_simplified), :f))
+    Base.Fix1(getproperty, pendulum),
+    toexpr.(getproperty.(inputs(pendulum_simplified), :f))
 )
 
 @named cancellation_controller = ODESystem(
@@ -63,5 +63,5 @@ p = rand(rng, 2)
 prob = ODEProblem(pendulum_feedback_cancellation, x0, 15τ, p)
 sol = solve(prob, Tsit5())
 x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
-@test sqrt(sum(abs2, [x_end, y_end] .- [0, 1])) ≈ 0 atol=1e-4
-@test ω_end ≈ 0 atol=1e-4
+@test sqrt(sum(abs2, [x_end, y_end] .- [0, 1]))≈0 atol=1e-4
+@test ω_end≈0 atol=1e-4

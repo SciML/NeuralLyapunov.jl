@@ -8,8 +8,8 @@ DocMeta.setdocmeta!(
     NeuralLyapunovProblemLibrary,
     :DocTestSetup,
     :(
-        using NeuralLyapunovProblemLibrary, ModelingToolkit, OrdinaryDiffEq, Random;
-        Random.seed!(200)
+    using NeuralLyapunovProblemLibrary, ModelingToolkit, OrdinaryDiffEq, Random;
+    Random.seed!(200)
     );
     recursive = true
 )
@@ -39,7 +39,7 @@ NEURALLYAPUNOVPROBLEMLIBRARY_PAGES = [
 
 bib = CitationBibliography(
     joinpath(@__DIR__, "ref.bib");
-    style=:authoryear
+    style = :authoryear
 )
 
 makedocs(;
@@ -57,7 +57,7 @@ makedocs(;
         "Demonstrations" => DEMONSTRATION_PAGES,
         "Test Problem Library" => NEURALLYAPUNOVPROBLEMLIBRARY_PAGES
     ],
-    plugins=[bib]
+    plugins = [bib]
 )
 
 deploydocs(;

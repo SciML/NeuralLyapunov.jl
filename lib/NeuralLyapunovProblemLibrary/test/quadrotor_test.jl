@@ -12,7 +12,7 @@ rng = StableRNG(0)
 #################################### Hovering quadrotor ####################################
 println("3D quadrotor vertical only test")
 
-function π_vertical_only(x, p; z_goal=0.0, k_p=1.0, k_d=1.0)
+function π_vertical_only(x, p; z_goal = 0.0, k_p = 1.0, k_d = 1.0)
     z = x[3]
     ż = x[9]
     m, g = p[1:2]
@@ -33,8 +33,8 @@ end
 
 _, _, p, quadrotor_3d_simplified = generate_control_function(
     quadrotor_3d;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(quadrotor_3d)
@@ -43,12 +43,12 @@ x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
 params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(p))
 u = map(
-        Base.Fix1(getproperty, quadrotor_3d),
-        toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
+    Base.Fix1(getproperty, quadrotor_3d),
+    toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
 )
 x = map(
-        Base.Fix1(getproperty, quadrotor_3d),
-        toexpr.(getproperty.(x, :f))
+    Base.Fix1(getproperty, quadrotor_3d),
+    toexpr.(getproperty.(x, :f))
 )
 q, q̇ = x[1:6], x[7:12]
 
@@ -83,31 +83,31 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, z_end, φ_end, θ_end, ψ_end = sol[q][end]
 vx_end, vy_end, vz_end, ωφ_end, ωθ_end, ωψ_end = sol[q̇][end]
-@test x_end ≈ 0.0 atol=1e-4
-@test y_end ≈ 0.0 atol=1e-4
-@test z_end ≈ 0.0 atol=1e-4
-@test φ_end ≈ 0.0 atol=1e-4
-@test θ_end ≈ 0.0 atol=1e-4
-@test vx_end ≈ 0.0 atol=1e-4
-@test vy_end ≈ 0.0 atol=1e-4
-@test vz_end ≈ 0.0 atol=1e-4
-@test ωφ_end ≈ 0.0 atol=1e-4
-@test ωθ_end ≈ 0.0 atol=1e-4
-@test ωψ_end ≈ x0[q̇[6]] atol=1e-4
+@test x_end≈0.0 atol=1e-4
+@test y_end≈0.0 atol=1e-4
+@test z_end≈0.0 atol=1e-4
+@test φ_end≈0.0 atol=1e-4
+@test θ_end≈0.0 atol=1e-4
+@test vx_end≈0.0 atol=1e-4
+@test vy_end≈0.0 atol=1e-4
+@test vz_end≈0.0 atol=1e-4
+@test ωφ_end≈0.0 atol=1e-4
+@test ωθ_end≈0.0 atol=1e-4
+@test ωψ_end≈x0[q̇[6]] atol=1e-4
 
 anim = plot_quadrotor_3d(
     sol,
     [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz];
-    x_symbol=q[1],
-    y_symbol=q[2],
-    z_symbol=q[3],
-    φ_symbol=q[4],
-    θ_symbol=q[5],
-    ψ_symbol=q[6],
-    T_symbol=u[1],
-    τφ_symbol=u[2],
-    τθ_symbol=u[3],
-    τψ_symbol=u[4]
+    x_symbol = q[1],
+    y_symbol = q[2],
+    z_symbol = q[3],
+    φ_symbol = q[4],
+    θ_symbol = q[5],
+    ψ_symbol = q[6],
+    T_symbol = u[1],
+    τφ_symbol = u[2],
+    τθ_symbol = u[3],
+    τψ_symbol = u[4]
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)
@@ -116,11 +116,11 @@ anim = plot_quadrotor_3d(
 println("3D quadrotor LQR test")
 
 function quadrotor_3d_lqr_matrix(
-    p;
-    x_eq = zeros(12),
-    u_eq = [p[1]*p[2], 0, 0, 0],
-    Q = I(12),
-    R = I(4)
+        p;
+        x_eq = zeros(12),
+        u_eq = [p[1] * p[2], 0, 0, 0],
+        Q = I(12),
+        R = I(4)
 )
     u = inputs(quadrotor_3d)
     x = setdiff(unknowns(quadrotor_3d), u)
@@ -143,7 +143,7 @@ function quadrotor_3d_lqr_matrix(
     return lqr(Continuous, A_lin, B_lin, Q, R)
 end
 
-function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R = I(4))
+function π_lqr(p; x_eq = zeros(12), u_eq = [p[1] * p[2], 0, 0, 0], Q = I(12), R = I(4))
     L = quadrotor_3d_lqr_matrix(p; Q, R, x_eq, u_eq)
     return (x) -> -L * (x - x_eq) + u_eq
 end
@@ -152,8 +152,8 @@ end
 
 _, _, p, quadrotor_3d_simplified = generate_control_function(
     quadrotor_3d;
-    simplify=true,
-    split=false
+    simplify = true,
+    split = false
 )
 
 t, = independent_variables(quadrotor_3d)
@@ -162,12 +162,12 @@ x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
 params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(p))
 u = map(
-        Base.Fix1(getproperty, quadrotor_3d),
-        toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
+    Base.Fix1(getproperty, quadrotor_3d),
+    toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
 )
 x = map(
-        Base.Fix1(getproperty, quadrotor_3d),
-        toexpr.(getproperty.(x, :f))
+    Base.Fix1(getproperty, quadrotor_3d),
+    toexpr.(getproperty.(x, :f))
 )
 q, q̇ = x[1:6], x[7:12]
 
@@ -200,32 +200,32 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, z_end, φ_end, θ_end, ψ_end = sol[q][end]
 vx_end, vy_end, vz_end, ωφ_end, ωθ_end, ωψ_end = sol[q̇][end]
-@test x_end ≈ 0.0 atol=1e-4
-@test y_end ≈ 0.0 atol=1e-4
-@test z_end ≈ 0.0 atol=1e-4
-@test φ_end ≈ 0.0 atol=1e-4
-@test θ_end ≈ 0.0 atol=1e-4
-@test ψ_end ≈ 0.0 atol=1e-4
-@test vx_end ≈ 0.0 atol=1e-4
-@test vy_end ≈ 0.0 atol=1e-4
-@test vz_end ≈ 0.0 atol=1e-4
-@test ωφ_end ≈ 0.0 atol=1e-4
-@test ωθ_end ≈ 0.0 atol=1e-4
-@test ωψ_end ≈ 0.0 atol=1e-4
+@test x_end≈0.0 atol=1e-4
+@test y_end≈0.0 atol=1e-4
+@test z_end≈0.0 atol=1e-4
+@test φ_end≈0.0 atol=1e-4
+@test θ_end≈0.0 atol=1e-4
+@test ψ_end≈0.0 atol=1e-4
+@test vx_end≈0.0 atol=1e-4
+@test vy_end≈0.0 atol=1e-4
+@test vz_end≈0.0 atol=1e-4
+@test ωφ_end≈0.0 atol=1e-4
+@test ωθ_end≈0.0 atol=1e-4
+@test ωψ_end≈0.0 atol=1e-4
 
 anim = plot_quadrotor_3d(
     sol,
     [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz];
-    x_symbol=q[1],
-    y_symbol=q[2],
-    z_symbol=q[3],
-    φ_symbol=q[4],
-    θ_symbol=q[5],
-    ψ_symbol=q[6],
-    T_symbol=u[1],
-    τφ_symbol=u[2],
-    τθ_symbol=u[3],
-    τψ_symbol=u[4]
+    x_symbol = q[1],
+    y_symbol = q[2],
+    z_symbol = q[3],
+    φ_symbol = q[4],
+    θ_symbol = q[5],
+    ψ_symbol = q[6],
+    T_symbol = u[1],
+    τφ_symbol = u[2],
+    τθ_symbol = u[3],
+    τψ_symbol = u[4]
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)

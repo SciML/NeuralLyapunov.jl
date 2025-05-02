@@ -28,15 +28,15 @@ constant length.
   - `u2_symbol`: The symbol of the thrust of the second rotor in `sol`; defaults to `:u2`.
 """
 function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
-    sol,
-    p;
-    title="",
-    N = 500,
-    x_symbol=:x,
-    y_symbol=:y,
-    θ_symbol=:θ,
-    u1_symbol=:u1,
-    u2_symbol=:u2
+        sol,
+        p;
+        title = "",
+        N = 500,
+        x_symbol = :x,
+        y_symbol = :y,
+        θ_symbol = :θ,
+        u1_symbol = :u1,
+        u2_symbol = :u2
 )
     t = LinRange(sol.t[1], sol.t[end], N)
     x = sol(t)[x_symbol]
@@ -44,18 +44,19 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
     θ = sol(t)[θ_symbol]
     u1 = sol(t)[u1_symbol]
     u2 = sol(t)[u2_symbol]
-    return plot_quadrotor_planar(x, y, θ, u1, u2, p, t; title=title)
+    return plot_quadrotor_planar(x, y, θ, u1, u2, p, t; title = title)
 end
 
-function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, p, t; title="")
+function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, p, t; title = "")
     m, _, g, _ = p
     T = m * g / 2
     u = fill(T, length(t))
-    return plot_quadrotor_planar(x, y, θ, u, u, p, t; title=title)
+    return plot_quadrotor_planar(x, y, θ, u, u, p, t; title = title)
 end
 
-function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, u1, u2, p, t; title="")
-    function quadrotor_body(x, y, θ, r; aspect_ratio=10)
+function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
+        x, y, θ, u1, u2, p, t; title = "")
+    function quadrotor_body(x, y, θ, r; aspect_ratio = 10)
         pos = [x, y]
         r_vec = [r * cos(θ), r * sin(θ)]
         r_perp = [r_vec[2], -r_vec[1]] / aspect_ratio
@@ -87,24 +88,24 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, u1, u2, p,
     u2 = max.(0.0, u2 ./ (m * g / 2))
     return @animate for i in eachindex(t)
         # Quadcopter body
-        plot(quadrotor_body(x[i], y[i], θ[i], r), aspect_ratio=1, legend=false)
+        plot(quadrotor_body(x[i], y[i], θ[i], r), aspect_ratio = 1, legend = false)
 
         # Rotors
         top_rotor, bottom_rotor = rotors(x[i], y[i], θ[i], u1[i], u2[i], r)
-        plot!(top_rotor..., arrow=true, linewidth=2, color=:red)
-        plot!(bottom_rotor..., arrow=true, linewidth=2, color=:red)
+        plot!(top_rotor..., arrow = true, linewidth = 2, color = :red)
+        plot!(bottom_rotor..., arrow = true, linewidth = 2, color = :red)
 
         # Trajectory so far
         traj_x = x[1:i]
         traj_y = y[1:i]
-        plot!(traj_x, traj_y, color=:orange)
+        plot!(traj_x, traj_y, color = :orange)
         scatter!(
             traj_x,
             traj_y,
             color = :orange,
             markersize = 2,
             markerstrokewidth = 0,
-            markerstrokecolor = :orange,
+            markerstrokecolor = :orange
         )
 
         # Plot settings and timestamp
@@ -153,20 +154,20 @@ constant length.
   - `τψ_symbol`: The symbol of the yaw torque in `sol`; defaults to `:τψ`.
 """
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
-    sol,
-    p;
-    title="",
-    N = 500,
-    x_symbol=:x,
-    y_symbol=:y,
-    z_symbol=:z,
-    φ_symbol=:φ,
-    θ_symbol=:θ,
-    ψ_symbol=:ψ,
-    T_symbol=:T,
-    τφ_symbol=:τφ,
-    τθ_symbol=:τθ,
-    τψ_symbol=:τψ
+        sol,
+        p;
+        title = "",
+        N = 500,
+        x_symbol = :x,
+        y_symbol = :y,
+        z_symbol = :z,
+        φ_symbol = :φ,
+        θ_symbol = :θ,
+        ψ_symbol = :ψ,
+        T_symbol = :T,
+        τφ_symbol = :τφ,
+        τθ_symbol = :τθ,
+        τψ_symbol = :τψ
 )
     t = LinRange(sol.t[1], sol.t[end], N)
     x = sol(t)[x_symbol]
@@ -179,22 +180,22 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
     τφ = sol(t)[τφ_symbol]
     τθ = sol(t)[τθ_symbol]
     τψ = sol(t)[τψ_symbol]
-    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title=title)
+    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
-    x, y, z, φ, θ, ψ, p, t; title=""
+        x, y, z, φ, θ, ψ, p, t; title = ""
 )
     m, g = p[1:2]
     T = fill(m * g / 4, length(t))
     τφ = zeros(length(t))
     τθ = zeros(length(t))
     τψ = zeros(length(t))
-    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title=title)
+    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
-    x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title=""
+        x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = ""
 )
     m, g = p[1:2]
     L = 1.0
@@ -209,13 +210,13 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         pos = [x[i], y[i], z[i]]
 
         # Rotor positions (body coordinates)
-        rotor1 = [ L,  0, 0]
-        rotor2 = [ 0,  L, 0]
-        rotor3 = [-L,  0, 0]
-        rotor4 = [ 0, -L, 0]
+        rotor1 = [L, 0, 0]
+        rotor2 = [0, L, 0]
+        rotor3 = [-L, 0, 0]
+        rotor4 = [0, -L, 0]
 
         # Rotate legs to world coordinates
-        R = RotZXY(roll=φ[i], pitch=θ[i], yaw=ψ[i])
+        R = RotZXY(roll = φ[i], pitch = θ[i], yaw = ψ[i])
         rotor1 = pos + R * rotor1
         rotor2 = pos + R * rotor2
         rotor3 = pos + R * rotor3
@@ -235,36 +236,36 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
             [rotor1[1], rotor3[1]],
             [rotor1[2], rotor3[2]],
             [rotor1[3], rotor3[3]],
-            legend=false,
-            lw=3,
-            color=:black
+            legend = false,
+            lw = 3,
+            color = :black
         )
         # Connect rotors 2 and 4
         plot!(
             [rotor2[1], rotor4[1]],
             [rotor2[2], rotor4[2]],
             [rotor2[3], rotor4[3]],
-            lw=3,
-            color=:black
+            lw = 3,
+            color = :black
         )
 
         # Mark center
-        scatter!([pos[1]], [pos[2]], [pos[3]], markersize=5, color=:black)
+        scatter!([pos[1]], [pos[2]], [pos[3]], markersize = 5, color = :black)
 
         # Plot thrusts
         quiver!(
             [rotor1[1], rotor2[1], rotor3[1], rotor4[1]],
             [rotor1[2], rotor2[2], rotor3[2], rotor4[2]],
             [rotor1[3], rotor2[3], rotor3[3], rotor4[3]],
-            quiver=(
+            quiver = (
                 [F1[1], F2[1], F3[1], F4[1]],
                 [F1[2], F2[2], F3[2], F4[2]],
                 [F1[3], F2[3], F3[3], F4[3]]
             ),
-            markersize=3,
-            markershape=:utriangle,
-            lw=2,
-            color=:red
+            markersize = 3,
+            markershape = :utriangle,
+            lw = 2,
+            color = :red
         )
 
         # Mark rotors
@@ -272,23 +273,23 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
             [rotor1[1], rotor2[1], rotor3[1], rotor4[1]],
             [rotor1[2], rotor2[2], rotor3[2], rotor4[2]],
             [rotor1[3], rotor2[3], rotor3[3], rotor4[3]],
-            markersize=5,
-            color=:black
+            markersize = 5,
+            color = :black
         )
 
         # Plot trajectory so far
         traj_x = x[1:i]
         traj_y = y[1:i]
         traj_z = z[1:i]
-        plot!(traj_x, traj_y, traj_z, color=:orange)
+        plot!(traj_x, traj_y, traj_z, color = :orange)
         scatter!(
             traj_x,
             traj_y,
             traj_z,
-            color=:orange,
-            markersize=2,
-            markerstrokewidth=0,
-            markerstrokecolor=:orange
+            color = :orange,
+            markersize = 2,
+            markerstrokewidth = 0,
+            markerstrokecolor = :orange
         )
 
         # Plot settings and timestamp
