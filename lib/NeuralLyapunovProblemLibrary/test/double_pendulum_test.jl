@@ -18,10 +18,8 @@ end
 function T(x, p)
     θ1, θ2, ω1, ω2 = x
     I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
-    M = [
-        I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
-        I2 + m2 * l1 * lc2 * cos(θ2)                        I2
-    ]
+    M = [I1+I2+m2*l1^2+2*m2*l1*lc2*cos(θ2) I2+m2 * l1 * lc2 * cos(θ2);
+         I2+m2 * l1 * lc2 * cos(θ2) I2]
     return 0.5 * dot([ω1, ω2], M, [ω1, ω2])
 end
 E(x, p) = T(x, p) + U(x, p)
@@ -81,14 +79,10 @@ println("Double pendulum feedback cancellation test")
 function π_cancellation(x, p)
     θ1, θ2, ω1, ω2 = x
     I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
-    M = [
-        I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
-        I2 + m2 * l1 * lc2 * cos(θ2)                        I2
-    ]
-    G = [
-        -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
-        -m2 * g * lc2 * sin(θ1 + θ2)
-    ]
+    M = [I1+I2+m2*l1^2+2*m2*l1*lc2*cos(θ2) I2+m2 * l1 * lc2 * cos(θ2);
+         I2+m2 * l1 * lc2 * cos(θ2) I2]
+    G = [-m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
+         -m2 * g * lc2 * sin(θ1 + θ2)]
     return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
@@ -161,20 +155,14 @@ function acrobot_lqr_matrix(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
     θ1, θ2 = x_eq[1:2]
 
     # Assumes linearization around a fixed point
-    M = [
-        I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
-        I2 + m2 * l1 * lc2 * cos(θ2)                        I2
-    ]
+    M = [I1+I2+m2*l1^2+2*m2*l1*lc2*cos(θ2) I2+m2 * l1 * lc2 * cos(θ2);
+         I2+m2 * l1 * lc2 * cos(θ2) I2]
     B = [0, 1]
-    Jτ_g = [
-        -m1 * g * lc1 * cos(θ1) - m2 * g * (l1 * cos(θ1) + lc2 * cos(θ1 + θ2))  -m2 * g * lc2 * cos(θ1 + θ2);
-        -m2 * g * lc2 * cos(θ1 + θ2)                                            -m2 * g * lc2 * cos(θ1 + θ2)
-    ]
+    Jτ_g = [-m1 * g * lc1 * cos(θ1)-m2 * g * (l1 * cos(θ1) + lc2 * cos(θ1 + θ2)) -m2*g*lc2*cos(θ1 + θ2);
+            -m2*g*lc2*cos(θ1 + θ2) -m2*g*lc2*cos(θ1 + θ2)]
 
-    A_lin = [
-        zeros(2, 2)     I(2);
-        M \ Jτ_g        zeros(2, 2)
-    ]
+    A_lin = [zeros(2, 2) I(2);
+             M\Jτ_g zeros(2, 2)]
     B_lin = [zeros(2); M \ B]
 
     return lqr(Continuous, A_lin, B_lin, Q, R)
@@ -233,10 +221,10 @@ anim = plot_double_pendulum(
 @test anim isa Plots.Animation
 # gif(anim, fps=50)
 
-x1_end, y1_end, ω1_end = sin(sol[acrobot.θ1][end]), -cos(sol[acrobot.θ1][end]),
-sol[Dt(acrobot.θ1)][end]
-x2_end, y2_end, ω2_end = sin(sol[acrobot.θ2][end]), -cos(sol[acrobot.θ2][end]),
-sol[Dt(acrobot.θ2)][end]
+x1_end, y1_end = sin(sol[acrobot.θ1][end]), -cos(sol[acrobot.θ1][end])
+ω1_end = sol[Dt(acrobot.θ1)][end]
+x2_end, y2_end = sin(sol[acrobot.θ2][end]), -cos(sol[acrobot.θ2][end])
+ω2_end = sol[Dt(acrobot.θ2)][end]
 @test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1]))≈0 atol=1e-4
 @test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1]))≈0 atol=1e-4
 @test ω1_end≈0 atol=1e-4
