@@ -43,25 +43,20 @@ The four actuation modes are described in the table below and selected via `actu
 Users may optionally provide default values of the parameters through `defaults`: a vector
 of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
 """
-function DoublePendulum(; actuation=:fully_actuated, name, defaults=NullParameters())
+function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullParameters())
     @independent_variables t
-    Dt = Differential(t); DDt = Dt^2
+    Dt = Differential(t)
+    DDt = Dt^2
 
     @variables θ1(t) θ2(t)
     @parameters I1 I2 l1 l2 lc1 lc2 m1 m2 g=9.81
 
-    M = [
-        I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2)   I2 + m2 * l1 * lc2 * cos(θ2);
-        I2 + m2 * l1 * lc2 * cos(θ2)                        I2
-    ]
-    C = [
-        -2 * m2 * l1 * lc2 * sin(θ2) * Dt(θ2)   -m2 * l1 * lc2 * sin(θ2) * Dt(θ2);
-        m2 * l1 * lc2 * sin(θ2) * Dt(θ1)        0
-    ]
-    G = [
-        -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
-        -m2 * g * lc2 * sin(θ1 + θ2)
-    ]
+    M = [I1+I2+m2*l1^2+2*m2*l1*lc2*cos(θ2) I2+m2 * l1 * lc2 * cos(θ2);
+         I2+m2 * l1 * lc2 * cos(θ2) I2]
+    C = [-2*m2*l1*lc2*sin(θ2)*Dt(θ2) -m2*l1*lc2*sin(θ2)*Dt(θ2);
+         m2*l1*lc2*sin(θ2)*Dt(θ1) 0]
+    G = [-m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
+         -m2 * g * lc2 * sin(θ1 + θ2)]
     q = [θ1, θ2]
     params = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
@@ -112,7 +107,7 @@ end
 
 Alias for [`DoublePendulum(; actuation = :acrobot, name, defaults)`](@ref).
 """
-function Acrobot(; name, defaults=NullParameters())
+function Acrobot(; name, defaults = NullParameters())
     return DoublePendulum(; actuation = :acrobot, name, defaults)
 end
 
@@ -121,7 +116,7 @@ end
 
 Alias for [`DoublePendulum(; actuation = :pendubot, name, defaults)`](@ref).
 """
-function Pendubot(; name, defaults=NullParameters())
+function Pendubot(; name, defaults = NullParameters())
     DoublePendulum(; actuation = :pendubot, name, defaults)
 end
 
