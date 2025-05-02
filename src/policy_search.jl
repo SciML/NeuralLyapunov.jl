@@ -27,7 +27,7 @@ function add_policy_search(
         control_structure::Function = identity
 )::NeuralLyapunovStructure
     let V = lyapunov_structure.V, V̇ = lyapunov_structure.V̇,
-        V_dim = lyapunov_structure.network_dim, nd = new_dims, u = control_structure
+        V_dim = lyapunov_structure.network_dim, u = control_structure
 
         NeuralLyapunovStructure(
             function (net, state, fixed_point)
@@ -47,7 +47,7 @@ function add_policy_search(
                     t, fixed_point)
             end,
             (f, net, state, p, t) -> f(state, u(net(state)[(V_dim + 1):end]), p, t),
-            V_dim + nd
+            V_dim + new_dims
         )
     end
 end

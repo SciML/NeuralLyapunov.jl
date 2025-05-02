@@ -239,7 +239,7 @@ function _NeuralLyapunovPDESystem(
     # φ(x) is the symbolic form of neural network output
     φ(x) = Num.([φi(x...) for φi in net])
 
-    # V(x) is the symobolic form of the Lyapunov function
+    # V(x) is the symbolic form of the Lyapunov function
     V(x) = structure.V(φ, x, fixed_point)
 
     # V̇(x) is the symbolic time derivative of the Lyapunov function
