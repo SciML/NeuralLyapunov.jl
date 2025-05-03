@@ -188,10 +188,20 @@ optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 nothing # hide
 ```
 
-Finally, we can run the [`benchmark`](@ref) function.
+Since the pendulum is periodic in ``0``, we'll use a custom endpoint check that reflects that property.
 
 ```@example benchmarking
 endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
+nothing # hide
+```
+
+Finally, we can run the [`benchmark`](@ref) function.
+For demonstration purposes, we'll use `EnsembleSerial()`, which simulates each trajectory without any parallelism when evaluating the trained Lyapunov function and controller.
+The default `ensemble_alg` is `EnsembleThreads()`, which uses multithreading (local parallelism only); see the [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) for more information and other options.
+
+```@example benchmarking
+using OrdinaryDiffEq: EnsembleSerial
+
 benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
@@ -208,6 +218,7 @@ benchmarking_results = benchmark(
     state_syms,
     parameter_syms,
     policy_search = true,
+    ensemble_alg = EnsembleSerial(),
     endpoint_check,
     init_params = ps
 );
