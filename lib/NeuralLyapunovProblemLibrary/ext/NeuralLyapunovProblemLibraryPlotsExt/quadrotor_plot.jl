@@ -44,14 +44,14 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
     θ = sol(t)[θ_symbol]
     u1 = sol(t)[u1_symbol]
     u2 = sol(t)[u2_symbol]
-    return plot_quadrotor_planar(x, y, θ, u1, u2, p, t; title = title)
+    return plot_quadrotor_planar(x, y, θ, u1, u2, p, t; title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, p, t; title = "")
     m, _, g, _ = p
     T = m * g / 2
     u = fill(T, length(t))
-    return plot_quadrotor_planar(x, y, θ, u, u, p, t; title = title)
+    return plot_quadrotor_planar(x, y, θ, u, u, p, t; title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
@@ -180,7 +180,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
     τφ = sol(t)[τφ_symbol]
     τθ = sol(t)[τθ_symbol]
     τψ = sol(t)[τψ_symbol]
-    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = title)
+    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
@@ -191,7 +191,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
     τφ = zeros(length(t))
     τθ = zeros(length(t))
     τψ = zeros(length(t))
-    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = title)
+    return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(

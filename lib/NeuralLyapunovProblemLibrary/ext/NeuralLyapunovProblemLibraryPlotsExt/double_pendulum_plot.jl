@@ -29,7 +29,7 @@ function NeuralLyapunovProblemLibrary.plot_double_pendulum(
     t = LinRange(sol.t[1], sol.t[end], N)
     θ1 = sol(t)[angle1_symbol]
     θ2 = sol(t)[angle2_symbol]
-    return plot_double_pendulum(θ1, θ2, p, t; title = title)
+    return plot_double_pendulum(θ1, θ2, p, t; title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_double_pendulum(θ1, θ2, p, t; title = "")

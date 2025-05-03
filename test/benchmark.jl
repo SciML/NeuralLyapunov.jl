@@ -1,6 +1,7 @@
 using NeuralPDE, NeuralLyapunov, Lux
 import Boltz.Layers: PeriodicEmbedding
 using OptimizationOptimisers, OptimizationOptimJL
+using OrdinaryDiffEq: EnsembleSerial
 using StableRNGs, Random
 using Test
 
@@ -71,8 +72,9 @@ using Test
         opt;
         simulation_time = 100,
         n = 200,
-        p = p,
-        optimization_args = optimization_args
+        p,
+        optimization_args,
+        ensemble_alg = EnsembleSerial()
     )
     cm = out.confusion_matrix
 
@@ -262,7 +264,7 @@ end
         opt;
         simulation_time = 300,
         n = 200,
-        optimization_args = optimization_args,
+        optimization_args,
         endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol = 1e-3),
         rng = StableRNG(0)
     )

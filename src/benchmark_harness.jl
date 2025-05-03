@@ -79,6 +79,10 @@ arguments for each optimization pass.
   - `ode_solver_args`: arguments to be passed into the differential equation solver. For
     more information, see the
     [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/).
+  - `ensemble_alg`: controls how the evaluation simulations are handled; defaults to
+    `EnsembleThreads()`, which uses multithreading (local parallelism only); see the
+    [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/)
+    for more information.
   - `endpoint_check`: function of the endpoint of a simulation that returns `true` when the
     endpoint is approximately the fixed point and `false` otherwise; defaults to
     `(x) -> ≈(x, fixed_point; atol=atol)`.
@@ -118,7 +122,8 @@ function benchmark(
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
         rng = StableRNG(0),
-        sample_alg = LatinHypercubeSample(rng)
+        sample_alg = LatinHypercubeSample(rng),
+        ensemble_alg = EnsembleThreads()
 )
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
@@ -171,7 +176,8 @@ function benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        init_params
+        init_params,
+        ensemble_alg
     )
 end
 
@@ -198,7 +204,8 @@ function benchmark(
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
         init_params = nothing,
         rng = StableRNG(0),
-        sample_alg = LatinHypercubeSample(rng)
+        sample_alg = LatinHypercubeSample(rng),
+        ensemble_alg = EnsembleThreads()
 )
     # Build PDESystem
     @named pde_system = NeuralLyapunovPDESystem(
@@ -240,7 +247,8 @@ function benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        init_params
+        init_params,
+        ensemble_alg
     )
 end
 
@@ -263,7 +271,8 @@ function _benchmark(
         ode_solver,
         ode_solver_args,
         endpoint_check,
-        init_params
+        init_params,
+        ensemble_alg
 )
     t = @timed begin
         # Construct OptimizationProblem
@@ -311,7 +320,8 @@ function _benchmark(
         p,
         ode_solver,
         ode_solver_args,
-        endpoint_check
+        endpoint_check,
+        ensemble_alg
     )
 
     return merge(out, (; training_time, states, V_samples, V̇_samples, V, V̇))
@@ -355,19 +365,6 @@ function benchmark_solve(prob, opt::AbstractVector, optimization_args)
     return res[].u
 end
 
-function get_endpoint(
-        f::ODEFunction,
-        x0,
-        t_end;
-        p,
-        solver,
-        solver_args
-)
-    prob = ODEProblem(f, x0, t_end, p)
-    sol = solve(prob, solver; solver_args...)
-    return sol.u[end]
-end
-
 function build_confusion_matrix(
         states,
         V_samples,
@@ -378,18 +375,23 @@ function build_confusion_matrix(
         p,
         ode_solver,
         ode_solver_args,
+        ensemble_alg,
         endpoint_check
 )
     predicted = classifier.(V_samples, V̇_samples, states)
 
-    endpoints = [get_endpoint(
-                     dynamics,
-                     x,
-                     simulation_time;
-                     p = p,
-                     solver = ode_solver,
-                     solver_args = ode_solver_args
-                 ) for x in states]
+    ensemble_prob = EnsembleProblem(
+        ODEProblem(dynamics, first(states), simulation_time, p);
+        prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
+        output_func = (sol, i) -> (sol.u[end], false)
+    )
+    endpoints = solve(
+        ensemble_prob,
+        ode_solver,
+        ensemble_alg;
+        trajectories = length(states),
+        ode_solver_args...
+    ).u
 
     actual = endpoint_check.(endpoints)
 
