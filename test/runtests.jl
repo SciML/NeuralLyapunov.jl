@@ -39,15 +39,15 @@ const GROUP = lowercase(get(ENV, "GROUP", "all"))
         end
     end
 
-    if GROUP == "all" || GROUP == "unimplemented"
-        @time @safetestset "Errors for partially-implemented extensions" begin
-            include("unimplemented.jl")
-        end
-    end
-
     if GROUP == "all" || GROUP == "benchmarking"
         @time @safetestset "Benchmarking tool" begin
             include("benchmark.jl")
+        end
+    end
+
+    if GROUP == "all" || GROUP == "unimplemented"
+        @time @safetestset "Errors for partially-implemented extensions" begin
+            include("unimplemented.jl")
         end
     end
 

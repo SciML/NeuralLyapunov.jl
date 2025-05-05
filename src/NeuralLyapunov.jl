@@ -2,10 +2,16 @@ module NeuralLyapunov
 
 import ForwardDiff
 import JuMP
-using LinearAlgebra
-using ModelingToolkit
+using LinearAlgebra: I, dot, ⋅
+import Symbolics
+using Symbolics: @variables, Equation, Num, diff2term, value
+using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, unknowns,
+                       defaults, operation, unbound_inputs, generate_control_function,
+                       get_defaults
 import SciMLBase
-using NeuralPDE
+using SciMLBase: ODEFunction, ODEProblem, EnsembleProblem, EnsembleThreads, solve
+using SymbolicIndexingInterface: SymbolCache, variable_symbols
+using NeuralPDE: PhysicsInformedNN, discretize
 using OrdinaryDiffEq: Tsit5
 using EvalMetrics: ConfusionMatrix
 import LuxCore
