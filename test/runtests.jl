@@ -50,4 +50,10 @@ const GROUP = lowercase(get(ENV, "GROUP", "all"))
             include("benchmark.jl")
         end
     end
+
+    if GROUP == "all" || GROUP == "qa"
+        @time @safetestset "Quality Assurance" begin
+            include("qa_tests.jl")
+        end
+    end
 end
