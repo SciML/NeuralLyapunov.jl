@@ -66,7 +66,7 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
 
     if GROUP == "all" || GROUP == "qa"
         if DEVICE == "cpu"
-                @time @safetestset "Quality Assurance" begin
+            @time @safetestset "Quality Assurance" begin
                 include("qa_tests.jl")
             end
         end
