@@ -124,8 +124,8 @@ function NeuralLyapunovPDESystem(
         s_syms = Symbol.(operation.(unknowns(dynamics.sys)))
         p_syms = Symbol.(parameters(dynamics.sys))
         (s_syms, p_syms)
-    elseif dynamics.sys isa SciMLBase.SymbolCache
-        s_syms = SciMLBase.variable_symbols(dynamics.sys)
+    elseif dynamics.sys isa SymbolCache
+        s_syms = variable_symbols(dynamics.sys)
         p_syms = if isnothing(dynamics.sys.parameters)
             []
         else
@@ -170,10 +170,10 @@ function NeuralLyapunovPDESystem(
         name
 )::PDESystem
     ######################### Check for policy search #########################
-    f, x, params, policy_search = if isempty(ModelingToolkit.unbound_inputs(dynamics))
+    f, x, params, policy_search = if isempty(unbound_inputs(dynamics))
         (ODEFunction(dynamics), unknowns(dynamics), parameters(dynamics), false)
     else
-        (f, _), x, params = ModelingToolkit.generate_control_function(
+        (f, _), x, params = generate_control_function(
             dynamics;
             simplify = true,
             split = false
@@ -190,7 +190,7 @@ function NeuralLyapunovPDESystem(
 
     ###################### Remove derivatives in domains ######################
     domains = map(
-        d -> Num(operation(Symbolics.diff2term(Symbolics.value(d.variables)))) ∈ d.domain,
+        d -> Num(operation(diff2term(value(d.variables)))) ∈ d.domain,
         bounds
     )
     domain_vars = map(d -> d.variables, domains)
@@ -207,7 +207,7 @@ function NeuralLyapunovPDESystem(
         fixed_point,
         state,
         params,
-        ModelingToolkit.get_defaults(dynamics),
+        get_defaults(dynamics),
         policy_search,
         name
     )

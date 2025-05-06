@@ -1,8 +1,9 @@
 module NeuralLyapunovProblemLibrary
 
-using ModelingToolkit
+using ModelingToolkit: @independent_variables, @parameters, ODESystem
+using Symbolics: @variables, Differential
 using SciMLBase: NullParameters
-using LinearAlgebra
+using LinearAlgebra: ×
 using Rotations: RotZXY
 
 include("pendulum.jl")

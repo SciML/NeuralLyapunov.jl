@@ -5,6 +5,7 @@
 [![Build Status](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Build status](https://badge.buildkite.com/201fa9f55f9b9f77b4a9e0cd6835e5a52ddbe7bc7fd7b724d3.svg)](https://buildkite.com/julialang/neurallyapunov-dot-jl)
 [![Coverage](https://codecov.io/gh/SciML/NeuralLyapunov.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/NeuralLyapunov.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 A library for searching for neural Lyapunov functions in Julia.
 
