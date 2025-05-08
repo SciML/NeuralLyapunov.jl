@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs, generate_control_function
+import ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -31,8 +31,9 @@ end
 
 @named quadrotor_3d = Quadrotor3D()
 
-_, _, p, quadrotor_3d_simplified = generate_control_function(
-    quadrotor_3d;
+quadrotor_3d_simplified, _ = structural_simplify(
+    quadrotor_3d,
+    (inputs(quadrotor_3d), []);
     simplify = true,
     split = false
 )
@@ -41,7 +42,7 @@ t, = independent_variables(quadrotor_3d)
 Dt = Differential(t)
 x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
-params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(p))
+params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(parameters(quadrotor_3d)))
 u = map(
     Base.Fix1(getproperty, quadrotor_3d),
     toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
@@ -150,8 +151,9 @@ end
 
 @named quadrotor_3d = Quadrotor3D()
 
-_, _, p, quadrotor_3d_simplified = generate_control_function(
-    quadrotor_3d;
+quadrotor_3d_simplified, _ = structural_simplify(
+    quadrotor_3d,
+    (inputs(quadrotor_3d), []);
     simplify = true,
     split = false
 )
@@ -160,7 +162,7 @@ t, = independent_variables(quadrotor_3d)
 Dt = Differential(t)
 x = setdiff(unknowns(quadrotor_3d), inputs(quadrotor_3d))
 
-params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(p))
+params = map(Base.Fix1(getproperty, quadrotor_3d), toexpr.(parameters(quadrotor_3d)))
 u = map(
     Base.Fix1(getproperty, quadrotor_3d),
     toexpr.(getproperty.(inputs(quadrotor_3d_simplified), :f))
