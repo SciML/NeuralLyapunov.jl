@@ -174,7 +174,7 @@ function NeuralLyapunovPDESystem(
 
     f, x = if policy_search
         dynamics_io_sys, _ = structural_simplify(
-            dynamics, (unbound_inputs(dynamics), []); split=false)
+            dynamics, (unbound_inputs(dynamics), []); split = false)
         (ODEInputFunction(dynamics_io_sys), unknowns(dynamics_io_sys))
     else
         (ODEFunction(dynamics), unknowns(dynamics))

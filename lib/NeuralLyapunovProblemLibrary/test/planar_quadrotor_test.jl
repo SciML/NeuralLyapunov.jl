@@ -33,7 +33,8 @@ t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
-params = map(Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
+params = map(
+    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
 u = map(
     Base.Fix1(getproperty, quadrotor_planar),
     toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
@@ -127,8 +128,8 @@ quadrotor_planar_simplified, _ = structural_simplify(
 t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
-
-params = map(Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
+params = map(
+    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
 u = map(
     Base.Fix1(getproperty, quadrotor_planar),
     toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
