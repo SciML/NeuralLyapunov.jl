@@ -206,7 +206,7 @@ function NeuralLyapunovPDESystem(
         fixed_point,
         state,
         parameters(dynamics),
-        get_defaults(dynamics),
+        defaults(dynamics),
         policy_search,
         name
     )
@@ -304,7 +304,7 @@ function _NeuralLyapunovPDESystem(
         state,
         φ(state),
         params;
-        defaults = defaults,
+        defaults,
         name = name
     )
 end

@@ -139,8 +139,8 @@ function benchmark(
         ODEInputFunction(dynamics; simplify = true, split = false)
     end
 
-    defaults = get_defaults(dynamics)
-    p = [defaults[param] for param in params]
+    defs = defaults(dynamics)
+    p = [defs[param] for param in params]
 
     lb = [d.domain.left for d in bounds]
     ub = [d.domain.right for d in bounds]
