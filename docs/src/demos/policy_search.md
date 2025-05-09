@@ -108,10 +108,9 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-driven_pendulum_io, _ = structural_simplify(
-    driven_pendulum, ([τ], []); simplify = true, split = false)
-open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
-state_order = unknowns(driven_pendulum_io)
+pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
+state_order = unknowns(pendulum_io)
 p = [defaults(pendulum)[param] for param in parameters(pendulum)]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
@@ -272,10 +271,9 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-driven_pendulum_io, _ = structural_simplify(
-    driven_pendulum, ([τ], []); simplify = true, split = false)
-open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
-state_order = unknowns(driven_pendulum_io)
+pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
+state_order = unknowns(pendulum_io)
 p = [defaults(pendulum)[param] for param in parameters(pendulum)]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
