@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   tests:
-    name: "Tests"
+    name: Tests
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +38,33 @@ jobs:
       project: "${{ matrix.project }}"
       group: "all"
     secrets: "inherit"
+  downgrade:
+    name: Downgrade
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.11'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
+        allow_failure: 
+          - false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          projects: ${{matrix.project}}/., ${{matrix.project}}/test
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
   docs:
     name: Documentation
     runs-on: ubuntu-latest
