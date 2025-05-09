@@ -62,7 +62,7 @@ jobs:
           version: ${{ matrix.version }}
       - uses: julia-actions/julia-downgrade-compat@v1
         with:
-          projects: ${{matrix.project}}/., ${{matrix.project}}/test
+          projects: ${{matrix.project}}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
   docs:
