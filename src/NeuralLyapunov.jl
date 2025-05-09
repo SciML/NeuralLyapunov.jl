@@ -6,10 +6,11 @@ using LinearAlgebra: I, dot, ⋅
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term, value
 using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, unknowns,
-                       defaults, operation, unbound_inputs, generate_control_function,
-                       get_defaults
+                       defaults, operation, unbound_inputs, defaults, structural_simplify
 import SciMLBase
-using SciMLBase: ODEFunction, ODEProblem, EnsembleProblem, EnsembleThreads, solve
+using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
+                 EnsembleThreads
+
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize
 using OrdinaryDiffEq: Tsit5

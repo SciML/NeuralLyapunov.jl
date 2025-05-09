@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs, generate_control_function
+import ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -86,8 +86,9 @@ function π_cancellation(x, p)
     return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
-_, x, p, double_pendulum_simplified = generate_control_function(
-    double_pendulum;
+double_pendulum_simplified, _ = structural_simplify(
+    double_pendulum,
+    (inputs(double_pendulum), []);
     simplify = true,
     split = false
 )
@@ -95,7 +96,7 @@ _, x, p, double_pendulum_simplified = generate_control_function(
 t, = independent_variables(double_pendulum)
 Dt = Differential(t)
 
-p = map(Base.Fix1(getproperty, double_pendulum), toexpr.(p))
+p = map(Base.Fix1(getproperty, double_pendulum), toexpr.(parameters(double_pendulum)))
 u = map(
     Base.Fix1(getproperty, double_pendulum),
     toexpr.(getproperty.(inputs(double_pendulum_simplified), :f))
@@ -175,8 +176,9 @@ end
 
 @named acrobot = Acrobot()
 
-_, x, params, acrobot_simplified = generate_control_function(
-    acrobot;
+acrobot_simplified, _ = structural_simplify(
+    acrobot,
+    (inputs(acrobot), []);
     simplify = true,
     split = false
 )
@@ -184,7 +186,7 @@ _, x, params, acrobot_simplified = generate_control_function(
 t, = independent_variables(acrobot)
 Dt = Differential(t)
 
-params = map(Base.Fix1(getproperty, acrobot), toexpr.(params))
+params = map(Base.Fix1(getproperty, acrobot), toexpr.(parameters(acrobot)))
 u = map(
     Base.Fix1(getproperty, acrobot),
     toexpr.(getproperty.(inputs(acrobot_simplified), :f))

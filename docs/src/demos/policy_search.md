@@ -108,9 +108,10 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    pendulum; simplify = true, split = false)
-p = [defaults(pendulum)[param] for param in p_order]
+pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
+state_order = unknowns(pendulum_io)
+p = [defaults(pendulum)[param] for param in parameters(pendulum)]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
     net,
@@ -270,8 +271,10 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(pendulum; simplify = true, split = false)
-p = [defaults(pendulum)[param] for param in p_order]
+pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
+state_order = unknowns(pendulum_io)
+p = [defaults(pendulum)[param] for param in parameters(pendulum)]
 
 V_func, V̇_func = get_numerical_lyapunov_function(
     net,
@@ -381,7 +384,7 @@ state_syms = Symbol.(state_order)
 
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
-    sys = SciMLBase.SymbolCache(state_syms, Symbol.(p_order))
+    sys = SciMLBase.SymbolCache(state_syms, Symbol.(parameters(pendulum)))
 )
 
 using OrdinaryDiffEq: Tsit5

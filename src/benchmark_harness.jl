@@ -132,19 +132,15 @@ function benchmark(
         fixed_point = fixed_point
     )
 
-    f, params = if isempty(unbound_inputs(dynamics))
-        ODEFunction(dynamics), parameters(dynamics)
+    params = parameters(dynamics)
+    f = if isempty(unbound_inputs(dynamics))
+        ODEFunction(dynamics)
     else
-        (_f, _), _, _p = generate_control_function(
-            dynamics,
-            simplify = true,
-            split = false
-        )
-        _f, _p
+        ODEInputFunction(dynamics; simplify = true, split = false)
     end
 
-    defaults = get_defaults(dynamics)
-    p = [defaults[param] for param in params]
+    defs = defaults(dynamics)
+    p = [defs[param] for param in params]
 
     lb = [d.domain.left for d in bounds]
     ub = [d.domain.right for d in bounds]
@@ -299,9 +295,7 @@ function _benchmark(
         p
     )
 
-    f = let fc = spec.structure.f_call, _f = f,
-        net = phi_to_net(phi, θ)
-
+    f = let fc = spec.structure.f_call, _f = f, net = phi_to_net(phi, θ)
         ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
     end
 

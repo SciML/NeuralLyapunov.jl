@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs, generate_control_function
+import ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -22,8 +22,9 @@ function π_vertical_only(x, p; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
     return [T, T]
 end
 
-_, _, p, quadrotor_planar_simplified = generate_control_function(
-    quadrotor_planar;
+quadrotor_planar_simplified, _ = structural_simplify(
+    quadrotor_planar,
+    (inputs(quadrotor_planar), []);
     simplify = true,
     split = false
 )
@@ -32,7 +33,8 @@ t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
-params = map(Base.Fix1(getproperty, quadrotor_planar), toexpr.(p))
+params = map(
+    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
 u = map(
     Base.Fix1(getproperty, quadrotor_planar),
     toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
@@ -116,8 +118,9 @@ end
 
 @named quadrotor_planar = QuadrotorPlanar()
 
-_, _, p, quadrotor_planar_simplified = generate_control_function(
-    quadrotor_planar;
+quadrotor_planar_simplified, _ = structural_simplify(
+    quadrotor_planar,
+    (inputs(quadrotor_planar), []);
     simplify = true,
     split = false
 )
@@ -125,8 +128,8 @@ _, _, p, quadrotor_planar_simplified = generate_control_function(
 t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
-
-params = map(Base.Fix1(getproperty, quadrotor_planar), toexpr.(p))
+params = map(
+    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
 u = map(
     Base.Fix1(getproperty, quadrotor_planar),
     toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))

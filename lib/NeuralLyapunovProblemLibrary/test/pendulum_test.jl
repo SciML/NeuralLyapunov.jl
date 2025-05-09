@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs, generate_control_function
+import ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -32,8 +32,9 @@ println("Simple pendulum feedback cancellation test")
 
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
 
-_, x, p, pendulum_simplified = generate_control_function(
-    pendulum;
+pendulum_simplified, _ = structural_simplify(
+    pendulum,
+    (inputs(pendulum), []);
     simplify = true,
     split = false
 )
@@ -41,7 +42,7 @@ _, x, p, pendulum_simplified = generate_control_function(
 t, = independent_variables(pendulum)
 Dt = Differential(t)
 
-p = map(Base.Fix1(getproperty, pendulum), toexpr.(p))
+p = map(Base.Fix1(getproperty, pendulum), toexpr.(parameters(pendulum)))
 u = map(
     Base.Fix1(getproperty, pendulum),
     toexpr.(getproperty.(inputs(pendulum_simplified), :f))

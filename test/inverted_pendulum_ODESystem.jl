@@ -26,7 +26,7 @@ eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
     t,
     [θ, τ],
     [ζ, ω_0];
-    defaults = defaults
+    defaults
 )
 
 bounds = [
@@ -107,9 +107,11 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-(open_loop_pendulum_dynamics, _), state_order, p_order = ModelingToolkit.generate_control_function(
-    driven_pendulum; simplify = true, split = false)
-p = [defaults[param] for param in p_order]
+driven_pendulum_io, _ = structural_simplify(
+    driven_pendulum, ([τ], []); simplify = true, split = false)
+open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
+state_order = unknowns(driven_pendulum_io)
+p = [defaults[param] for param in parameters(driven_pendulum)]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
@@ -175,7 +177,7 @@ state_syms = Symbol.(state_order)
 
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
-    sys = SciMLBase.SymbolCache(state_syms, Symbol.(p_order))
+    sys = SciMLBase.SymbolCache(state_syms, Symbol.(parameters(driven_pendulum)))
 )
 
 # Starting still at bottom ...

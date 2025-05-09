@@ -170,15 +170,14 @@ function NeuralLyapunovPDESystem(
         name
 )::PDESystem
     ######################### Check for policy search #########################
-    f, x, params, policy_search = if isempty(unbound_inputs(dynamics))
-        (ODEFunction(dynamics), unknowns(dynamics), parameters(dynamics), false)
+    policy_search = !isempty(unbound_inputs(dynamics))
+
+    f, x = if policy_search
+        dynamics_io_sys, _ = structural_simplify(
+            dynamics, (unbound_inputs(dynamics), []); split = false)
+        (ODEInputFunction(dynamics_io_sys), unknowns(dynamics_io_sys))
     else
-        (f, _), x, params = generate_control_function(
-            dynamics;
-            simplify = true,
-            split = false
-        )
-        (f, x, params, true)
+        (ODEFunction(dynamics), unknowns(dynamics))
     end
 
     ########################## Define state symbols ###########################
@@ -206,8 +205,8 @@ function NeuralLyapunovPDESystem(
         spec,
         fixed_point,
         state,
-        params,
-        get_defaults(dynamics),
+        parameters(dynamics),
+        defaults(dynamics),
         policy_search,
         name
     )
@@ -305,7 +304,7 @@ function _NeuralLyapunovPDESystem(
         state,
         φ(state),
         params;
-        defaults = defaults,
+        defaults,
         name = name
     )
 end
