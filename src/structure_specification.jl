@@ -1,15 +1,16 @@
 """
-    UnstructuredNeuralLyapunov()
+    NoAdditionalStructure()
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the neural network
-evaluated at the state. This does not structurally enforce any Lyapunov conditions.
+evaluated at the state. This does impose any additional structure to enforce any Lyapunov
+conditions.
 
 Corresponds to ``V(x) = ϕ(x)``, where ``ϕ`` is the neural network.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 """
-function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
+function NoAdditionalStructure()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
         (net, state, fixed_point) -> net(state),
         (net, grad_net, f, state, params, t, fixed_point) -> grad_net(state) ⋅
@@ -20,7 +21,7 @@ function UnstructuredNeuralLyapunov()::NeuralLyapunovStructure
 end
 
 """
-    NonnegativeNeuralLyapunov(network_dim; <keyword_arguments>)
+    NonnegativeStructure(network_dim; <keyword_arguments>)
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the L2 norm of the
 neural network output plus a constant δ times a function `pos_def`.
@@ -53,7 +54,7 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 
 See also: [`DontCheckNonnegativity`](@ref)
 """
-function NonnegativeNeuralLyapunov(
+function NonnegativeStructure(
         network_dim::Integer;
         δ::Real = 0.0,
         pos_def::Function = (state, fixed_point) -> log(1.0 +

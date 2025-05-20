@@ -40,7 +40,7 @@ using Test
     strategy = QuasiRandomTraining(1000)
 
     # Define neural Lyapunov structure
-    structure = NonnegativeNeuralLyapunov(
+    structure = NonnegativeStructure(
         dim_output;
         δ = 1e-6
     )

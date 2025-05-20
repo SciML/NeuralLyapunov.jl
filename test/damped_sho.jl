@@ -41,7 +41,7 @@ strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
-structure = NonnegativeNeuralLyapunov(
+structure = NonnegativeStructure(
     dim_output;
     δ = 5.0
 )

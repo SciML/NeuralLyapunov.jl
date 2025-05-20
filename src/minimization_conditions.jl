@@ -130,7 +130,7 @@ has been structurally enforced.
 
 Even in this case, it is still possible to check for ``V(x_0) = 0``, for example if `V` is
 structured to be positive for ``x ≠ x_0`` but does not guarantee ``V(x_0) = 0`` (such as
-[`NonnegativeNeuralLyapunov`](@ref)). `check_fixed_point` defaults to `true`, since in cases
+[`NonnegativeStructure`](@ref)). `check_fixed_point` defaults to `true`, since in cases
 where ``V(x_0) = 0`` is enforced structurally, the equation will reduce to `0.0 ~ 0.0`,
 which gets automatically removed in most cases.
 """
