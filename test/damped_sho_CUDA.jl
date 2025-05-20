@@ -41,7 +41,7 @@ strategy = QuasiRandomTraining(2500)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
-structure = UnstructuredNeuralLyapunov()
+structure = NoAdditionalStructure()
 minimization_condition = StrictlyPositiveDefinite(C = 0.1)
 
 # Define Lyapunov decrease condition
@@ -101,7 +101,7 @@ V̇_samples = V̇_samples_gpu |> cpud
 
 #################################### Tests ####################################
 
-# Network structure should enforce nonegativeness of V
+# Network structure should enforce nonnegativeness of V
 V0 = (V(fixed_point) |> cpud)[]
 V_min, i_min = findmin(V_samples)
 state_min = collect(states)[i_min]

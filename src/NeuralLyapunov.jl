@@ -32,7 +32,7 @@ include("policy_search.jl")
 include("benchmark_harness.jl")
 
 # Lyapunov function structures
-export NeuralLyapunovStructure, UnstructuredNeuralLyapunov, NonnegativeNeuralLyapunov,
+export NeuralLyapunovStructure, NoAdditionalStructure, NonnegativeStructure,
        PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
 
 # Minimization conditions

@@ -56,7 +56,7 @@ strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
-structure = NonnegativeNeuralLyapunov(
+structure = NonnegativeStructure(
     dim_output;
     δ = 1e-6
 )
@@ -179,7 +179,7 @@ To train for exponential stability we use [`ExponentialStability`](@ref), but we
 using NeuralLyapunov
 
 # Define neural Lyapunov structure
-structure = NonnegativeNeuralLyapunov(
+structure = NonnegativeStructure(
     dim_output;
     δ = 1e-6
 )
