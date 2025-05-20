@@ -1,7 +1,7 @@
 name = "NeuralLyapunov"
 uuid = "61252e1c-87f0-426a-93a7-3cdb1ed5a867"
 authors = ["Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 EvalMetrics = "251d5f9e-10c1-4699-ba24-e0ad168fa3e4"
