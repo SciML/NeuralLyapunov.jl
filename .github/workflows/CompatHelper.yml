@@ -39,7 +39,7 @@ jobs:
           import CompatHelper
           subdirs = ["", "docs"]
 
-          for libdir in filter(isdir, readdir("lib"; join=true))
+          for libdir in filter(isdir, readdir(joinpath(pwd(), "lib"); join=true))
             if ispath(joinpath(libdir, "Project.toml"))
               push!(subdirs, libdir)
             end
