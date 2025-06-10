@@ -12,6 +12,12 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
             @time @safetestset "Damped pendulum" begin
                 include("damped_pendulum.jl")
             end
+            @time @safetestset "Damped pendulum - AdditiveLyapunovNet structure" begin
+                include("damped_pendulum_lux.jl")
+            end
+            @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
+                include("damped_pendulum_lux_2.jl")
+            end
         end
 
         if DEVICE == "gpu"
