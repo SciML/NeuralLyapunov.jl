@@ -13,35 +13,40 @@ term will be positive semidefinite.
 # Arguments
   - `ϕ`: The base neural network model; its output dimension should be `dim_ϕ`.
   - `ψ`: A Lux layer representing a positive semidefinite function that maps the output of
-    `ϕ` to a scalar value; defaults to `SoSPooling()` (i.e., ``\\lVert ⋅ \\rVert^2``). Users
-    may provide a function instead of a Lux layer, in which case it will be wrapped into a
-    layer via `WrappedFunction`.
+    `ϕ` to a scalar value; defaults to [`SoSPooling()`](@ref) (i.e.,
+    ``\\lVert ⋅ \\rVert^2``). Users may provide a function instead of a Lux layer, in which
+    case it will be wrapped into a layer via
+    [`Lux.WrappedFunction`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers).
   - `m`: Optional pre-processing layer for use before `r`. This layer should output a vector
     of dimension `dim_m` and ``m(x) = m(x_0)`` should imply that ``x`` is an equilibrium to
-    be analyzed by the Lyapunov function. Defaults to `NoOpLayer()`, which is typically the
-    right choice when analyzing a single equilibrium point. Consider using a
-    `Boltz.Layers.PeriodicEmbedding` if any of the state variables are periodic. Users may
-    provide a function instead of a Lux layer, in which case it will be wrapped into a layer
-    via `WrappedFunction`.
+    be analyzed by the Lyapunov function. Defaults to
+    [`Lux.NoOpLayer()`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers),
+    which is typically the right choice when analyzing a single equilibrium point. Consider
+    using a
+    [`Boltz.Layers.PeriodicEmbedding`](https://luxdl.github.io/Boltz.jl/dev/api/layers#Boltz.Layers-API-Reference)
+    if any of the state variables are periodic. Users may provide a function instead of a
+    Lux layer, in which case it will be wrapped into a layer via
+    [`Lux.WrappedFunction`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers).
   - `r`: A Lux layer representing a positive definite function that maps the output of `m`
-    to a scalar value; defaults to `SoSPooling()` (i.e., ``\\lVert ⋅ \\rVert^2``). Users may
-    provide a function instead of a Lux layer, in which case it will be wrapped into a layer
-    via `WrappedFunction`.
+    to a scalar value; defaults to [`SoSPooling()`](@ref) (i.e., ``\\lVert ⋅ \\rVert^2``).
+    Users may provide a function instead of a Lux layer, in which case it will be wrapped
+    into a layer via
+    [`Lux.WrappedFunction`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers).
   - `dim_ϕ`: The dimension of the output of `ϕ`.
   - `dim_m`: The dimension of the output of `m`; defaults to `length(fixed_point)` when
     `fixed_point` is provided and `dim_m` isn't. Users must provide at least one of `dim_m`
     and `fixed_point`.
-  - `fixed_point`: A vector in `ℝ^dim_m` representing the fixed point; defaults to
+  - `fixed_point`: A vector of length `dim_m` representing the fixed point; defaults to
     `zeros(dim_m)` when `dim_m` is provided and `fixed_point` isn't. Users must provide at
     least one of `dim_m` and `fixed_point`.
 """
 function AdditiveLyapunovNet(
-    ϕ;
-    ψ=SoSPooling(),
-    m=NoOpLayer(),
-    r=SoSPooling(),
-    dim_ϕ,
-    kwargs...
+        ϕ;
+        ψ = SoSPooling(),
+        m = NoOpLayer(),
+        r = SoSPooling(),
+        dim_ϕ,
+        kwargs...
 )
     if :dim_m in keys(kwargs)
         dim_m = kwargs[:dim_m]
@@ -102,31 +107,36 @@ term will be strictly positive.
 # Arguments
   - `ϕ`: The base neural network model.
   - `ζ`: A Lux layer representing a strictly positive function that maps the output of
-    `ϕ` to a scalar value; defaults to `StrictlyPositiveSoSPooling()` (i.e.,
+    `ϕ` to a scalar value; defaults to [`StrictlyPositiveSoSPooling()`](@ref) (i.e.,
     ``1 + \\lVert ⋅ \\rVert^2``). Users may provide a function instead of a Lux layer, in
-    which case it will be wrapped into a layer via `WrappedFunction`.
+    which case it will be wrapped into a layer via
+    [`Lux.WrappedFunction`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers).
   - `m`: Optional pre-processing layer for use before `r`. This layer should output a vector
     of dimension `dim_m` and ``m(x) = m(x_0)`` should imply that ``x`` is an equilibrium to
-    be analyzed by the Lyapunov function. Defaults to `NoOpLayer()`, which is typically the
-    right choice when analyzing a single equilibrium point. Consider using a
-    `Boltz.Layers.PeriodicEmbedding` if any of the state variables are periodic. Users may
-    provide a function instead of a Lux layer, in which case it will be wrapped into a layer
-    via `WrappedFunction`.
+    be analyzed by the Lyapunov function. Defaults to
+    [`Lux.NoOpLayer()`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers),
+    which is typically the right choice when analyzing a single equilibrium point. Consider
+    using a
+    [`Boltz.Layers.PeriodicEmbedding`](https://luxdl.github.io/Boltz.jl/dev/api/layers#Boltz.Layers-API-Reference)
+    if any of the state variables are periodic. Users may provide a function instead of a
+    Lux layer, in which case it will be wrapped into a layer via
+    [`Lux.WrappedFunction`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers).
   - `r`: A Lux layer representing a positive definite function that maps the output of `m`
-    to a scalar value; defaults to `SoSPooling()` (i.e., ``\\lVert ⋅ \\rVert^2``). Users may
-    provide a function instead of a Lux layer, in which case it will be wrapped into a layer
-    via `WrappedFunction`.
+    to a scalar value; defaults to [`SoSPooling()`](@ref) (i.e., ``\\lVert ⋅ \\rVert^2``).
+    Users may provide a function instead of a Lux layer, in which case it will be wrapped
+    into a layer via
+    [`Lux.WrappedFunction`](https://lux.csail.mit.edu/dev/api/Lux/layers#Misc.-Helper-Layers).
   - `dim_m`: The dimension of the output of `m`; defaults to `length(fixed_point)` when
     `fixed_point` is provided and `dim_m` isn't.
-  - `fixed_point`: A vector in `ℝ^dim_m` representing the fixed point; defaults to
+  - `fixed_point`: A vector of length `dim_m` representing the fixed point; defaults to
     `zeros(dim_m)` when `dim_m` is provided and `fixed_point` isn't.
 """
 function MultiplicativeLyapunovNet(
-    ϕ;
-    ζ=StrictlyPositiveSoSPooling(),
-    m=NoOpLayer(),
-    r=SoSPooling(),
-    kwargs...
+        ϕ;
+        ζ = StrictlyPositiveSoSPooling(),
+        m = NoOpLayer(),
+        r  =SoSPooling(),
+        kwargs...
 )
     if :dim_m in keys(kwargs)
         dim_m = kwargs[:dim_m]
@@ -154,7 +164,7 @@ function MultiplicativeLyapunovNet(
 
     return Parallel(
         .*,
-        Chain(ϕ,ζ),
+        Chain(ϕ, ζ),
         Chain(
             ShiftTo(
                 m,

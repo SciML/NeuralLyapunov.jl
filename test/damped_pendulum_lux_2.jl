@@ -57,7 +57,7 @@ chain = Chain(
         MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_output), tanh);
         dim_m = dim_state + 1,
         fixed_point = fixed_point_embedded
-    ),
+    )
 )
 ps = Lux.initialparameters(rng, chain)
 

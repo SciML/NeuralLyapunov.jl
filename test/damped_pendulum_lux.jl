@@ -58,7 +58,7 @@ chain = Chain(
         dim_ϕ = dim_output,
         dim_m = dim_state + 1,
         fixed_point = fixed_point_embedded
-    ),
+    )
 )
 ps = Lux.initialparameters(rng, chain)
 
