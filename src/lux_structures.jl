@@ -135,7 +135,7 @@ function MultiplicativeLyapunovNet(
         ϕ;
         ζ = StrictlyPositiveSoSPooling(),
         m = NoOpLayer(),
-        r  =SoSPooling(),
+        r = SoSPooling(),
         kwargs...
 )
     if :dim_m in keys(kwargs)
