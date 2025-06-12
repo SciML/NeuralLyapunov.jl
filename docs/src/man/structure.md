@@ -40,6 +40,8 @@ Regardless of what NeuralLyapunov transformation is used to transform ``\phi`` i
 Two options provided by NeuralLyapunov, intended to be used with [`NoAdditionalStructure`](@ref), are [`AdditiveLyapunovNet`](@ref) and [`MultiplicativeLyapunovNet`](@ref).
 These each wrap a different Lux model, effectively performing the transformation from ``\phi`` to ``V`` within the Lux ecosystem, rather than in the NeuralPDE/ModelingToolkit symbolic ecosystem. 
 
+[`AdditiveLyapunovNet`](@ref) is based on [gaby_lyapunov-net_2021](@cite), and [`MultiplicativeLyapunovNet`](@ref) is an analogous structure combining the neural term and the positive definite term via multiplication instead of addition.
+
 ```@docs
 AdditiveLyapunovNet
 MultiplicativeLyapunovNet
@@ -90,3 +92,8 @@ Note that this form allows ``V(x)`` to depend on the neural network evaluated at
 The time derivative ``\dot{V}`` is similarly defined by a function `V̇(phi, J_phi, dynamics, state, params, t, fixed_point)`.
 The function `J_phi(state)` gives the Jacobian of the neural network `phi` at `state`.
 The function `dynamics` is as above (with parameters `params`). 
+
+## References
+```@bibliography
+Pages = ["structure.md"]
+```
