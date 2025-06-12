@@ -16,6 +16,8 @@ using NeuralPDE: PhysicsInformedNN, discretize
 using OrdinaryDiffEq: Tsit5
 using EvalMetrics: ConfusionMatrix
 import LuxCore
+using Lux: Chain, Parallel, NoOpLayer, WrappedFunction
+using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
 using Optimization: remake
@@ -30,10 +32,15 @@ include("numerical_lyapunov_functions.jl")
 include("local_lyapunov.jl")
 include("policy_search.jl")
 include("benchmark_harness.jl")
+include("lux_structures.jl")
 
 # Lyapunov function structures
 export NeuralLyapunovStructure, NoAdditionalStructure, NonnegativeStructure,
        PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
+
+# Lux structures
+export AdditiveLyapunovNet, MultiplicativeLyapunovNet, SoSPooling,
+       StrictlyPositiveSoSPooling
 
 # Minimization conditions
 export LyapunovMinimizationCondition, StrictlyPositiveDefinite, PositiveSemiDefinite,
