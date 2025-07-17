@@ -120,7 +120,7 @@ end
                  Dense(dim_hidden, dim_hidden, tanh),
                  Dense(dim_hidden, 1)
              ) for _ in 1:dim_output]
-    ps = Lux.initialparameters(StableRNG(0), chain)
+    ps, st = Lux.setup(StableRNG(0), chain)
 
     # Define neural network discretization
     strategy = QuasiRandomTraining(10000)
@@ -174,7 +174,8 @@ end
         policy_search = true,
         endpoint_check,
         classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
-        init_params = ps
+        init_params = ps,
+        init_states = st
     )
     cm = out.confusion_matrix
 

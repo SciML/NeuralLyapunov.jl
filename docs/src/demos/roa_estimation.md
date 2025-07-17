@@ -33,16 +33,16 @@ fixed_point = [0.0];
 dim_state = length(lb)
 dim_hidden = 5
 dim_output = 2
-chain = [Lux.Chain(
+chain = [Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(rng, chain)
+ps, st = Lux.setup(rng, chain)
 
 # Define training strategy
 strategy = GridTraining(0.1)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(dim_output)
@@ -132,12 +132,12 @@ rng = StableRNG(0)
 dim_state = length(lb)
 dim_hidden = 5
 dim_output = 2
-chain = [Lux.Chain(
+chain = [Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(rng, chain)
+ps, st = Lux.setup(rng, chain)
 ```
 
 ```@example RoA
@@ -145,7 +145,7 @@ using NeuralPDE
 
 # Define training strategy
 strategy = GridTraining(0.1)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_params = st)
 nothing # hide
 ```
 

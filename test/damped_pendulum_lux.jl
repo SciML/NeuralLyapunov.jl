@@ -48,8 +48,8 @@ dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
 periodic_embedding_layer = PeriodicEmbedding([1], [2π])
-ps, st = Lux.setup(rng, periodic_embedding_layer)
-periodic_embedding(x) = first(periodic_embedding_layer(x, ps, st))
+_ps, _st = Lux.setup(rng, periodic_embedding_layer)
+periodic_embedding(x) = first(periodic_embedding_layer(x, _ps, _st))
 fixed_point_embedded = periodic_embedding(fixed_point)
 chain = Chain(
     periodic_embedding_layer,
@@ -60,11 +60,11 @@ chain = Chain(
         fixed_point = fixed_point_embedded
     )
 )
-ps = Lux.initialparameters(rng, chain)
+ps, st = Lux.setup(rng, chain)
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure
 structure = NoAdditionalStructure()
