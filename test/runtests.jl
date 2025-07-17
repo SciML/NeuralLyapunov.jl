@@ -60,6 +60,11 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
                 include("benchmark.jl")
             end
         end
+        if DEVICE == "gpu"
+            @time @safetestset "Benchmarking tool - CUDA" begin
+                include("benchmark_CUDA.jl")
+            end
+        end
     end
 
     if GROUP == "all" || GROUP == "unimplemented"
