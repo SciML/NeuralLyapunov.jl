@@ -145,7 +145,7 @@ using NeuralPDE
 
 # Define training strategy
 strategy = GridTraining(0.1)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_params = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 nothing # hide
 ```
 
