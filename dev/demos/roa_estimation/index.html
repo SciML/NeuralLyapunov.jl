@@ -19,16 +19,16 @@ fixed_point = [0.0];
 dim_state = length(lb)
 dim_hidden = 5
 dim_output = 2
-chain = [Lux.Chain(
+chain = [Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(rng, chain)
+ps, st = Lux.setup(rng, chain)
 
 # Define training strategy
 strategy = GridTraining(0.1)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(dim_output)
@@ -95,18 +95,16 @@ rng = StableRNG(0)
 dim_state = length(lb)
 dim_hidden = 5
 dim_output = 2
-chain = [Lux.Chain(
+chain = [Chain(
              Dense(dim_state, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(rng, chain)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{@NamedTuple{layer_1::@NamedTuple{weight::Matrix{Float32}, bias::Vector{Float32}}, layer_2::@NamedTuple{weight::Matrix{Float32}, bias::Vector{Float32}}, layer_3::@NamedTuple{weight::Matrix{Float32}}}}:
- (layer_1 = (weight = [-0.45784864; -0.06867478; … ; 1.64411; 0.23668337;;], bias = [0.3418486, -0.978009, -0.04572296, -0.8118267, 0.055347443]), layer_2 = (weight = [-0.34389058 0.9279804 … 0.07996013 -1.0231869; -1.2034209 0.28792876 … 0.23100138 0.064495794; … ; -0.50130814 -0.688124 … -0.52472657 0.8011582; -0.9508799 -0.13354729 … 0.55746263 0.5449771], bias = [0.27231756, 0.33674875, -0.11881286, 0.13140164, -0.3838435]), layer_3 = (weight = [-0.2886456 0.13539186 … -0.14496835 -0.17473423],))
- (layer_1 = (weight = [2.2938614; -2.1249437; … ; 1.815136; 2.6265342;;], bias = [-0.9846766, -0.63826203, 0.51425433, -0.46349335, -0.036490917]), layer_2 = (weight = [-0.02004436 -1.2301451 … -1.0701928 0.8329293; 0.69851124 1.0166358 … -1.0654731 -0.87174803; … ; -1.1370962 1.029001 … -1.1567752 -0.55754757; -0.8275013 0.5202121 … -0.15313427 -0.98145705], bias = [-0.15087044, -0.12097594, -0.40972832, -0.246295, -0.043452278]), layer_3 = (weight = [-0.13673632 0.20193696 … -0.49816325 -0.41002852],))</code></pre><pre><code class="language-julia hljs">using NeuralPDE
+ps, st = Lux.setup(rng, chain)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(@NamedTuple{layer_1::@NamedTuple{weight::Matrix{Float32}, bias::Vector{Float32}}, layer_2::@NamedTuple{weight::Matrix{Float32}, bias::Vector{Float32}}, layer_3::@NamedTuple{weight::Matrix{Float32}}}[(layer_1 = (weight = [-0.45784864; -0.06867478; … ; 1.64411; 0.23668337;;], bias = [0.3418486, -0.978009, -0.04572296, -0.8118267, 0.055347443]), layer_2 = (weight = [-0.34389058 0.9279804 … 0.07996013 -1.0231869; -1.2034209 0.28792876 … 0.23100138 0.064495794; … ; -0.50130814 -0.688124 … -0.52472657 0.8011582; -0.9508799 -0.13354729 … 0.55746263 0.5449771], bias = [0.27231756, 0.33674875, -0.11881286, 0.13140164, -0.3838435]), layer_3 = (weight = [-0.2886456 0.13539186 … -0.14496835 -0.17473423],)), (layer_1 = (weight = [2.2938614; -2.1249437; … ; 1.815136; 2.6265342;;], bias = [-0.9846766, -0.63826203, 0.51425433, -0.46349335, -0.036490917]), layer_2 = (weight = [-0.02004436 -1.2301451 … -1.0701928 0.8329293; 0.69851124 1.0166358 … -1.0654731 -0.87174803; … ; -1.1370962 1.029001 … -1.1567752 -0.55754757; -0.8275013 0.5202121 … -0.15313427 -0.98145705], bias = [-0.15087044, -0.12097594, -0.40972832, -0.246295, -0.043452278]), layer_3 = (weight = [-0.13673632 0.20193696 … -0.49816325 -0.41002852],))], [(layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple()), (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple())])</code></pre><pre><code class="language-julia hljs">using NeuralPDE
 
 # Define training strategy
 strategy = GridTraining(0.1)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>For this example, let&#39;s use the default Lyapunov candidate from <a href="../../man/structure/#NeuralLyapunov.PositiveSemiDefiniteStructure"><code>PositiveSemiDefiniteStructure</code></a>:</p><p class="math-container">\[V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVert^2 \right),\]</p><p>which structurally enforces positive definiteness. We therefore use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity()</code></a>.</p><p>We only require asymptotic stability in this example, but we use <a href="../../man/roa/#NeuralLyapunov.make_RoA_aware"><code>make_RoA_aware</code></a> to only penalize positive values of <span>$\dot{V}(x)$</span> when <span>$V(x) \le 1$</span>.</p><pre><code class="language-julia hljs">using NeuralLyapunov
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>For this example, let&#39;s use the default Lyapunov candidate from <a href="../../man/structure/#NeuralLyapunov.PositiveSemiDefiniteStructure"><code>PositiveSemiDefiniteStructure</code></a>:</p><p class="math-container">\[V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVert^2 \right),\]</p><p>which structurally enforces positive definiteness. We therefore use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity()</code></a>.</p><p>We only require asymptotic stability in this example, but we use <a href="../../man/roa/#NeuralLyapunov.make_RoA_aware"><code>make_RoA_aware</code></a> to only penalize positive values of <span>$\dot{V}(x)$</span> when <span>$V(x) \le 1$</span>.</p><pre><code class="language-julia hljs">using NeuralLyapunov
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(dim_output)
@@ -170,14 +168,14 @@ println(
 )
 println(&quot;True region of attraction: (-1, 1)&quot;)
 println(&quot;Estimated region of attraction: &quot;, RoA)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [Matrix{Float64}]: A [Base.ReshapedArray{Float32, 2, SubArray{Float32, 1, Vector{Float32}, Tuple{UnitRange{Int64}}, true}, Tuple{}}] x B [Matrix{Float64}]). Falling back to generic implementation. This may be slow.
-<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/XxZ1M/src/impl/matmul.jl:190</span>
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/3ewJc/src/impl/matmul.jl:190</span>
 <span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [Matrix{Float64}]: A [Base.ReshapedArray{Float32, 2, SubArray{Float32, 1, Vector{Float32}, Tuple{UnitRange{Int64}}, true}, Tuple{}}] x B [Matrix{Float64}]). Falling back to generic implementation. This may be slow.
-<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/XxZ1M/src/impl/matmul.jl:190</span>
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/3ewJc/src/impl/matmul.jl:190</span>
 <span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [Matrix{Float64}]: A [Base.ReshapedArray{Float32, 2, SubArray{Float32, 1, Vector{Float32}, Tuple{UnitRange{Int64}}, true}, Tuple{}}] x B [Matrix{Float64}]). Falling back to generic implementation. This may be slow.
-<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/XxZ1M/src/impl/matmul.jl:190</span>
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/3ewJc/src/impl/matmul.jl:190</span>
 V(0.,0.) = 0.0
 <span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [Matrix{Float64}]: A [Base.ReshapedArray{Float32, 2, SubArray{Float32, 1, Vector{Float32}, Tuple{UnitRange{Int64}}, true}, Tuple{}}] x B [Matrix{Float64}]). Falling back to generic implementation. This may be slow.
-<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/XxZ1M/src/impl/matmul.jl:190</span>
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ LuxLib.Impl ~/.julia/packages/LuxLib/3ewJc/src/impl/matmul.jl:190</span>
 V ∋ [0.0, 3.5251504663249973]
 V̇ ∋ [-0.721374428820775, 11.087438260235606]
 True region of attraction: (-1, 1)
@@ -193,4 +191,4 @@ p_V̇ = hline!([0.0], label = &quot;dV/dt = 0&quot;, legend = :top);
 p_V̇ = vspan!(collect(RoA); label = &quot;Estimated Region of Attraction&quot;, color = :gray, fillstyle = :/);
 p_V̇ = vspan!([-1, 1]; label = &quot;True Region of Attraction&quot;, opacity = 0.2, color = :green);
 
-plt = plot(p_V, p_V̇)</code></pre><img src="7427918a.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../damped_SHO/">« Damped Simple Harmonic Oscillator</a><a class="docs-footer-nextpage" href="../policy_search/">Policy Search on the Driven Inverted Pendulum »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Tuesday 1 July 2025 09:36">Tuesday 1 July 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+plt = plot(p_V, p_V̇)</code></pre><img src="7e0c24a7.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../damped_SHO/">« Damped Simple Harmonic Oscillator</a><a class="docs-footer-nextpage" href="../policy_search/">Policy Search on the Driven Inverted Pendulum »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Monday 21 July 2025 16:53">Monday 21 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
