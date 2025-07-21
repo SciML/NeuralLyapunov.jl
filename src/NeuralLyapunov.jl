@@ -17,6 +17,7 @@ using OrdinaryDiffEq: Tsit5
 using EvalMetrics: ConfusionMatrix
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction
+using MLDataDevices: cpu_device
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample

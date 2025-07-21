@@ -89,8 +89,10 @@ arguments for each optimization pass.
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
   - `init_params`: initial parameters for the neural network; defaults to `nothing`, in
     which case the initial parameters are generated using `Lux.initialparameters` and `rng`.
-  - `rng`: random number generator used to generate initial parameters; defaults to a
-    `StableRNG` with seed `0`.
+  - `init_states`: initial states for the neural network; defaults to `nothing`, in which
+    case the initial states are generated using `Lux.initialstates` and `rng`.
+  - `rng`: random number generator used to generate initial parameters and states, as well
+    as in the default sampling algorithm; defaults to a `StableRNG` with seed `0`.
 
 # Output Fields
   - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
@@ -121,6 +123,7 @@ function benchmark(
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
+        init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleThreads()
@@ -151,6 +154,12 @@ function benchmark(
         init_params
     end
 
+    init_states = if init_states === nothing
+        get_init_states(chain, rng)
+    else
+        init_states
+    end
+
     _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
 
     return _benchmark(
@@ -173,6 +182,7 @@ function benchmark(
         ode_solver_args,
         endpoint_check,
         init_params,
+        init_states,
         ensemble_alg
     )
 end
@@ -199,6 +209,7 @@ function benchmark(
         atol = 1e-6,
         endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
         init_params = nothing,
+        init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleThreads()
@@ -220,6 +231,12 @@ function benchmark(
         get_init_params(chain, rng)
     else
         init_params
+    end
+
+    init_states = if init_states === nothing
+        get_init_states(chain, rng)
+    else
+        init_states
     end
 
     _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
@@ -244,6 +261,7 @@ function benchmark(
         ode_solver_args,
         endpoint_check,
         init_params,
+        init_states,
         ensemble_alg
     )
 end
@@ -268,11 +286,12 @@ function _benchmark(
         ode_solver_args,
         endpoint_check,
         init_params,
+        init_states,
         ensemble_alg
 )
     t = @timed begin
         # Construct OptimizationProblem
-        discretization = PhysicsInformedNN(chain, strategy; init_params)
+        discretization = PhysicsInformedNN(chain, strategy; init_params, init_states)
         opt_prob = discretize(pde_system, discretization)
 
         # Solve OptimizationProblem
@@ -300,14 +319,15 @@ function _benchmark(
     end
 
     # Sample Lyapunov function and decrease function
-    states = sample(n, lb, ub, sample_alg)
-    V_samples = V(states)
-    V̇_samples = V̇(states)
+    cpud = cpu_device()
+    states = sample(n, lb, ub, sample_alg) |> cpud
+    V_samples = V(states) |> cpud
+    V̇_samples = V̇(states) |> cpud
 
     out = build_confusion_matrix(
         eachcol(states),
-        eachcol(V_samples),
-        eachcol(V̇_samples),
+        first.(eachcol(V_samples)),
+        first.(eachcol(V̇_samples)),
         f;
         classifier,
         simulation_time,
@@ -401,5 +421,15 @@ function get_init_params(chain, rng)
         end
     else
         LuxCore.initialparameters(rng, chain)
+    end
+end
+
+function get_init_states(chain, rng)
+    return if chain isa AbstractArray
+        map(chain) do c
+            LuxCore.initialstates(rng, c)
+        end
+    else
+        LuxCore.initialstates(rng, chain)
     end
 end

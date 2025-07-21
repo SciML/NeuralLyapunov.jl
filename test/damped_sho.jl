@@ -34,11 +34,11 @@ chain = [Lux.Chain(
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(rng, chain)
+ps, st = Lux.setup(rng, chain)
 
 # Define training strategy
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure
 structure = NonnegativeStructure(

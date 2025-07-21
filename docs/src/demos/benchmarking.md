@@ -46,7 +46,7 @@ chain = [Chain(
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(rng, chain)
+ps, st = Lux.setup(rng, chain)
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(10000)
@@ -99,7 +99,8 @@ benchmarking_results = benchmark(
     parameter_syms,
     policy_search = true,
     endpoint_check,
-    init_params = ps
+    init_params = ps, 
+    init_states = st
 )
 ```
 
@@ -144,7 +145,7 @@ chain = [Chain(
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
-ps = Lux.initialparameters(StableRNG(0), chain)
+ps, st = Lux.setup(StableRNG(0), chain)
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(10000)
@@ -220,7 +221,8 @@ benchmarking_results = benchmark(
     policy_search = true,
     ensemble_alg = EnsembleSerial(),
     endpoint_check,
-    init_params = ps
+    init_params = ps, 
+    init_states = st
 );
 nothing # hide
 ```

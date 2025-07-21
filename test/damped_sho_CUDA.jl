@@ -34,11 +34,13 @@ chain = Chain(
     Dense(dim_hidden, 1)
 )
 const gpud = gpu_device()
-ps = Lux.initialparameters(rng, chain) |> ComponentArray |> gpud |> f32
+ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> gpud |> f32
+st = st |> gpud |> f32
 
 # Define training strategy
 strategy = QuasiRandomTraining(2500)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure
 structure = NoAdditionalStructure()
