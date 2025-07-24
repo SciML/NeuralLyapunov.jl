@@ -139,7 +139,9 @@ function benchmark(
     f = if isempty(unbound_inputs(dynamics))
         ODEFunction(dynamics)
     else
-        ODEInputFunction(dynamics; simplify = true, split = false)
+        dynamics_io_sys, _ = structural_simplify(
+            dynamics, (unbound_inputs(dynamics), []); split = false)
+        ODEInputFunction(dynamics_io_sys; simplify = true, split = false)
     end
 
     defs = defaults(dynamics)
