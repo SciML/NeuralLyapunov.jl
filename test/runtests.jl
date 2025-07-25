@@ -2,7 +2,7 @@ using SafeTestsets
 
 # Use the local version of NeuralLyapunovProblemLibrary
 import Pkg
-Pkg.develop(Pkg.PackageSpec(path=(pwd() * "/../lib/NeuralLyapunovProblemLibrary")))
+Pkg.develop(Pkg.PackageSpec(path = (pwd() * "/../lib/NeuralLyapunovProblemLibrary")))
 Pkg.instantiate()
 
 const GROUP = lowercase(get(ENV, "GROUP", "all"))
