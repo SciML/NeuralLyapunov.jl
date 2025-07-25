@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using StableRNGs, Random
@@ -11,24 +11,12 @@ println("Inverted Pendulum - Policy Search (ODESystem)")
 
 ######################### Define dynamics and domain ##########################
 
-@parameters ζ ω_0
-defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+p = [0.5, 1.0]
+@named driven_pendulum = Pendulum(; driven = true, defaults = p)
+t, = independent_variables(driven_pendulum)
+θ, τ = unknowns(driven_pendulum)
 
-@independent_variables t
-@variables θ(t) τ(t) [input = true]
 Dt = Differential(t)
-DDt = Dt^2
-
-eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ τ]
-
-@named driven_pendulum = ODESystem(
-    eqs,
-    t,
-    [θ, τ],
-    [ζ, ω_0];
-    defaults
-)
-
 bounds = [
     θ ∈ (0, 2π),
     Dt(θ) ∈ (-2.0, 2.0)
@@ -111,7 +99,6 @@ driven_pendulum_io, _ = structural_simplify(
     driven_pendulum, ([τ], []); simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
 state_order = unknowns(driven_pendulum_io)
-p = [defaults[param] for param in parameters(driven_pendulum)]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
@@ -119,7 +106,7 @@ V, V̇ = get_numerical_lyapunov_function(
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
-    p = p
+    p
 )
 
 u = get_policy(net, _θ, dim_output, dim_u)
