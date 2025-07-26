@@ -187,8 +187,8 @@ end
 end
 
 ############################### Damped pendulum ###############################
-@testset "Damped pendulum benchmarking" begin
-    println("Benchmark: Damped Pendulum")
+@testset "Damped pendulum (ODESystem) benchmarking" begin
+    println("Benchmark: Damped Pendulum (ODESystem)")
 
     # Define dynamics and domain
     @named damped_pendulum = Pendulum(; driven = false, defaults = [5.0, 1.0])
@@ -263,4 +263,98 @@ end
 
     # Should accurately classify
     @test cm.fn / cm.p < 0.5
+end
+
+####################### Inverted pendulum policy search #######################
+@testset "Policy search on inverted pendulum (ODESystem) benchmarking" begin
+    println("Benchmark: Inverted Pendulum - Policy Search (ODESystem)")
+
+    Random.seed!(200)
+
+    # Define dynamics and domain
+    p = [0.5, 1.0]
+    @named driven_pendulum = Pendulum(; driven = true, defaults = p)
+    t, = independent_variables(driven_pendulum)
+    θ, τ = unknowns(driven_pendulum)
+
+    Dt = Differential(t)
+    bounds = [
+        θ ∈ (0, 2π),
+        Dt(θ) ∈ (-2.0, 2.0)
+    ]
+
+    upright_equilibrium = [π, 0.0]
+
+    # Define neural network discretization
+    # We use an input layer that is periodic with period 2π with respect to θ
+    dim_state = length(bounds)
+    dim_hidden = 25
+    dim_phi = 3
+    dim_u = 1
+    dim_output = dim_phi + dim_u
+    chain = [Chain(
+                 PeriodicEmbedding([1], [2π]),
+                 Dense(3, dim_hidden, tanh),
+                 Dense(dim_hidden, dim_hidden, tanh),
+                 Dense(dim_hidden, 1)
+             ) for _ in 1:dim_output]
+    ps, st = Lux.setup(StableRNG(0), chain)
+
+    # Define neural network discretization
+    strategy = QuasiRandomTraining(10000)
+
+    # Define neural Lyapunov structure
+    periodic_pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+    end
+
+    structure = PositiveSemiDefiniteStructure(
+        dim_phi;
+        pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
+    )
+    structure = add_policy_search(structure, dim_u)
+
+    minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+    # Define Lyapunov decrease condition
+    decrease_condition = AsymptoticStability(strength = periodic_pos_def)
+
+    # Construct neural Lyapunov specification
+    spec = NeuralLyapunovSpecification(
+        structure,
+        minimization_condition,
+        decrease_condition
+    )
+
+    # Define optimization parameters
+    opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
+    optimization_args = [[:maxiters => 300], [:maxiters => 300]]
+
+    # Run benchmark
+    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
+    out = benchmark(
+        driven_pendulum,
+        bounds,
+        spec,
+        chain,
+        strategy,
+        opt;
+        simulation_time = 200,
+        n = 200,
+        fixed_point = upright_equilibrium,
+        optimization_args,
+        endpoint_check,
+        classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
+        init_params = ps,
+        init_states = st
+    )
+    cm = out.confusion_matrix
+
+    # Resulting controller should drive more states to equilibrium than not
+    @test cm.p > cm.n
+
+    # Resulting classifier should be accurate
+    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
 end
