@@ -1,4 +1,4 @@
-using NeuralPDE, NeuralLyapunov, Lux
+using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
 using OptimizationOptimisers, OptimizationOptimJL
 using OrdinaryDiffEq: EnsembleSerial
@@ -191,23 +191,10 @@ end
     println("Benchmark: Damped Pendulum")
 
     # Define dynamics and domain
-    @parameters ζ ω_0
-    defaults = Dict([ζ => 5.0, ω_0 => 1.0])
-
-    @independent_variables t
-    @variables θ(t)
+    @named damped_pendulum = Pendulum(; driven = false, defaults = [5.0, 1.0])
+    t, = independent_variables(damped_pendulum)
+    θ, = unknowns(damped_pendulum)
     Dt = Differential(t)
-    DDt = Dt^2
-
-    eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
-
-    @named damped_pendulum = ODESystem(
-        eqs,
-        t,
-        [θ],
-        [ζ, ω_0];
-        defaults = defaults
-    )
 
     damped_pendulum = structural_simplify(damped_pendulum)
     bounds = [
@@ -220,7 +207,7 @@ end
     dim_state = length(bounds)
     dim_hidden = 15
     dim_output = 2
-    chain = [Lux.Chain(
+    chain = [Chain(
                  PeriodicEmbedding([1], [2π]),
                  Dense(3, dim_hidden, tanh),
                  Dense(dim_hidden, dim_hidden, tanh),

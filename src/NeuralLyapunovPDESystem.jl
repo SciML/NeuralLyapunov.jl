@@ -82,7 +82,7 @@ function NeuralLyapunovPDESystem(
     end
 
     ############################# Define domains ##############################
-    domains = [state[i] ∈ (lb[i], ub[i]) for i in 1:state_dim]
+    domains = [state[i] in (lb[i], ub[i]) for i in 1:state_dim]
 
     ########################### Construct PDESystem ###########################
     return _NeuralLyapunovPDESystem(

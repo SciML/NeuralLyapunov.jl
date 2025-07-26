@@ -7,10 +7,8 @@ DocMeta.setdocmeta!(
 DocMeta.setdocmeta!(
     NeuralLyapunovProblemLibrary,
     :DocTestSetup,
-    :(
-    using NeuralLyapunovProblemLibrary, ModelingToolkit, OrdinaryDiffEq, Random;
-    Random.seed!(200)
-    );
+    :(using NeuralLyapunovProblemLibrary, ModelingToolkit, OrdinaryDiffEq, Random;
+    Random.seed!(200));
     recursive = true
 )
 

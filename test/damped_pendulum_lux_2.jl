@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using StableRNGs, Random
@@ -11,32 +11,13 @@ println("Damped Pendulum - MultiplicativeLyapunovNet structure")
 
 ######################### Define dynamics and domain ##########################
 
-@parameters ζ ω_0
-defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+p = [0.5, 1.0]
 
-@independent_variables t
-@variables θ(t)
-Dt = Differential(t)
-DDt = Dt^2
-
-eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
-
-@named dynamics = ODESystem(
-    eqs,
-    t,
-    [θ],
-    [ζ, ω_0];
-    defaults
-)
-
+@named dynamics = Pendulum(; driven = false, defaults = p)
 dynamics = structural_simplify(dynamics)
-bounds = [
-    θ ∈ (-π, π),
-    Dt(θ) ∈ (-10.0, 10.0)
-]
+
 lb = [-π, -10.0];
 ub = [π, 10.0];
-p = [defaults[param] for param in parameters(dynamics)]
 fixed_point = [0.0, 0.0]
 
 ####################### Specify neural Lyapunov problem #######################
@@ -44,7 +25,7 @@ fixed_point = [0.0, 0.0]
 # Define neural network discretization
 # We use a LyapunovNet with an input layer that is periodic with period 2π with
 # respect to θ
-dim_state = length(bounds)
+dim_state = length(lb)
 dim_hidden = 15
 dim_output = 2
 periodic_embedding_layer = PeriodicEmbedding([1], [2π])
@@ -109,7 +90,7 @@ V, V̇ = get_numerical_lyapunov_function(
     res.u,
     structure,
     ODEFunction(dynamics),
-    zeros(length(bounds));
+    zeros(length(lb));
     p = p
 )
 
