@@ -32,7 +32,8 @@ println("Simple pendulum feedback cancellation test")
 
 π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
 
-pendulum_simplified, _ = structural_simplify(
+pendulum_simplified,
+_ = structural_simplify(
     pendulum,
     (inputs(pendulum), []);
     simplify = true,

@@ -86,7 +86,8 @@ function π_cancellation(x, p)
     return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
-double_pendulum_simplified, _ = structural_simplify(
+double_pendulum_simplified,
+_ = structural_simplify(
     double_pendulum,
     (inputs(double_pendulum), []);
     simplify = true,
@@ -176,7 +177,8 @@ end
 
 @named acrobot = Acrobot()
 
-acrobot_simplified, _ = structural_simplify(
+acrobot_simplified,
+_ = structural_simplify(
     acrobot,
     (inputs(acrobot), []);
     simplify = true,
