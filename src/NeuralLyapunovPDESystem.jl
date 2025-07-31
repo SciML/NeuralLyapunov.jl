@@ -172,8 +172,10 @@ function NeuralLyapunovPDESystem(
     ######################### Check for policy search #########################
     policy_search = !isempty(unbound_inputs(dynamics))
 
-    f, x = if policy_search
-        dynamics_io_sys, _ = structural_simplify(
+    f,
+    x = if policy_search
+        dynamics_io_sys,
+        _ = structural_simplify(
             dynamics, (unbound_inputs(dynamics), []); split = false)
         (ODEInputFunction(dynamics_io_sys), unknowns(dynamics_io_sys))
     else

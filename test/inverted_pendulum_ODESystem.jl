@@ -95,12 +95,14 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-driven_pendulum_io, _ = structural_simplify(
+driven_pendulum_io,
+_ = structural_simplify(
     driven_pendulum, ([τ], []); simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
 state_order = unknowns(driven_pendulum_io)
 
-V, V̇ = get_numerical_lyapunov_function(
+V,
+V̇ = get_numerical_lyapunov_function(
     net,
     _θ,
     structure,

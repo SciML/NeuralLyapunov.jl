@@ -160,10 +160,11 @@ function Quadrotor3D(; name, defaults = NullParameters())
         Dt.(position_world) .~ velocity_world,
         Dt.(velocity_world) .~ F ./ m .+ g_vec,
         Dt.(attitude) .~ inv(R) * angular_velocity_world,
-        Dt.(angular_velocity_world) .~ inertia_matrix \
-                                       (τ -
-                                        angular_velocity_world ×
-                                        (inertia_matrix * angular_velocity_world))
+        Dt.(angular_velocity_world) .~
+        inertia_matrix \
+        (τ -
+         angular_velocity_world ×
+         (inertia_matrix * angular_velocity_world))
     )
 
     kwargs = if defaults == NullParameters()

@@ -67,7 +67,8 @@ prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
-V, V̇ = get_numerical_lyapunov_function(
+V,
+V̇ = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,

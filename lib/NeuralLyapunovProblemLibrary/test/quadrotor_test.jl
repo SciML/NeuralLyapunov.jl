@@ -31,7 +31,8 @@ end
 
 @named quadrotor_3d = Quadrotor3D()
 
-quadrotor_3d_simplified, _ = structural_simplify(
+quadrotor_3d_simplified,
+_ = structural_simplify(
     quadrotor_3d,
     (inputs(quadrotor_3d), []);
     simplify = true,
@@ -151,7 +152,8 @@ end
 
 @named quadrotor_3d = Quadrotor3D()
 
-quadrotor_3d_simplified, _ = structural_simplify(
+quadrotor_3d_simplified,
+_ = structural_simplify(
     quadrotor_3d,
     (inputs(quadrotor_3d), []);
     simplify = true,
