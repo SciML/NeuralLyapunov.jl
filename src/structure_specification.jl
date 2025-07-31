@@ -13,8 +13,9 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 function NoAdditionalStructure()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
         (net, state, fixed_point) -> net(state),
-        (net, grad_net, f, state, params, t, fixed_point) -> grad_net(state) ⋅
-                                                             f(state, params, t),
+        (net, grad_net, f, state, params, t,
+            fixed_point) -> grad_net(state) ⋅
+                            f(state, params, t),
         (f, net, state, p, t) -> f(state, p, t),
         1
     )
@@ -57,16 +58,18 @@ See also: [`DontCheckNonnegativity`](@ref)
 function NonnegativeStructure(
         network_dim::Integer;
         δ::Real = 0.0,
-        pos_def::Function = (state, fixed_point) -> log(1.0 +
-                                                        (state - fixed_point) ⋅
-                                                        (state - fixed_point)),
+        pos_def::Function = (
+            state, fixed_point) -> log(1.0 +
+                                       (state - fixed_point) ⋅
+                                       (state - fixed_point)),
         grad_pos_def = nothing,
         grad = ForwardDiff.gradient
 )::NeuralLyapunovStructure
     if δ == 0.0
         NeuralLyapunovStructure(
             (net, state, fixed_point) -> net(state) ⋅ net(state),
-            (net, J_net, f, state, params, t, fixed_point) -> 2 * dot(
+            (net, J_net, f, state, params, t,
+                fixed_point) -> 2 * dot(
                 net(state), J_net(state), f(state, params, t)),
             (f, net, state, p, t) -> f(state, p, t),
             network_dim
@@ -78,9 +81,16 @@ function NonnegativeStructure(
             grad_pos_def
         end
         NeuralLyapunovStructure(
-            (net, state, fixed_point) -> net(state) ⋅ net(state) +
-                                         δ * pos_def(state, fixed_point),
-            (net, J_net, f, state, params, t, fixed_point) -> 2 * dot(
+            (net, state,
+                fixed_point) -> net(state) ⋅ net(state) +
+                                δ * pos_def(state, fixed_point),
+            (net,
+                J_net,
+                f,
+                state,
+                params,
+                t,
+                fixed_point) -> 2 * dot(
                 net(state),
                 J_net(state),
                 f(state, params, t)
@@ -134,9 +144,10 @@ See also: [`DontCheckNonnegativity`](@ref)
 """
 function PositiveSemiDefiniteStructure(
         network_dim::Integer;
-        pos_def::Function = (state, fixed_point) -> log(1.0 +
-                                                        (state - fixed_point) ⋅
-                                                        (state - fixed_point)),
+        pos_def::Function = (
+            state, fixed_point) -> log(1.0 +
+                                       (state - fixed_point) ⋅
+                                       (state - fixed_point)),
         non_neg::Function = (net, state, fixed_point) -> 1 + net(state) ⋅ net(state),
         grad_pos_def = nothing,
         grad_non_neg = nothing,
@@ -150,21 +161,29 @@ function PositiveSemiDefiniteStructure(
         grad_pos_def
     end
     grad_non_neg = if isnothing(grad_non_neg)
-        (net, J_net, state, fixed_point) -> _grad(
+        (net, J_net, state,
+            fixed_point) -> _grad(
             (x) -> non_neg(net, x, fixed_point), state)
     else
         grad_non_neg
     end
     NeuralLyapunovStructure(
-        (net, state, fixed_point) -> pos_def(state, fixed_point) *
-                                     non_neg(net, state, fixed_point),
-        (net, J_net, f, state, params, t, fixed_point) -> (f(state, params, t) ⋅
-                                                           grad_pos_def(
+        (net, state,
+            fixed_point) -> pos_def(state, fixed_point) *
+                            non_neg(net, state, fixed_point),
+        (net,
+            J_net,
+            f,
+            state,
+            params,
+            t,
+            fixed_point) -> (f(state, params, t) ⋅
+                             grad_pos_def(
             state, fixed_point)) *
-                                                          non_neg(net, state, fixed_point) +
-                                                          pos_def(state, fixed_point) *
-                                                          (f(state, params, t) ⋅
-                                                           grad_non_neg(
+                            non_neg(net, state, fixed_point) +
+                            pos_def(state, fixed_point) *
+                            (f(state, params, t) ⋅
+                             grad_non_neg(
             net, J_net, state, fixed_point)),
         (f, net, state, p, t) -> f(state, p, t),
         network_dim

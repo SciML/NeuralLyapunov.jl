@@ -22,7 +22,8 @@ function π_vertical_only(x, p; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
     return [T, T]
 end
 
-quadrotor_planar_simplified, _ = structural_simplify(
+quadrotor_planar_simplified,
+_ = structural_simplify(
     quadrotor_planar,
     (inputs(quadrotor_planar), []);
     simplify = true,
@@ -118,7 +119,8 @@ end
 
 @named quadrotor_planar = QuadrotorPlanar()
 
-quadrotor_planar_simplified, _ = structural_simplify(
+quadrotor_planar_simplified,
+_ = structural_simplify(
     quadrotor_planar,
     (inputs(quadrotor_planar), []);
     simplify = true,
