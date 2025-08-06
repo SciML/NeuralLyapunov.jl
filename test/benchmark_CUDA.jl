@@ -22,9 +22,9 @@ const gpud = gpu_device()
         vel = state[2]
         vcat(vel, -vel - pos)
     end
-    lb = [-2.0, -2.0];
-    ub = [2.0, 2.0];
-    fixed_point = [0.0, 0.0];
+    lb = [-2.0, -2.0]
+    ub = [2.0, 2.0]
+    fixed_point = [0.0, 0.0]
     dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 
     # Specify neural Lyapunov problem
@@ -129,7 +129,7 @@ end
             AdditiveLyapunovNet(
                 MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_hidden), tanh);
                 dim_ϕ = dim_hidden,
-                fixed_point = fixed_point_embedded,
+                fixed_point = fixed_point_embedded
             )
         ),
         Chain(
