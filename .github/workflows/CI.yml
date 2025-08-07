@@ -61,9 +61,9 @@ jobs:
           skip: LinearAlgebra, Pkg, Random, Test
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
-          ALLOW_RERESOLVE: false
         with:
           project: ${{ matrix.project }}
+          allow_reresolve: false
         env:
           GROUP: "all"
   docs:
