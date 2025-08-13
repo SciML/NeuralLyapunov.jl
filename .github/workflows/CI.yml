@@ -55,14 +55,17 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v1
+      - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{matrix.project}}
           skip: LinearAlgebra, Pkg, Random, Test
+          julia_version: ${{ matrix.version }}
+          mode: deps
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
+          allow_reresolve: false
         env:
           GROUP: "all"
   docs:
