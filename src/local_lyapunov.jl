@@ -4,6 +4,10 @@
 Use semidefinite programming to derive a quadratic Lyapunov function for the linearization
 of `dynamics` around `fixed_point`. Return `(V, dV/dt)`.
 
+The system dynamics are given by the function `dynamics(x, p, t)`, where `x` is the state,
+`p` are the parameters, and `t` is time. The state dimension is given by `state_dim`, which
+is the length of the state vector `x`.
+
 To solve the semidefinite program, `JuMP.Model` requires an `optimizer_factory` capable of
 semidefinite programming (SDP). See the
 [JuMP documentation](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers) for
@@ -11,16 +15,16 @@ examples.
 
 If `jac` is not supplied, the Jacobian of the `dynamics(x, p, t)` with respect to `x` is
 calculated using `ForwardDiff`. Otherwise, `jac` is expected to be either a function or an
-`AbstractMatrix`. If `jac isa Function`, it should take in the state and parameters and
-output the Jacobian of `dynamics` with respect to the state `x`. If `jac isa
-AbstractMatrix`, it should be the value of the Jacobian at `fixed_point`.
+`AbstractMatrix`. If `jac isa AbstractMatrix`, it should be the value of the Jacobian at
+`fixed_point`. Otherwise, `jac(x, p)` should be a function, and should take in the state and
+parameters and output the Jacobian of `dynamics` with respect to the state `x`.
 
 If `fixed_point` is not specified, it defaults to the origin, i.e., `zeros(state_dim)`.
 Parameters `p` for the dynamics should be supplied when the dynamics depend on them.
 """
-function local_lyapunov(dynamics::Function, state_dim, optimizer_factory,
-        jac::AbstractMatrix{T}; fixed_point = zeros(T, state_dim),
-        p = SciMLBase.NullParameters()) where {T <: Number}
+function local_lyapunov(dynamics, state_dim, optimizer_factory, jac::AbstractMatrix{T};
+        fixed_point = zeros(T, state_dim), p = SciMLBase.NullParameters()) where {T <:
+                                                                                  Number}
     model = JuMP.Model(optimizer_factory)
     JuMP.set_silent(model)
 
@@ -54,28 +58,14 @@ function local_lyapunov(dynamics::Function, state_dim, optimizer_factory,
     return V, V̇
 end
 
-function local_lyapunov(dynamics::Function, state_dim, optimizer_factory, jac::Function;
+function local_lyapunov(dynamics, state_dim, optimizer_factory, jac;
         fixed_point = zeros(state_dim), p = SciMLBase.NullParameters())
     A::AbstractMatrix = jac(fixed_point, p)
-    return local_lyapunov(
-        dynamics,
-        state_dim,
-        optimizer_factory,
-        A;
-        fixed_point = fixed_point,
-        p = p
-    )
+    return local_lyapunov(dynamics, state_dim, optimizer_factory, A; fixed_point, p)
 end
 
-function local_lyapunov(dynamics::Function, state_dim, optimizer_factory;
+function local_lyapunov(dynamics, state_dim, optimizer_factory;
         fixed_point = zeros(state_dim), p = SciMLBase.NullParameters())
     A::AbstractMatrix = ForwardDiff.jacobian(x -> dynamics(x, p, 0.0), fixed_point)
-    return local_lyapunov(
-        dynamics,
-        state_dim,
-        optimizer_factory,
-        A;
-        fixed_point = fixed_point,
-        p = p
-    )
+    return local_lyapunov(dynamics, state_dim, optimizer_factory, A; fixed_point, p)
 end

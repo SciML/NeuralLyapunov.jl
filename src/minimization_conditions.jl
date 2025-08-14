@@ -5,12 +5,12 @@ Specifies the form of the Lyapunov minimization condition to be used.
 
 # Fields
   - `check_nonnegativity::Bool`: whether or not to train for positivity/nonnegativity of
-    ``V(x)``
-  - `strength::Function`: specifies the level of strictness for positivity training; should
-    be zero when the two inputs are equal and nonnegative otherwise; used when
-    `check_nonnegativity == true`
-  - `rectifier::Function`: positive when the input is positive and (approximately) zero when
-    the input is negative
+    ``V(x)``.
+  - `strength`: specifies the level of strictness for positivity training; should be zero
+    when the two inputs are equal and nonnegative otherwise; used when `check_nonnegativity`
+    is `true`.
+  - `rectifier`: positive when the input is positive and (approximately) zero when
+    the input is negative.
   - `check_fixed_point`: whether or not to train for ``V(x_0) = 0``.
 
 # Training conditions
@@ -47,8 +47,8 @@ employed.
 """
 struct LyapunovMinimizationCondition <: AbstractLyapunovMinimizationCondition
     check_nonnegativity::Bool
-    strength::Function
-    rectifier::Function
+    strength
+    rectifier
     check_fixed_point::Bool
 end
 

@@ -7,11 +7,11 @@ attraction estimate of ``\\{ x : V(x) ≤ ρ \\}``.
 # Fields
   - `cond::AbstractLyapunovDecreaseCondition`: specifies the loss to be applied when
     ``V(x) ≤ ρ``.
-  - `sigmoid::Function`: approximately one when the input is positive and approximately zero
-    when the input is negative.
+  - `sigmoid`: a univariate function that outputs a value that is approximately one when the
+    input is positive and approximately zero when the input is negative.
   - `ρ`: the level of the sublevel set forming the estimate of the region of attraction.
-  - `out_of_RoA_penalty::Function`: a loss function to be applied penalizing points outside
-    the sublevel set forming the region of attraction estimate.
+  - `out_of_RoA_penalty`: a loss function to be applied penalizing points outside the
+    sublevel set forming the region of attraction estimate.
 
 # Training conditions
 
@@ -69,9 +69,9 @@ See also: [`AbstractLyapunovDecreaseCondition`](@ref), [`LyapunovDecreaseConditi
 """
 struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
     cond::AbstractLyapunovDecreaseCondition
-    sigmoid::Function
+    sigmoid
     ρ::Real
-    out_of_RoA_penalty::Function
+    out_of_RoA_penalty
 end
 
 check_decrease(cond::RoAAwareDecreaseCondition)::Bool = check_decrease(cond.cond)
@@ -110,9 +110,9 @@ by `cond` only in that sublevel set.
 
 # Keyword Arguments
   - `ρ`: the target level such that the RoA will be ``\\{ x : V(x) ≤ ρ \\}``, defaults to 1.
-  - `out_of_RoA_penalty::Function`: specifies the loss to be applied when ``V(x) > ρ``,
+  - `out_of_RoA_penalty`: specifies the loss to be applied when ``V(x) > ρ``,
     defaults to no loss.
-  - `sigmoid::Function`: approximately one when the input is positive and approximately zero
+  - `sigmoid`: approximately one when the input is positive and approximately zero
     when the input is negative, defaults to unit step function.
 
 The loss applied to samples ``x`` such that ``V(x) > ρ`` is
@@ -136,7 +136,7 @@ function make_RoA_aware(
         out_of_RoA_penalty = (V, dVdt, state, fixed_point, _ρ) -> 0.0,
         sigmoid = (x) -> x .≥ zero.(x)
 )::RoAAwareDecreaseCondition
-    RoAAwareDecreaseCondition(
+    return RoAAwareDecreaseCondition(
         cond,
         sigmoid,
         ρ,
