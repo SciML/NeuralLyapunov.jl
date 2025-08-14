@@ -45,10 +45,10 @@ In either case, the rectified linear unit `rectifier(t) = max(zero(t), t)` exact
 represents the inequality, but differentiable approximations of this function may be
 employed.
 """
-struct LyapunovMinimizationCondition <: AbstractLyapunovMinimizationCondition
+struct LyapunovMinimizationCondition{S, R} <: AbstractLyapunovMinimizationCondition
     check_nonnegativity::Bool
-    strength
-    rectifier
+    strength::S
+    rectifier::R
     check_fixed_point::Bool
 end
 

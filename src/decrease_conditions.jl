@@ -55,11 +55,11 @@ In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` e
 represents the inequality, but differentiable approximations of this function may be
 employed.
 """
-struct LyapunovDecreaseCondition <: AbstractLyapunovDecreaseCondition
+struct LyapunovDecreaseCondition{RM, S, R} <: AbstractLyapunovDecreaseCondition
     check_decrease::Bool
-    rate_metric
-    strength
-    rectifier
+    rate_metric::RM
+    strength::S
+    rectifier::R
 end
 
 function check_decrease(cond::LyapunovDecreaseCondition)::Bool

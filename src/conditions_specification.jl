@@ -17,11 +17,11 @@ structurally enforcing some Lyapunov conditions.
 
 `phi` and `J_phi` above are both functions of `state` alone.
 """
-struct NeuralLyapunovStructure
-    V
-    V̇
-    f_call
-    network_dim::Integer
+struct NeuralLyapunovStructure{TV, TDV, F, D <: Integer}
+    V::TV
+    V̇::TDV
+    f_call::F
+    network_dim::D
 end
 
 """

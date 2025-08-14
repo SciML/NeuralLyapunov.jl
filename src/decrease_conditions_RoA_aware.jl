@@ -67,11 +67,12 @@ employed.
 
 See also: [`AbstractLyapunovDecreaseCondition`](@ref), [`LyapunovDecreaseCondition`](@ref)
 """
-struct RoAAwareDecreaseCondition <: AbstractLyapunovDecreaseCondition
-    cond::AbstractLyapunovDecreaseCondition
-    sigmoid
-    ρ::Real
-    out_of_RoA_penalty
+struct RoAAwareDecreaseCondition{C <: AbstractLyapunovDecreaseCondition, S, R <: Real, P} <:
+       AbstractLyapunovDecreaseCondition
+    cond::C
+    sigmoid::S
+    ρ::R
+    out_of_RoA_penalty::P
 end
 
 check_decrease(cond::RoAAwareDecreaseCondition)::Bool = check_decrease(cond.cond)
