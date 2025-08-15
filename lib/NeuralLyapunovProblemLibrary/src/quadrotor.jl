@@ -134,7 +134,7 @@ function Quadrotor3D(; name, defaults = NullParameters())
 
     # Angular velocity (world frame)
     @variables ωφ(t), ωθ(t), ωψ(t)
-    angular_velocity_world = [ωφ, ωθ, ωψ]
+    ω_world = [ωφ, ωθ, ωψ]
 
     # Inputs
     # T-thrust, τφ-roll torque, τθ-pitch torque, τψ-yaw torque
@@ -159,12 +159,8 @@ function Quadrotor3D(; name, defaults = NullParameters())
     eqs = vcat(
         Dt.(position_world) .~ velocity_world,
         Dt.(velocity_world) .~ F ./ m .+ g_vec,
-        Dt.(attitude) .~ inv(R) * angular_velocity_world,
-        Dt.(angular_velocity_world) .~
-        inertia_matrix \
-        (τ -
-         angular_velocity_world ×
-         (inertia_matrix * angular_velocity_world))
+        Dt.(attitude) .~ inv(R) * ω_world,
+        Dt.(ω_world) .~ inertia_matrix \ (τ - ω_world × (inertia_matrix * ω_world))
     )
 
     kwargs = if defaults == NullParameters()
@@ -176,8 +172,7 @@ function Quadrotor3D(; name, defaults = NullParameters())
     return ODESystem(
         eqs,
         t,
-        vcat(position_world, attitude, velocity_world,
-            angular_velocity_world, T, τφ, τθ, τψ),
+        vcat(position_world, attitude, velocity_world, ω_world, T, τφ, τθ, τψ),
         params;
         kwargs...
     )

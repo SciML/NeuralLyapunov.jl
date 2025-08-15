@@ -108,7 +108,7 @@ function NeuralLyapunovPDESystem(
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
-        policy_search::Bool = typeof(dynamics) <: ODEInputFunction,
+        policy_search::Bool = dynamics isa ODEInputFunction,
         name
 )::PDESystem
     if dynamics.mass_matrix !== I

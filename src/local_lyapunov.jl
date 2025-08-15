@@ -37,7 +37,7 @@ function local_lyapunov(dynamics, state_dim, optimizer_factory, jac::AbstractMat
     JuMP.@variable(model, Q[1:state_dim, 1:state_dim], PSD)
 
     # V̇(x) = (x - x0) ⋅ ( (P A + A^T P) * (x - x0)), so we require P A + A^T P = -Q
-    JuMP.@constraint(model, P * jac + transpose(jac) * P .== -Q)
+    JuMP.@constraint(model, P * jac + transpose(jac) * P.==-Q)
 
     # Solve the semidefinite program and get the value of P
     JuMP.optimize!(model)

@@ -12,11 +12,9 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 """
 function NoAdditionalStructure()::NeuralLyapunovStructure
     NeuralLyapunovStructure(
-        (net, state, fixed_point) -> net(state),
-        (net, grad_net, f, state, params, t,
-            fixed_point) -> grad_net(state) ⋅
-                            f(state, params, t),
-        (f, net, state, p, t) -> f(state, p, t),
+        (net, x, x0) -> net(x),
+        (net, grad_net, f, x, p, t, x0) -> grad_net(x) ⋅ f(x, p, t),
+        (f, net, x, p, t) -> f(x, p, t),
         1
     )
 end
@@ -64,35 +62,23 @@ function NonnegativeStructure(
 )::NeuralLyapunovStructure
     if δ == 0.0
         NeuralLyapunovStructure(
-            (net, state, fixed_point) -> net(state) ⋅ net(state),
-            (net, J_net, f, state, params, t,
-                fixed_point) -> 2 * dot(
-                net(state), J_net(state), f(state, params, t)),
-            (f, net, state, p, t) -> f(state, p, t),
+            (net, x, x0) -> net(x) ⋅ net(x),
+            (net, J_net, f, x, p, t, x0) -> 2 * dot(net(x), J_net(x), f(x, p, t)),
+            (f, net, x, p, t) -> f(x, p, t),
             network_dim
         )
     else
         grad_pos_def = if isnothing(grad_pos_def)
-            (state, fixed_point) -> grad((x) -> pos_def(x, fixed_point), state)
+            (x, x0) -> grad((_x) -> pos_def(_x, x0), x)
         else
             grad_pos_def
         end
         NeuralLyapunovStructure(
-            (net, state,
-                fixed_point) -> net(state) ⋅ net(state) +
-                                δ * pos_def(state, fixed_point),
-            (net,
-                J_net,
-                f,
-                state,
-                params,
-                t,
-                fixed_point) -> 2 * dot(
-                net(state),
-                J_net(state),
-                f(state, params, t)
-            ) + δ * grad_pos_def(state, fixed_point) ⋅ f(state, params, t),
-            (f, net, state, p, t) -> f(state, p, t),
+            (net, x, x0) -> net(x) ⋅ net(x) + δ * pos_def(x, x0),
+            function (net, J_net, f, x, p, t, x0)
+                2 * dot(net(x), J_net(x), f(x, p, t)) + δ * grad_pos_def(x, x0) ⋅ f(x, p, t)
+            end,
+            (f, net, x, p, t) -> f(x, p, t),
             network_dim
         )
     end
@@ -150,7 +136,7 @@ function PositiveSemiDefiniteStructure(
     _grad(f, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
     _grad(f, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)
-        (state, fixed_point) -> _grad((x) -> pos_def(x, fixed_point), state)
+        (x, x0) -> _grad((_x) -> pos_def(_x, x0), x)
     else
         grad_pos_def
     end
