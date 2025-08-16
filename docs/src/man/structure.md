@@ -70,7 +70,7 @@ NeuralLyapunovStructure
 ### Calling the dynamics
 
 Very generally, the dynamical system can be a system of ODEs ``\dot{x} = f(x, u, p, t)``, where ``u`` is a control input, ``p`` contains parameters, and ``f`` depends on the neural network in some way.
-To capture this variety, users must supply the function `f_call(dynamics::Function, phi::Function, state, p, t)`.
+To capture this variety, users must supply the function `f_call(dynamics, phi, state, p, t)`.
 
 The most common example is when `dynamics` takes the same form as an `ODEFunction`. 
 i.e., ``\dot{x} = \texttt{dynamics}(x, p, t)``.

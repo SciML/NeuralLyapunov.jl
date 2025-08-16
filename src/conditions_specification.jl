@@ -7,22 +7,21 @@ Allows the user to define the Lyapunov in terms of the neural network, potential
 structurally enforcing some Lyapunov conditions.
 
 # Fields
-  - `V(phi::Function, state, fixed_point)`: outputs the value of the Lyapunov function at
-    `state`.
-  - `V̇(phi::Function, J_phi::Function, dynamics::Function, state, params, t, fixed_point)`:
-    outputs the time derivative of the Lyapunov function at `state`.
-  - `f_call(dynamics::Function, phi::Function, state, params, t)`: outputs the derivative of
-    the state; this is useful for making closed-loop dynamics which depend on the neural
-    network, such as in the policy search case.
+  - `V(phi, state, fixed_point)`: outputs the value of the Lyapunov function at `state`.
+  - `V̇(phi, J_phi, dynamics, state, params, t, fixed_point)`: outputs the time derivative of
+    the Lyapunov function at `state`.
+  - `f_call(dynamics, phi, state, params, t)`: outputs the derivative of the state; this is
+    useful for making closed-loop dynamics which depend on the neural network, such as in
+    the policy search case.
   - `network_dim`: the dimension of the output of the neural network.
 
 `phi` and `J_phi` above are both functions of `state` alone.
 """
-struct NeuralLyapunovStructure
-    V::Function
-    V̇::Function
-    f_call::Function
-    network_dim::Integer
+struct NeuralLyapunovStructure{TV, TDV, F, D <: Integer}
+    V::TV
+    V̇::TDV
+    f_call::F
+    network_dim::D
 end
 
 """

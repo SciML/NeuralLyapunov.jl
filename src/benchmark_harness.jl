@@ -56,18 +56,19 @@ arguments for each optimization pass.
     `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
     default parameter values of `dynamics`.
   - `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
-    isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa ODEFunction`,
-    symbols stored there are used, unless overridden here; if not provided here and cannot
-    be inferred, `[:state1, :state2, ...]` will be used.
+    isa ODESystem` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
+    `ODEFunction` or an `ODEInputFunction`, the symbols stored there are used, unless
+    overridden here; if not provided here and cannot be inferred, `[:state1, :state2, ...]`
+    will be used.
   - `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
-    `dynamics isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa
-    ODEFunction`, symbols stored there are used, unless overridden here; if not provided
-    here and cannot be inferred, `[:param1, :param2, ...]` will be used.
+    `dynamics isa ODESystem` (in that case, the symbols from `dynamics` are used); if
+    `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
+    used, unless overridden here; if not provided here and cannot be inferred,
+    `[:param1, :param2, ...]` will be used.
   - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-    actually be a fixed point; defaults to `false`; only used when `dynamics isa Function &&
-    !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`, `policy_search` should
-    not be supplied (as it must be false); when `dynamics isa ODESystem`, value inferred by
-    the presence of unbound inputs.
+    actually be a fixed point; defaults to `false`; when `dynamics isa ODESystem`, the value
+    is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
+    an `ODEInputFunction`, the value is inferred by the type of `dynamics`.
   - `optimization_args`: arguments to be passed into the optimization solver, as a vector of
     `Pair`s. For more information, see the
     [Optimization.jl docs](https://docs.sciml.ai/Optimization/stable/API/solve/).
@@ -132,7 +133,7 @@ function benchmark(
         dynamics,
         bounds,
         spec;
-        fixed_point = fixed_point
+        fixed_point
     )
 
     params = parameters(dynamics)
@@ -191,7 +192,7 @@ function benchmark(
 end
 
 function benchmark(
-        dynamics::Function,
+        dynamics,
         lb,
         ub,
         spec,
@@ -223,11 +224,11 @@ function benchmark(
         lb,
         ub,
         spec;
-        fixed_point = fixed_point,
-        p = p,
-        state_syms = state_syms,
-        parameter_syms = parameter_syms,
-        policy_search = policy_search
+        fixed_point,
+        p,
+        state_syms,
+        parameter_syms,
+        policy_search
     )
 
     init_params = if init_params === nothing

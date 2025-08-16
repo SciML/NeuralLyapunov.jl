@@ -37,14 +37,14 @@ function get_numerical_lyapunov_function(
         phi,
         θ,
         structure::NeuralLyapunovStructure,
-        dynamics::Function,
+        dynamics,
         fixed_point;
         p = SciMLBase.NullParameters(),
         use_V̇_structure = false,
         deriv = ForwardDiff.derivative,
         jac = ForwardDiff.jacobian,
         J_net = nothing
-)::Tuple{Function, Function}
+)
     # network_func is the numerical form of neural network output
     network_func = phi_to_net(phi, θ)
 

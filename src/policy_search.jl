@@ -10,9 +10,9 @@ Add dependence on the neural network to the dynamics in a [`NeuralLyapunovStruct
     through `control_structure`.
 
 # Keyword Arguments
-  - `control_structure::Function`: transforms the final `new_dims` outputs of the neural net
-    before passing them into the dynamics; defaults to `identity`, passing in the neural
-    network outputs unchanged.
+  - `control_structure`: function that transforms the final `new_dims` outputs of the neural
+    network before passing them into the dynamics; defaults to `identity`, passing in the
+    neural network outputs unchanged.
 
 The returned `NeuralLyapunovStructure` expects dynamics of the form `f(x, u, p, t)`, where
 `u` captures the dependence of dynamics on the neural network (e.g., through a control
@@ -24,7 +24,7 @@ as specified originally by `lyapunov_structure`.
 function add_policy_search(
         lyapunov_structure::NeuralLyapunovStructure,
         new_dims::Integer;
-        control_structure::Function = identity
+        control_structure = identity
 )::NeuralLyapunovStructure
     let V = lyapunov_structure.V, V̇ = lyapunov_structure.V̇,
         V_dim = lyapunov_structure.network_dim, u = control_structure
@@ -80,7 +80,7 @@ function get_policy(
         θ,
         network_dim::Integer,
         control_dim::Integer;
-        control_structure::Function = identity
+        control_structure = identity
 )
     network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
 

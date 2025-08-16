@@ -1,6 +1,6 @@
 """
     NeuralLyapunovPDESystem(dynamics::ODESystem, bounds, spec; <keyword_arguments>)
-    NeuralLyapunovPDESystem(dynamics::Function, lb, ub, spec; <keyword_arguments>)
+    NeuralLyapunovPDESystem(dynamics, lb, ub, spec; <keyword_arguments>)
 
 Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapunov problem.
 
@@ -23,22 +23,23 @@ Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapun
     `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
     default parameter values of `dynamics`.
   - `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
-    isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa ODEFunction`,
-    symbols stored there are used, unless overridden here; if not provided here and cannot
-    be inferred, `[:state1, :state2, ...]` will be used.
+    isa ODESystem` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
+    `ODEFunction` or an `ODEInputFunction`, the symbols stored there are used, unless
+    overridden here; if not provided here and cannot be inferred, `[:state1, :state2, ...]`
+    will be used.
   - `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
-    `dynamics isa ODESystem`, then the symbols from `dynamics` are used; if `dynamics isa
-    ODEFunction`, symbols stored there are used, unless overridden here; if not provided
-    here and cannot be inferred, `[:param1, :param2, ...]` will be used.
+    `dynamics isa ODESystem` (in that case, the symbols from `dynamics` are used); if
+    `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
+    used, unless overridden here; if not provided here and cannot be inferred,
+    `[:param1, :param2, ...]` will be used.
   - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-    actually be a fixed point; defaults to `false`; only used when `dynamics isa Function &&
-    !(dynamics isa ODEFunction)`; when `dynamics isa ODEFunction`, `policy_search` should
-    not be supplied (as it must be false); when `dynamics isa ODESystem`, value inferred by
-    the presence of unbound inputs.
-  - `name`: the name of the constructed `PDESystem`
+    actually be a fixed point; defaults to `false`; when `dynamics isa ODESystem`, the value
+    is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
+    an `ODEInputFunction`, the value is inferred by the type of `dynamics`.
+  - `name`: the name of the constructed `PDESystem`.
 """
 function NeuralLyapunovPDESystem(
-        dynamics::Function,
+        dynamics,
         lb,
         ub,
         spec::NeuralLyapunovSpecification;
@@ -99,7 +100,7 @@ function NeuralLyapunovPDESystem(
 end
 
 function NeuralLyapunovPDESystem(
-        dynamics::ODEFunction,
+        dynamics::Union{ODEFunction, ODEInputFunction},
         lb,
         ub,
         spec::NeuralLyapunovSpecification;
@@ -107,19 +108,22 @@ function NeuralLyapunovPDESystem(
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
-        policy_search::Bool = false,
+        policy_search::Bool = dynamics isa ODEInputFunction,
         name
 )::PDESystem
     if dynamics.mass_matrix !== I
         throw(ErrorException("DAEs are not supported at this time. Please supply dynamics" *
                              " without a mass matrix."))
     end
-    if policy_search
+    if policy_search && (dynamics isa ODEFunction)
         throw(ErrorException("Got policy_search == true when dynamics were supplied as an" *
                              " ODEFunction f(x,p,t), so no input can be supplied."))
+    elseif !policy_search && (dynamics isa ODEInputFunction)
+        throw(ErrorException("Got policy_search == false when dynamics were supplied as " *
+                             "an ODEInputFunction f(x,u,p,t)."))
     end
 
-    # Extract state and parameter symbols from ODEFunction
+    # Extract state and parameter symbols from ODEFunction/ODEInputFunction
     s_syms, p_syms = if dynamics.sys isa ODESystem
         s_syms = Symbol.(operation.(unknowns(dynamics.sys)))
         p_syms = Symbol.(parameters(dynamics.sys))
@@ -136,7 +140,7 @@ function NeuralLyapunovPDESystem(
         ([], [])
     end
 
-    # Override ODEFunction state and parameter symbols when supplied
+    # Override ODEFunction/ODEInputFunction state and parameter symbols when supplied
     s_syms = if state_syms == []
         s_syms
     else
@@ -153,8 +157,8 @@ function NeuralLyapunovPDESystem(
         lb,
         ub,
         spec;
-        fixed_point = fixed_point,
-        p = p,
+        fixed_point,
+        p,
         state_syms = s_syms,
         parameter_syms = p_syms,
         policy_search = false,
@@ -202,7 +206,7 @@ function NeuralLyapunovPDESystem(
 
     ########################### Construct PDESystem ###########################
     return _NeuralLyapunovPDESystem(
-        f,
+        f.f,
         domains,
         spec,
         fixed_point,
@@ -215,7 +219,7 @@ function NeuralLyapunovPDESystem(
 end
 
 function _NeuralLyapunovPDESystem(
-        dynamics::Function,
+        dynamics,
         domains,
         spec::NeuralLyapunovSpecification,
         fixed_point,
@@ -307,6 +311,6 @@ function _NeuralLyapunovPDESystem(
         φ(state),
         params;
         defaults,
-        name = name
+        name
     )
 end

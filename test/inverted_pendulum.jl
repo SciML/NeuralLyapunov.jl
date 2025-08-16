@@ -80,9 +80,9 @@ spec = NeuralLyapunovSpecification(
     ub,
     spec;
     fixed_point = upright_equilibrium,
-    p = p,
-    state_syms = state_syms,
-    parameter_syms = parameter_syms,
+    p,
+    state_syms,
+    parameter_syms,
     policy_search = true
 )
 
@@ -106,7 +106,7 @@ V̇ = get_numerical_lyapunov_function(
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
-    p = p
+    p
 )
 
 u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)

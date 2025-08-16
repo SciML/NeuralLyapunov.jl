@@ -6,12 +6,12 @@ Specifies the form of the Lyapunov decrease condition to be used.
 # Fields
   - `check_decrease::Bool`: whether or not to train for negativity/nonpositivity of
     ``V̇(x)``.
-  - `rate_metric::Function`: should increase with ``V̇(x)``; used when
+  - `rate_metric`: should increase with second input, ``V̇(x)``; used when
     `check_decrease == true`.
-  - `strength::Function`: specifies the level of strictness for negativity training; should
-    be zero when the two inputs are equal and nonnegative otherwise; used when
-    `check_decrease == true`.
-  - `rectifier::Function`: positive when the input is positive and (approximately) zero when
+  - `strength`: specifies the level of strictness for negativity training; should be zero
+    when the two inputs are equal and nonnegative otherwise; used when `check_decrease` is
+    `true`.
+  - `rectifier`: positive when the input is positive and (approximately) zero when
     the input is negative.
 
 # Training conditions
@@ -55,11 +55,11 @@ In either case, the rectified linear unit `rectifier = (t) -> max(zero(t), t)` e
 represents the inequality, but differentiable approximations of this function may be
 employed.
 """
-struct LyapunovDecreaseCondition <: AbstractLyapunovDecreaseCondition
+struct LyapunovDecreaseCondition{RM, S, R} <: AbstractLyapunovDecreaseCondition
     check_decrease::Bool
-    rate_metric::Function
-    strength::Function
-    rectifier::Function
+    rate_metric::RM
+    strength::S
+    rectifier::R
 end
 
 function check_decrease(cond::LyapunovDecreaseCondition)::Bool

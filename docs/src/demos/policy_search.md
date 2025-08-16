@@ -282,7 +282,7 @@ V_func, V̇_func = get_numerical_lyapunov_function(
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
-    p = p
+    p
 )
 
 u = get_policy(net, _θ, dim_output, dim_u)
