@@ -65,7 +65,7 @@ spec = NeuralLyapunovSpecification(
     lb,
     ub,
     spec;
-    p = p
+    p
 )
 
 ######################## Construct OptimizationProblem ########################
@@ -87,7 +87,7 @@ V̇ = get_numerical_lyapunov_function(
     structure,
     f,
     fixed_point;
-    p = p,
+    p,
     use_V̇_structure = true
 )
 

@@ -61,9 +61,9 @@ function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullPara
     params = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
     kwargs = if defaults == NullParameters()
-        (; name = name)
+        (; name)
     else
-        (; name = name, defaults = Dict(params .=> defaults))
+        (; name, defaults = Dict(params .=> defaults))
     end
 
     if actuation == :fully_actuated

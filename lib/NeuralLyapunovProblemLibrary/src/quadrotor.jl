@@ -53,9 +53,9 @@ function QuadrotorPlanar(; name, defaults = NullParameters())
 
     params = [m, I_quad, g, r]
     kwargs = if defaults == NullParameters()
-        (; name = name)
+        (; name)
     else
-        (; name = name, defaults = Dict(params .=> defaults))
+        (; name, defaults = Dict(params .=> defaults))
     end
 
     return ODESystem(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
@@ -164,9 +164,9 @@ function Quadrotor3D(; name, defaults = NullParameters())
     )
 
     kwargs = if defaults == NullParameters()
-        (; name = name)
+        (; name)
     else
-        (; name = name, defaults = Dict(params .=> defaults))
+        (; name, defaults = Dict(params .=> defaults))
     end
 
     return ODESystem(

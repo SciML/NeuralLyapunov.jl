@@ -92,7 +92,7 @@ V̇ = get_numerical_lyapunov_function(
     structure,
     ODEFunction(dynamics),
     zeros(length(lb));
-    p = p
+    p
 )
 
 ################################## Simulate ###################################

@@ -19,7 +19,7 @@ function NeuralLyapunovProblemLibrary.plot_pendulum(
         sol; title = "", N = 500, angle_symbol = :θ)
     t = LinRange(sol.t[1], sol.t[end], N)
     θ = sol(t)[angle_symbol]
-    return plot_pendulum(θ, t; title = title)
+    return plot_pendulum(θ, t; title)
 end
 
 function NeuralLyapunovProblemLibrary.plot_pendulum(θ, t; title = "")

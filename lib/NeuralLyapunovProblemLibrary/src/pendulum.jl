@@ -48,9 +48,9 @@ function Pendulum(; driven = true, name, defaults = NullParameters())
 
     params = [ζ, ω_0]
     kwargs = if defaults == NullParameters()
-        (; name = name)
+        (; name)
     else
-        (; name = name, defaults = Dict(params .=> defaults))
+        (; name, defaults = Dict(params .=> defaults))
     end
 
     torque = if driven
