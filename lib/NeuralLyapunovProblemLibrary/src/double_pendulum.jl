@@ -122,7 +122,7 @@ end
 
 """
     plot_double_pendulum(θ1, θ2, p, t; title)
-    plot_double_pendulum(sol, p; title, N, angle_symbol)
+    plot_double_pendulum(sol, p; title, N, angle1_symbol, angle2_symbol)
 
 Plot the pendulum's trajectory.
 
