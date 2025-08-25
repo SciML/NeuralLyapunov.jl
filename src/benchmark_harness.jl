@@ -96,16 +96,26 @@ arguments for each optimization pass.
     as in the default sampling algorithm; defaults to a `StableRNG` with seed `0`.
 
 # Output Fields
+  - `data, training_time, θ, phi, V, V̇`
   - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
+  - `data`: a `DataFrame` containing the following columns:
+    - "Initial state": initial state of the simulation.
+    - "End state": end state of the simulation.
+    - "V": value of the Lyapunov function at the initial state.
+    - "dVdt": value of the Lyapunov decrease function at the initial state.
+    - "Predicted in RoA": whether `classifier` predicted that the initial state is in the
+      region of attraction.
+    - "Actually in RoA": whether the endpoint of the simulation is approximately equal to
+      `fixed_point` (as determined by `endpoint_check`).
+    - "Classification": classification of each point, either "TP" (true positive),
+      "TN" (true negative), "FP" (false positive), or "FN" (false negative).
   - `training_time`: time taken to train the neural Lyapunov function.
+  - `θ`: the parameters of the neural Lyapunov function.
+  - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
+    output, or a `Vector` of the same with one entry per neural network output (to be used
+    with [`get_numerical_lyapunov_function`](@ref)).
   - `V`: the neural Lyapunov function.
   - `V̇`: the Lyapunov decrease function.
-  - `states`: evaluation samples matrix (each column is a sample).
-  - `endpoints`: endpoints of the simulations.
-  - `actual`: result of `endpoint_check` applied to `endpoints`.
-  - `predicted`: result of `classifier` applied to `states`.
-  - `V_samples`: `V` evaluated at `states`.
-  - `V̇_samples`: `V̇` evaluated at `states`.
 """
 function benchmark(
         dynamics::ODESystem,
@@ -328,7 +338,7 @@ function _benchmark(
     V_samples = V(states) |> cpud
     V̇_samples = V̇(states) |> cpud
 
-    out = build_confusion_matrix(
+    (; confusion_matrix, endpoints, actual, predicted) = build_confusion_matrix(
         eachcol(states),
         first.(eachcol(V_samples)),
         first.(eachcol(V̇_samples)),
@@ -342,7 +352,21 @@ function _benchmark(
         ensemble_alg
     )
 
-    return merge(out, (; training_time, states, V_samples, V̇_samples, V, V̇))
+    classification = map(zip(actual, predicted)) do (a, p)
+        (a == p ? "T" : "F") * (p ? "P" : "N")
+    end
+
+    data = DataFrame(
+        "Initial state" => eachcol(states),
+        "End state" => endpoints,
+        "V" => first.(eachcol(V_samples)),
+        "dVdt" => first.(eachcol(V̇_samples)),
+        "Predicted in RoA" => predicted,
+        "Actually in RoA" => actual,
+        "Classification" => classification
+    )
+
+    return (; confusion_matrix, data, training_time, θ, phi, V, V̇)
 end
 
 function benchmark_solve(prob, opt, optimization_args)
