@@ -96,11 +96,10 @@ arguments for each optimization pass.
     as in the default sampling algorithm; defaults to a `StableRNG` with seed `0`.
 
 # Output Fields
-  - `data, training_time, θ, phi, V, V̇`
   - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
   - `data`: a `DataFrame` containing the following columns:
-    - "Initial state": initial state of the simulation.
-    - "End state": end state of the simulation.
+    - "Initial State": initial state of the simulation.
+    - "Final State": end state of the simulation.
     - "V": value of the Lyapunov function at the initial state.
     - "dVdt": value of the Lyapunov decrease function at the initial state.
     - "Predicted in RoA": whether `classifier` predicted that the initial state is in the
@@ -357,8 +356,8 @@ function _benchmark(
     end
 
     data = DataFrame(
-        "Initial state" => eachcol(states),
-        "End state" => endpoints,
+        "Initial State" => eachcol(states),
+        "Final State" => endpoints,
         "V" => first.(eachcol(V_samples)),
         "dVdt" => first.(eachcol(V̇_samples)),
         "Predicted in RoA" => predicted,
