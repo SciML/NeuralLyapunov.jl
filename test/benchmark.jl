@@ -156,7 +156,8 @@ end
 
     # Run benchmark
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
-    out = benchmark(
+    classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
+    benchmarking_results = benchmark(
         open_loop_pendulum_dynamics,
         lb,
         ub,
@@ -173,17 +174,45 @@ end
         parameter_syms,
         policy_search = true,
         endpoint_check,
-        classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
+        classifier,
         init_params = ps,
         init_states = st
     )
-    cm = out.confusion_matrix
 
     # Resulting controller should drive more states to equilibrium than not
+    cm = benchmarking_results.confusion_matrix
     @test cm.p > cm.n
 
     # Resulting classifier should be accurate
     @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
+
+    # Generate numerical Lyapunov function for testing
+    V, V̇ = get_numerical_lyapunov_function(
+        benchmarking_results.phi,
+        benchmarking_results.θ,
+        structure,
+        open_loop_pendulum_dynamics,
+        upright_equilibrium;
+        p
+    )
+
+    # Check V samples
+    states = benchmarking_results.data[!, "Initial State"]
+    V_samples = benchmarking_results.data[!, "V"]
+    @test all(V.(states) .== benchmarking_results.V.(states) .== V_samples)
+
+    # Check V̇ samples
+    V̇_samples = benchmarking_results.data[!, "dVdt"]
+    @test all(V̇.(states) .== benchmarking_results.V̇.(states) .== V̇_samples)
+
+    # Check actual classification
+    endpoints = benchmarking_results.data[!, "Final State"]
+    actual = benchmarking_results.data[!, "Actually in RoA"]
+    @test all(endpoint_check.(endpoints) .== actual)
+
+    # Check predicted classification
+    predicted = benchmarking_results.data[!, "Predicted in RoA"]
+    @test all(classifier.(V_samples, V̇_samples, states) .== predicted)
 end
 
 ############################### Damped pendulum ###############################

@@ -237,28 +237,39 @@ benchmarking_results.confusion_matrix
 benchmarking_results.training_time
 ```
 
-The `benchmark` function also outputs the Lyapunov function ``V`` and its time-derivative ``V̇``, along with the evaluation samples `states` (each sample is a column in the matrix) and the corresponding samples of ``V`` (`V_samples`) and ``V̇`` (`V̇_samples`).
+The `benchmark` function also outputs a `DataFrame`, `data`, with the simulation results.
+The first three rows are shown below.
 
 ```@example benchmarking
-all(benchmarking_results.V(benchmarking_results.states) .== benchmarking_results.V_samples)
+benchmarking_results.data[1:3, :]
+```
+
+The `benchmark` function also outputs the Lyapunov function ``V`` and its time-derivative ``V̇``.
+
+```@example benchmarking
+states = benchmarking_results.data[!, "Initial State"]
+V_samples = benchmarking_results.data[!, "V"]
+all(benchmarking_results.V.(states) .== V_samples)
 ```
 
 ```@example benchmarking
-all(benchmarking_results.V̇(benchmarking_results.states) .== benchmarking_results.V̇_samples)
+V̇_samples = benchmarking_results.data[!, "dVdt"]
+all(benchmarking_results.V̇.(states) .== V̇_samples)
 ```
 
-The returned `actual` labels are just `endpoint_check` applied to `endpoints`, which are the results of simulating from each element of `states`.
+The "Actually in RoA" column is just the result of applying `endpoint_check` applied to the "End State" column.
+The "End State" column is the final state of the simulation starting at that "Initial State".
 
 ```@example benchmarking
-all(endpoint_check.(benchmarking_results.endpoints) .== benchmarking_results.actual)
+endpoints = benchmarking_results.data[!, "Final State"]
+actual = benchmarking_results.data[!, "Actually in RoA"]
+all(endpoint_check.(endpoints) .== actual)
 ```
 
-Similarly, the `predicted` labels are the results of the neural Lyapunov classifier.
+Similarly, the labels in the "Predicted in RoA" column are the results of the neural Lyapunov classifier.
 
 ```@example benchmarking
 classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
-V_samples = eachcol(benchmarking_results.V_samples)
-V̇_samples = eachcol(benchmarking_results.V̇_samples)
-states = eachcol(benchmarking_results.states)
-all(classifier.(V_samples, V̇_samples, states) .== benchmarking_results.predicted)
+predicted = benchmarking_results.data[!, "Predicted in RoA"]
+all(classifier.(V_samples, V̇_samples, states) .== predicted)
 ```

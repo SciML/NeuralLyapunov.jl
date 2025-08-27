@@ -22,6 +22,7 @@ using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
 using Optimization: remake
+using DataFrames: DataFrame
 
 include("conditions_specification.jl")
 include("structure_specification.jl")
