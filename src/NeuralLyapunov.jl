@@ -24,6 +24,8 @@ using QuasiMonteCarlo: sample, LatinHypercubeSample
 using Optimization: remake
 using DataFrames: DataFrame
 
+const cpud = cpu_device()
+
 include("conditions_specification.jl")
 include("structure_specification.jl")
 include("minimization_conditions.jl")

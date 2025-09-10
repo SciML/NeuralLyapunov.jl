@@ -90,8 +90,14 @@ arguments for each optimization pass.
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
   - `init_params`: initial parameters for the neural network; defaults to `nothing`, in
     which case the initial parameters are generated using `Lux.initialparameters` and `rng`.
+    To train using GPU, users must provide an `init_params` stored on the GPU. Even in that
+    case, the returned parameters `θ` will be moved to the CPU, which does not interfere at
+    all with use of
+    [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/)
+    for the evaluation simulations.
   - `init_states`: initial states for the neural network; defaults to `nothing`, in which
-    case the initial states are generated using `Lux.initialstates` and `rng`.
+    case the initial states are generated using `Lux.initialstates` and `rng`. `init_states`
+    should be stored on the same device as `init_params`.
   - `rng`: random number generator used to generate initial parameters and states, as well
     as in the default sampling algorithm; defaults to a `StableRNG` with seed `0`.
 
@@ -313,10 +319,10 @@ function _benchmark(
         # Get parameters from optimization result
         phi = discretization.phi
         θ = phi isa AbstractArray ? u.depvar : u
-        (θ, phi)
     end
     training_time = t.time
-    θ, phi = t.value
+    θ = t.value |> cpud
+    phi = PhysicsInformedNN(chain, strategy; init_params = init_params |> cpud, init_states = init_states |> cpud).phi
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,
@@ -327,23 +333,26 @@ function _benchmark(
         p
     )
 
-    f = let fc = spec.structure.f_call, _f = f, net = phi_to_net(phi, θ)
-        ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
+    f = if f isa ODEFunction
+        f
+    else
+        let fc = spec.structure.f_call, _f = f, net = phi_to_net(phi, θ)
+            ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
+        end
     end
 
     # Sample Lyapunov function and decrease function
-    cpud = cpu_device()
-    states = sample(n, lb, ub, sample_alg) |> cpud
-    V_samples = V(states) |> cpud
-    V̇_samples = V̇(states) |> cpud
+    states = sample(n, eltype(θ).(lb), eltype(θ).(ub), sample_alg)
+    V_samples = vec(V(states))
+    V̇_samples = vec(V̇(states))
 
     (; confusion_matrix, endpoints, actual, predicted) = build_confusion_matrix(
         eachcol(states),
-        first.(eachcol(V_samples)),
-        first.(eachcol(V̇_samples)),
+        V_samples,
+        V̇_samples,
         f;
         classifier,
-        simulation_time,
+        simulation_time = eltype(θ)(simulation_time),
         p,
         ode_solver,
         ode_solver_args,
@@ -358,8 +367,8 @@ function _benchmark(
     data = DataFrame(
         "Initial State" => eachcol(states),
         "Final State" => endpoints,
-        "V" => first.(eachcol(V_samples)),
-        "dVdt" => first.(eachcol(V̇_samples)),
+        "V" => V_samples,
+        "dVdt" => V̇_samples,
         "Predicted in RoA" => predicted,
         "Actually in RoA" => actual,
         "Classification" => classification
