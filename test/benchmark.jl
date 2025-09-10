@@ -63,7 +63,7 @@ using Test
 
     # Run benchmark
     out = benchmark(
-        sho,
+        sho_dynamics,
         lb,
         ub,
         spec,
