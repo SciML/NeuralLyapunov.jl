@@ -29,6 +29,7 @@ Boltz = "1.2"
 CSDP = "1"
 ComponentArrays = "0.15.16"
 DataFrames = "1.4"
+DiffEqGPU = "3.8"
 EvalMetrics = "0.3"
 ExplicitImports = "1.11.2"
 ForwardDiff = "0.10.36, 1"
@@ -61,6 +62,7 @@ julia = "1.11"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CSDP = "0a46da34-8e4b-519e-b418-48813639ff34"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+DiffEqGPU = "071ae1c0-96b5-11e9-1965-c90190d839ea"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
@@ -74,4 +76,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["SafeTestsets", "Test", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NeuralLyapunovProblemLibrary", "NLopt", "Random", "CSDP", "ComponentArrays", "LuxCUDA", "Aqua", "ExplicitImports", "Pkg"]
+test = ["SafeTestsets", "Test", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "NeuralLyapunovProblemLibrary", "NLopt", "Random", "CSDP", "ComponentArrays", "LuxCUDA", "DiffEqGPU", "Aqua", "ExplicitImports", "Pkg"]
