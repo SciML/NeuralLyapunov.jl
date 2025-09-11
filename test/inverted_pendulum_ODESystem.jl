@@ -29,8 +29,8 @@ upright_equilibrium = [π, 0.0]
 # Define neural network discretization
 # We use an input layer that is periodic with period 2π with respect to θ
 dim_state = length(bounds)
-dim_hidden = 20
-dim_phi = 2
+dim_hidden = 25
+dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
@@ -42,7 +42,7 @@ chain = [Chain(
 ps, st = Lux.setup(rng, chain)
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(5000)
+strategy = QuasiRandomTraining(10000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure
@@ -86,11 +86,11 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.05); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
-###################### Get numerical numerical functions ######################
+########################### Get numerical functions ###########################
 
 net = discretization.phi
 _θ = res.u.depvar
@@ -113,15 +113,17 @@ V̇ = get_numerical_lyapunov_function(
 
 u = get_policy(net, _θ, dim_output, dim_u)
 
+closed_loop_pendulum_dynamics(x) = open_loop_pendulum_dynamics(x, u(x), p, 0.0)
+
 ################################## Simulate ###################################
 
 lb = [0.0, -2.0];
 ub = [2π, 2.0];
-xs = (-2π):0.1:(2π)
-ys = lb[2]:0.1:ub[2]
+xs = (-2π):0.02:(2π)
+ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_samples = vec(V(hcat(states...)))
-V̇_samples = vec(V̇(hcat(states...)))
+V_samples = vec(V(reduce(hcat, states)))
+V̇_samples = vec(V̇(reduce(hcat, states)))
 
 #################################### Tests ####################################
 
@@ -129,23 +131,19 @@ V̇_samples = vec(V̇(hcat(states...)))
 @test V(upright_equilibrium) == 0.0
 @test min(V(upright_equilibrium), minimum(V_samples)) ≥ 0.0
 @test ForwardDiff.gradient(V, upright_equilibrium) == zeros(2)
-@test minimum(eigvals(ForwardDiff.hessian(V, upright_equilibrium))) .≥ 0
+@test minimum(eigvals(ForwardDiff.hessian(V, upright_equilibrium))) ≥ 0
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
 @test maximum(abs, V(x0 .+ [2π, 0.0]) .- V(x0)) < 1e-3
 
 # Training should result in a locally stable fixed point at the upright equilibrium
-@test maximum(
-    abs,
-    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
-) < 2.5e-3
+# Check for approximately zero angular acceleration
+@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 2.5e-3
+# Check for nonpositive eigenvalues of the Jacobian
 @test maximum(
     eigvals(
-    ForwardDiff.jacobian(
-    x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
-    upright_equilibrium
-)
+    ForwardDiff.jacobian(closed_loop_pendulum_dynamics, upright_equilibrium)
 )
 ) ≤ 0
 

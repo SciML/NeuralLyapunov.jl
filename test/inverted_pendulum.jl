@@ -97,27 +97,32 @@ res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.05); maxiters = 300
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
-###################### Get numerical numerical functions ######################
+########################### Get numerical functions ###########################
+
+net = discretization.phi
+θ = res.u.depvar
 
 V,
 V̇ = get_numerical_lyapunov_function(
-    discretization.phi,
-    res.u.depvar,
+    net,
+    θ,
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
     p
 )
 
-u = get_policy(discretization.phi, res.u.depvar, dim_output, dim_u)
+u = get_policy(net, θ, dim_output, dim_u)
+
+closed_loop_pendulum_dynamics(x) = open_loop_pendulum_dynamics(x, u(x), p, 0.0)
 
 ################################## Simulate ###################################
 
 xs = (-2π):0.02:(2π)
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V(hcat(states...)))
-dVdt_predict = vec(V̇(hcat(states...)))
+V_predict = vec(V(reduce(hcat, states)))
+dVdt_predict = vec(V̇(reduce(hcat, states)))
 
 #################################### Tests ####################################
 
@@ -133,16 +138,11 @@ x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
 
 # Training should result in a locally stable fixed point at the upright equilibrium
 # Check for approximately zero angular acceleration
-@test abs(
-    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)[2]
-) < 2.5e-3
+@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 2.5e-3
 # Check for nonpositive eigenvalues of the Jacobian
 @test maximum(
     eigvals(
-    ForwardDiff.jacobian(
-    x -> open_loop_pendulum_dynamics(x, u(x), p, 0.0),
-    upright_equilibrium
-)
+    ForwardDiff.jacobian(closed_loop_pendulum_dynamics, upright_equilibrium)
 )
 ) ≤ 0
 
