@@ -322,7 +322,8 @@ function _benchmark(
     end
     training_time = t.time
     θ = t.value |> cpud
-    phi = PhysicsInformedNN(chain, strategy; init_params = init_params |> cpud, init_states = init_states |> cpud).phi
+    phi = PhysicsInformedNN(chain, strategy; init_params = init_params |> cpud,
+        init_states = init_states |> cpud).phi
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,

@@ -269,7 +269,7 @@ end
     Random.seed!(0)
 
     # Define dynamics and domain
-    p = [0.f5, 1.f0]
+    p = [0.5f0, 1.0f0]
     @named driven_pendulum = Pendulum(; driven = true, defaults = p)
     t, = independent_variables(driven_pendulum)
     θ, τ = unknowns(driven_pendulum)
