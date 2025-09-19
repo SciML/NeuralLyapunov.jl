@@ -13,12 +13,26 @@ fixed point. Return a confusion matrix for the neural Lyapunov classifier using 
 of the simulated trajectories as ground truth. Additionally return the time it took for the
 optimization to run.
 
-To use multiple solvers, users should supply a vector of optimizers in `opt`. The first
-optimizer will be used, then the problem will be remade with the result of the first
+To train with multiple solvers, users should supply a vector of optimizers in `opt`. The
+first optimizer will be used, then the problem will be remade with the result of the first
 optimization as the initial guess. Then, the second optimizer will be used, and so on.
 Supplying a vector of `Pair`s in `optimization_args` will use the same arguments for each
 optimization pass, and supplying a vector of such vectors will use potentially different
 arguments for each optimization pass.
+
+To train using GPU, users must provide an `init_params` stored on the GPU. Even in that
+case, the returned parameters `θ` will be moved to the CPU, which does not interfere at
+all with use of
+[`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/) for
+the evaluation simulations.
+
+When `init_params` or `init_states` are not provided, they are generated using
+`Lux.initialparameters` or `Lux.initialstates`, respectively. In that case, the type of any
+floating point parameters is inferred from `simulation_time`, the system parameters, and the
+bounds, in that order. If any of those are not floats (e.g., integers), the next is
+considered. If none are floats, `Float64` is used. This inference is important, since
+simulation fails when the output type of the dynamics differs from the type of the state
+divided by the type of `simulation_time`.
 
 # Positional Arguments
   - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
@@ -90,11 +104,6 @@ arguments for each optimization pass.
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
   - `init_params`: initial parameters for the neural network; defaults to `nothing`, in
     which case the initial parameters are generated using `Lux.initialparameters` and `rng`.
-    To train using GPU, users must provide an `init_params` stored on the GPU. Even in that
-    case, the returned parameters `θ` will be moved to the CPU, which does not interfere at
-    all with use of
-    [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/)
-    for the evaluation simulations.
   - `init_states`: initial states for the neural network; defaults to `nothing`, in which
     case the initial states are generated using `Lux.initialstates` and `rng`. `init_states`
     should be stored on the same device as `init_params`.
@@ -167,14 +176,36 @@ function benchmark(
     lb = [d.domain.left for d in bounds]
     ub = [d.domain.right for d in bounds]
 
+    default_float_type = if simulation_time isa AbstractFloat
+        typeof(simulation_time)
+    elseif eltype(p) <: AbstractFloat
+        eltype(p)
+    elseif eltype(ub) <: AbstractFloat
+        eltype(ub)
+    elseif eltype(lb) <: AbstractFloat
+        eltype(lb)
+    else
+        Float64
+    end
+
+    type_changer = if default_float_type === Float64
+        f64
+    elseif default_float_type === Float32
+        f32
+    elseif default_float_type === Float16
+        f16
+    else
+        identity
+    end
+
     init_params = if init_params === nothing
-        get_init_params(chain, rng)
+        get_init_params(chain, rng) |> type_changer
     else
         init_params
     end
 
     init_states = if init_states === nothing
-        get_init_states(chain, rng)
+        get_init_states(chain, rng) |> type_changer
     else
         init_states
     end
@@ -246,14 +277,36 @@ function benchmark(
         policy_search
     )
 
+    default_float_type = if simulation_time isa AbstractFloat
+        typeof(simulation_time)
+    elseif eltype(p) <: AbstractFloat
+        eltype(p)
+    elseif eltype(ub) <: AbstractFloat
+        eltype(ub)
+    elseif eltype(lb) <: AbstractFloat
+        eltype(lb)
+    else
+        Float64
+    end
+
+    type_changer = if default_float_type === Float64
+        f64
+    elseif default_float_type === Float32
+        f32
+    elseif default_float_type === Float16
+        f16
+    else
+        identity
+    end
+
     init_params = if init_params === nothing
-        get_init_params(chain, rng)
+        get_init_params(chain, rng) |> type_changer
     else
         init_params
     end
 
     init_states = if init_states === nothing
-        get_init_states(chain, rng)
+        get_init_states(chain, rng) |> type_changer
     else
         init_states
     end

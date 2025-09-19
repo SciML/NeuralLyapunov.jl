@@ -103,7 +103,7 @@ end
     lb = [0.0, -2.0]
     ub = [2π, 2.0]
     upright_equilibrium = [π, 0.0]
-    p = [0.5, 1.0]
+    p = Float32[0.5, 1.0]
     state_syms = [:θ, :ω]
     parameter_syms = [:ζ, :ω_0]
 
@@ -115,7 +115,7 @@ end
     dim_u = 1
     dim_output = dim_phi + dim_u
     chain = [Chain(
-                 PeriodicEmbedding([1], [2π]),
+                 PeriodicEmbedding([1], Float32[2π]),
                  Dense(3, dim_hidden, tanh),
                  Dense(dim_hidden, dim_hidden, tanh),
                  Dense(dim_hidden, 1)
@@ -220,7 +220,7 @@ end
     println("Benchmark: Damped Pendulum (ODESystem)")
 
     # Define dynamics and domain
-    @named damped_pendulum = Pendulum(; driven = false, defaults = [5.0, 1.0])
+    @named damped_pendulum = Pendulum(; driven = false, defaults = Float32[5.0, 1.0])
     t, = independent_variables(damped_pendulum)
     θ, = unknowns(damped_pendulum)
     Dt = Differential(t)
@@ -328,6 +328,8 @@ end
                  Dense(dim_hidden, 1)
              ) for _ in 1:dim_output]
     ps, st = Lux.setup(StableRNG(0), chain)
+    ps = ps |> f64
+    st = st |> f64
 
     # Define neural network discretization
     strategy = QuasiRandomTraining(10000)
