@@ -32,7 +32,9 @@ floating point parameters is inferred from `simulation_time`, the system paramet
 bounds, in that order. If any of those are not floats (e.g., integers), the next is
 considered. If none are floats, `Float64` is used. This inference is important, since
 simulation fails when the output type of the dynamics differs from the type of the state
-divided by the type of `simulation_time`.
+divided by the type of `simulation_time`. For this reason, the `simulation_time` passed into
+the ODE solver is converted to the same type as the network parameters (whether supplied by
+the user or generated automatically).
 
 # Positional Arguments
   - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
