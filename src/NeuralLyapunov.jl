@@ -16,13 +16,15 @@ using NeuralPDE: PhysicsInformedNN, discretize
 using OrdinaryDiffEq: Tsit5
 using EvalMetrics: ConfusionMatrix
 import LuxCore
-using Lux: Chain, Parallel, NoOpLayer, WrappedFunction
+using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
 using MLDataDevices: cpu_device
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
 using Optimization: remake
 using DataFrames: DataFrame
+
+const cpud = cpu_device()
 
 include("conditions_specification.jl")
 include("structure_specification.jl")

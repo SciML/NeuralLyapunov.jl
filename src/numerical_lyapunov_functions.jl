@@ -7,6 +7,10 @@ functions representing the Lyapunov function and its time derivative: ``V(x), V�
 
 These functions can operate on a state vector or columnwise on a matrix of state vectors.
 
+The parameters `θ` of the neural network that are used in the returned functions remain on
+the same device (e.g., CPU or GPU) as they are passed in. If `θ` is on the GPU, users must
+ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar indexing).
+
 # Positional Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output.
@@ -81,13 +85,16 @@ function get_numerical_lyapunov_function(
 
             # Numerical time derivative of Lyapunov function
             function V̇(state::AbstractVector)
-                _deriv(
-                    (δt) -> _V(state + δt * f_call(f, net, state, params, 0.0)),
+                return _deriv(
+                    δt -> _V(state + δt * f_call(f, net, state, params, 0.0)),
                     0.0
                 )
             end
             function V̇(states::AbstractMatrix)
-                mapslices(V̇, states, dims = [1])
+                ẋ = mapslices(states, dims = [1]) do state
+                    return f_call(f, net, state, params, 0.0)
+                end
+                return _deriv(δt -> _V(states + δt * ẋ), 0.0)
             end
 
             return _V, V̇

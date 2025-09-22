@@ -2,6 +2,7 @@ using NeuralPDE, NeuralLyapunov
 import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random
 using Lux, LuxCUDA, ComponentArrays
+using Boltz.Layers: MLP
 using Test, LinearAlgebra, ForwardDiff, StableRNGs
 
 rng = StableRNG(0)
@@ -17,9 +18,9 @@ function f(state, p, t)
     vel = state[2]
     vcat(vel, -vel - pos)
 end
-lb = [-2.0, -2.0];
-ub = [2.0, 2.0];
-fixed_point = [0.0, 0.0];
+lb = Float32[-2.0, -2.0];
+ub = Float32[2.0, 2.0];
+fixed_point = Float32[0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 
 ####################### Specify neural Lyapunov problem #######################
@@ -27,12 +28,7 @@ dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 # Define neural network discretization
 dim_state = length(lb)
 dim_hidden = 20
-chain = Chain(
-    Dense(dim_state, dim_hidden, tanh),
-    Dense(dim_hidden, dim_hidden, tanh),
-    Dense(dim_hidden, dim_hidden, tanh),
-    Dense(dim_hidden, 1)
-)
+chain = MLP(dim_state, (dim_hidden, dim_hidden, dim_hidden, 1), tanh)
 const gpud = gpu_device()
 ps, st = Lux.setup(rng, chain)
 ps = ps |> ComponentArray |> gpud |> f32
@@ -44,11 +40,11 @@ discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_state
 
 # Define neural Lyapunov structure
 structure = NoAdditionalStructure()
-minimization_condition = StrictlyPositiveDefinite(C = 0.1)
+minimization_condition = StrictlyPositiveDefinite(C = 0.1f0)
 
 # Define Lyapunov decrease condition
 # This damped SHO has exponential decrease at a rate of k = 0.5, so we train to certify that
-decrease_condition = ExponentialStability(0.5)
+decrease_condition = ExponentialStability(0.5f0)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(
@@ -73,7 +69,7 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01f0); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)

@@ -29,7 +29,7 @@ end
 lb = [0.0, -2.0];
 ub = [2π, 2.0];
 upright_equilibrium = [π, 0.0]
-p = [0.5, 1.0]
+p = Float32[0.5, 1.0]
 state_syms = [:θ, :ω]
 parameter_syms = [:ζ, :ω_0]
 
@@ -41,7 +41,7 @@ dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
-             PeriodicEmbedding([1], [2π]),
+             PeriodicEmbedding([1], Float32[2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -128,7 +128,7 @@ end
 lb = [0.0, -2.0];
 ub = [2π, 2.0];
 upright_equilibrium = [π, 0.0]
-p = [0.5, 1.0]
+p = Float32[0.5, 1.0]
 state_syms = [:θ, :ω]
 parameter_syms = [:ζ, :ω_0]
 
@@ -140,7 +140,7 @@ dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
-             PeriodicEmbedding([1], [2π]),
+             PeriodicEmbedding([1], Float32[2π]),
              Dense(3, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
@@ -199,6 +199,11 @@ nothing # hide
 Finally, we can run the [`benchmark`](@ref) function.
 For demonstration purposes, we'll use `EnsembleSerial()`, which simulates each trajectory without any parallelism when evaluating the trained Lyapunov function and controller.
 The default `ensemble_alg` is `EnsembleThreads()`, which uses multithreading (local parallelism only); see the [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) for more information and other options.
+Another option is [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/), which parallelizes the ODE solves on the GPU.
+Note that this option is imported from `DiffEqGPU` and has certain restrictions on the dynamics.
+For example, the dynamics may not allocate memory (build arrays), so in-place dynamics must be defined in addition to the out-of-place dynamics that NeuralLyapunov usually requires.
+(Providing both can be achieved by defining both methods for the same function and passing in an `ODEFunction` made from that function.)
+For this reason, the default value of `EnsembleThreads()` is recommended, even when training occurs on GPU.
 
 ```@example benchmarking
 using OrdinaryDiffEq: EnsembleSerial
