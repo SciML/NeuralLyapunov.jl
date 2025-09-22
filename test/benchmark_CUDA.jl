@@ -1,5 +1,7 @@
 using NeuralPDE, NeuralLyapunov, NeuralLyapunovProblemLibrary
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using Random
 using Lux, LuxCUDA, ComponentArrays
 using Boltz.Layers: ShiftTo, MLP, PeriodicEmbedding
@@ -61,11 +63,7 @@ const gpud = gpu_device()
 
     # Benchmarking
     # Define optimization parameters
-    opt = [
-        OptimizationOptimisers.Adam(0.01),
-        OptimizationOptimisers.Adam(),
-        OptimizationOptimJL.BFGS()
-    ]
+    opt = [Adam(0.01), Adam(), BFGS()]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
@@ -145,7 +143,7 @@ end
     )
 
     # Define optimization parameters
-    opt = OptimizationOptimisers.Adam()
+    opt = Adam()
     optimization_args = [:maxiters => 450]
 
     # Run benchmark
@@ -231,11 +229,7 @@ end
 
     # Benchmarking
     # Define optimization parameters
-    opt = [
-        OptimizationOptimisers.Adam(0.01),
-        OptimizationOptimisers.Adam(),
-        OptimizationOptimJL.BFGS()
-    ]
+    opt = [Adam(0.01), Adam(), BFGS()]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
@@ -269,7 +263,7 @@ end
     Random.seed!(0)
 
     # Define dynamics and domain
-    p = [0.5f0, 1.0f0]
+    p = Float32[0.5f0, 1.0f0]
     @named driven_pendulum = Pendulum(; driven = true, defaults = p)
     t, = independent_variables(driven_pendulum)
     θ, τ = unknowns(driven_pendulum)
@@ -277,37 +271,38 @@ end
     Dt = Differential(t)
     bounds = [
         θ ∈ (0, 2π),
-        Dt(θ) ∈ (-2.0, 2.0)
+        Dt(θ) ∈ (-2.0f0, 2.0f0)
     ]
 
-    upright_equilibrium = [π, 0.0]
+    upright_equilibrium = Float32[π, 0.0f0]
 
     # Define embedding layer that is periodic with period 2π with respect to θ
     # Note: RNG used doesn't matter since the embedding is deterministic
-    periodic_embedding_layer = PeriodicEmbedding([1], [2π])
+    periodic_embedding_layer = PeriodicEmbedding([1], Float32[2π])
     _ps, _st = Lux.setup(Random.default_rng(), periodic_embedding_layer)
     periodic_embedding(x) = first(periodic_embedding_layer(x, _ps, _st))
     fixed_point_embedded = periodic_embedding(upright_equilibrium)
 
     # Define neural network discretization
     dim_state = length(bounds)
-    dim_hidden = 25
+    dim_hidden = 10
+    dim_output = 3
     dim_u = 1
     chain = [
         Chain(
             periodic_embedding_layer,
             AdditiveLyapunovNet(
-                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_hidden), tanh);
-                dim_ϕ = dim_hidden,
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_output), tanh);
+                dim_ϕ = dim_output,
                 fixed_point = fixed_point_embedded
             )
         ),
         Chain(
             periodic_embedding_layer,
             ShiftTo(
-                MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh),
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_u), tanh),
                 fixed_point_embedded,
-                [0.0]
+                [0.0f0]
             )
         )
     ]
@@ -320,9 +315,7 @@ end
 
     # Define neural Lyapunov structure
     periodic_pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2
+        return sum(abs2, periodic_embedding(state) .- periodic_embedding(fixed_point))
     end
 
     structure = NoAdditionalStructure()
@@ -341,11 +334,11 @@ end
     )
 
     # Define optimization parameters
-    opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
+    opt = [Adam(0.1f0), BFGS()]
     optimization_args = [[:maxiters => 500], [:maxiters => 500]]
 
     # Run benchmark
-    endpoint_check = (x) -> ≈(periodic_embedding(x), fixed_point_embedded, atol = 0.01)
+    endpoint_check = (x) -> ≈(periodic_embedding(x), fixed_point_embedded, atol = 0.01f0)
     out = benchmark(
         driven_pendulum,
         bounds,
