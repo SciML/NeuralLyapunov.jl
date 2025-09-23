@@ -1,5 +1,7 @@
 using NeuralPDE, NeuralLyapunov
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using Random
 using Lux, LuxCUDA, ComponentArrays
 using Boltz.Layers: MLP
@@ -16,7 +18,7 @@ println("Damped Simple Harmonic Oscillator (CUDA)")
 function f(state, p, t)
     pos = state[1]
     vel = state[2]
-    vcat(vel, -vel - pos)
+    return [vel, -vel - pos]
 end
 lb = Float32[-2.0, -2.0];
 ub = Float32[2.0, 2.0];
@@ -38,7 +40,7 @@ st = st |> gpud |> f32
 strategy = QuasiRandomTraining(2500)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
+# Define neural Lyapunov structure and corresponding minimization condition
 structure = NoAdditionalStructure()
 minimization_condition = StrictlyPositiveDefinite(C = 0.1f0)
 
@@ -47,20 +49,11 @@ minimization_condition = StrictlyPositiveDefinite(C = 0.1f0)
 decrease_condition = ExponentialStability(0.5f0)
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    dynamics,
-    lb,
-    ub,
-    spec;
-)
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -69,15 +62,14 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01f0); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+res = Optimization.solve(prob, Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
-V,
-V̇ = get_numerical_lyapunov_function(
+(V, V̇) = get_numerical_lyapunov_function(
     discretization.phi,
     res.u,
     structure,
@@ -91,8 +83,8 @@ V̇ = get_numerical_lyapunov_function(
 xs = lb[1]:Δx:ub[1]
 vs = lb[2]:Δv:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, vs))
-V_samples_gpu = vec(V(hcat(states...)))
-V̇_samples_gpu = vec(V̇(hcat(states...)))
+V_samples_gpu = vec(V(reduce(hcat, states)))
+V̇_samples_gpu = vec(V̇(reduce(hcat, states)))
 
 const cpud = cpu_device()
 V_samples = V_samples_gpu |> cpud

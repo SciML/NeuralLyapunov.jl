@@ -78,11 +78,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
@@ -113,7 +109,7 @@ open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
 p = [defaults(pendulum)[param] for param in parameters(pendulum)]
 
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     net,
     _θ,
     structure,
@@ -179,7 +175,7 @@ dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
              PeriodicEmbedding([1], [2π]),
-             Dense(3, dim_hidden, tanh),
+             Dense(dim_state + 1, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
@@ -238,11 +234,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Construct PDESystem 
 @named pde_system = NeuralLyapunovPDESystem(
@@ -276,7 +268,7 @@ open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
 p = [defaults(pendulum)[param] for param in parameters(pendulum)]
 
-V_func, V̇_func = get_numerical_lyapunov_function(
+V, V̇ = get_numerical_lyapunov_function(
     net,
     _θ,
     structure,
@@ -298,19 +290,18 @@ ub = [2π, 2.0];
 xs = (-2π):0.1:(2π)
 ys = lb[2]:0.1:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_samples = vec(V_func(hcat(states...)))
-V̇_samples = vec(V̇_func(hcat(states...)))
+V_samples = vec(V(reduce(hcat, states)))
+V̇_samples = vec(V̇(reduce(hcat, states)))
 
 # Print statistics
-println("V(π, 0) = ", V_func(upright_equilibrium))
+println("V(π, 0) = ", V(upright_equilibrium))
 println(
     "f([π, 0], u([π, 0])) = ",
     open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
 )
 println(
     "V ∋ [",
-    min(V_func(upright_equilibrium),
-    minimum(V_samples)),
+    min(V(upright_equilibrium), minimum(V_samples)),
     ", ",
     maximum(V_samples),
     "]"
@@ -319,7 +310,7 @@ println(
     "V̇ ∋ [",
     minimum(V̇_samples),
     ", ",
-    max(V̇_func(upright_equilibrium), maximum(V̇_samples)),
+    max(V̇(upright_equilibrium), maximum(V̇_samples)),
     "]"
 )
 ```

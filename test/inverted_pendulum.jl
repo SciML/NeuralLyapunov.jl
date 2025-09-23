@@ -1,6 +1,8 @@
 using NeuralPDE, Lux, NeuralLyapunov
-import Boltz.Layers: PeriodicEmbedding
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Boltz.Layers: PeriodicEmbedding, MLP
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
@@ -15,8 +17,7 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     θ, ω = x
     ζ, ω_0 = p
     τ = u[]
-    return [ω
-            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+    return [ω, -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
 lb = [0.0, -2.0];
@@ -37,9 +38,7 @@ dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
              PeriodicEmbedding([1], [2π]),
-             Dense(3, dim_hidden, tanh),
-             Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1)
+             MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
 
@@ -47,7 +46,7 @@ ps, st = Lux.setup(rng, chain)
 strategy = QuasiRandomTraining(10000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
+# Define neural Lyapunov structure and corresponding minimization condition
 periodic_pos_def = function (state, fixed_point)
     θ, ω = state
     θ_eq, ω_eq = fixed_point
@@ -93,17 +92,16 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.05); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.05); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ########################### Get numerical functions ###########################
 
 net = discretization.phi
 θ = res.u.depvar
 
-V,
-V̇ = get_numerical_lyapunov_function(
+(V, V̇) = get_numerical_lyapunov_function(
     net,
     θ,
     structure,

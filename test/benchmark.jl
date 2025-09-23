@@ -1,6 +1,7 @@
 using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary
-import Boltz.Layers: PeriodicEmbedding
-using OptimizationOptimisers, OptimizationOptimJL
+import Boltz.Layers: PeriodicEmbedding, MLP
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using OrdinaryDiffEq: EnsembleSerial
 using StableRNGs, Random
 using Test
@@ -18,7 +19,7 @@ using Test
         ζ, ω_0 = p
         pos = state[1]
         vel = state[2]
-        vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+        return vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
     end
     lb = [-5.0, -2.0]
     ub = [5.0, 2.0]
@@ -30,20 +31,13 @@ using Test
     dim_state = length(lb)
     dim_hidden = 10
     dim_output = 3
-    chain = [Chain(
-                 Dense(dim_state, dim_hidden, tanh),
-                 Dense(dim_hidden, dim_hidden, tanh),
-                 Dense(dim_hidden, 1)
-             ) for _ in 1:dim_output]
+    chain = [MLP(dim_state, (dim_hidden, dim_hidden, 1), tanh) for _ in 1:dim_output]
 
     # Define training strategy
     strategy = QuasiRandomTraining(1000)
 
-    # Define neural Lyapunov structure
-    structure = NonnegativeStructure(
-        dim_output;
-        δ = 1e-6
-    )
+    # Define neural Lyapunov structure and corresponding minimization condition
+    structure = NonnegativeStructure(dim_output; δ = 1e-6)
     minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
     # Define Lyapunov decrease condition
@@ -58,7 +52,7 @@ using Test
     )
 
     # Define optimization parameters
-    opt = OptimizationOptimisers.Adam()
+    opt = Adam()
     optimization_args = [:maxiters => 450]
 
     # Run benchmark
@@ -116,16 +110,14 @@ end
     dim_output = dim_phi + dim_u
     chain = [Chain(
                  PeriodicEmbedding([1], Float32[2π]),
-                 Dense(3, dim_hidden, tanh),
-                 Dense(dim_hidden, dim_hidden, tanh),
-                 Dense(dim_hidden, 1)
+                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
              ) for _ in 1:dim_output]
     ps, st = Lux.setup(StableRNG(0), chain)
 
     # Define neural network discretization
     strategy = QuasiRandomTraining(10000)
 
-    # Define neural Lyapunov structure
+    # Define neural Lyapunov structure and corresponding minimization condition
     periodic_pos_def = function (state, fixed_point)
         θ, ω = state
         θ_eq, ω_eq = fixed_point
@@ -151,7 +143,7 @@ end
     )
 
     # Define optimization parameters
-    opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
+    opt = [Adam(0.05), BFGS()]
     optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
     # Run benchmark
@@ -187,7 +179,7 @@ end
     @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
 
     # Generate numerical Lyapunov function for testing
-    V, V̇ = get_numerical_lyapunov_function(
+    (V, V̇) = get_numerical_lyapunov_function(
         benchmarking_results.phi,
         benchmarking_results.θ,
         structure,
@@ -238,15 +230,13 @@ end
     dim_output = 2
     chain = [Chain(
                  PeriodicEmbedding([1], [2π]),
-                 Dense(3, dim_hidden, tanh),
-                 Dense(dim_hidden, dim_hidden, tanh),
-                 Dense(dim_hidden, 1)
+                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
              ) for _ in 1:dim_output]
 
     # Define neural network discretization
     strategy = QuadratureTraining()
 
-    # Define neural Lyapunov structure
+    # Define neural Lyapunov structure and corresponding minimization condition
     structure = PositiveSemiDefiniteStructure(
         dim_output;
         pos_def = function (state, fixed_point)
@@ -268,7 +258,7 @@ end
     )
 
     # Define optimization parameters
-    opt = OptimizationOptimisers.Adam()
+    opt = Adam()
     optimization_args = [:maxiters => 600]
 
     # Run benchmark
@@ -323,9 +313,7 @@ end
     dim_output = dim_phi + dim_u
     chain = [Chain(
                  PeriodicEmbedding([1], [2π]),
-                 Dense(3, dim_hidden, tanh),
-                 Dense(dim_hidden, dim_hidden, tanh),
-                 Dense(dim_hidden, 1)
+                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
              ) for _ in 1:dim_output]
     ps, st = Lux.setup(StableRNG(0), chain)
     ps = ps |> f64
@@ -334,7 +322,7 @@ end
     # Define neural network discretization
     strategy = QuasiRandomTraining(10000)
 
-    # Define neural Lyapunov structure
+    # Define neural Lyapunov structure and corresponding minimization condition
     periodic_pos_def = function (state, fixed_point)
         θ, ω = state
         θ_eq, ω_eq = fixed_point
@@ -360,7 +348,7 @@ end
     )
 
     # Define optimization parameters
-    opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
+    opt = [Adam(0.05), BFGS()]
     optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
     # Run benchmark

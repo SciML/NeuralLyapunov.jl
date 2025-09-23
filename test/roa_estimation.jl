@@ -1,5 +1,8 @@
 using NeuralPDE, Lux, NeuralLyapunov
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
+using Boltz.Layers: MLP
 using Random, StableRNGs
 using Test, LinearAlgebra, ForwardDiff
 
@@ -21,18 +24,14 @@ fixed_point = [0.0];
 dim_state = length(lb)
 dim_hidden = 5
 dim_output = 2
-chain = [Lux.Chain(
-             Dense(dim_state, dim_hidden, tanh),
-             Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1)
-         ) for _ in 1:dim_output]
+chain = [MLP(dim_state, (dim_hidden, dim_hidden, 1), tanh) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
 
 # Define training strategy
 strategy = QuadratureTraining()
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
+# Define neural Lyapunov structure and corresponding minimization condition
 structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
 
@@ -48,12 +47,7 @@ spec = NeuralLyapunovSpecification(
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    f,
-    lb,
-    ub,
-    spec
-)
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -62,13 +56,12 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+res = Optimization.solve(prob, Adam(); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
-V,
-V̇ = get_numerical_lyapunov_function(
+(V, V̇) = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,

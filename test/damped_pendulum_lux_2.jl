@@ -1,6 +1,8 @@
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding, MLP
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
@@ -46,7 +48,7 @@ ps, st = Lux.setup(rng, chain)
 strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
+# Define neural Lyapunov structure and minimization condition
 structure = NoAdditionalStructure()
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
@@ -56,21 +58,11 @@ decrease_condition = AsymptoticStability(
 )
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    ODEFunction(dynamics),
-    lb,
-    ub,
-    spec;
-    p
-)
+@named pde_system = NeuralLyapunovPDESystem(ODEFunction(dynamics), lb, ub, spec; p)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -79,14 +71,13 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.01); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
-V,
-V̇ = get_numerical_lyapunov_function(
+(V, V̇) = get_numerical_lyapunov_function(
     discretization.phi,
     res.u,
     structure,
@@ -100,8 +91,8 @@ V̇ = get_numerical_lyapunov_function(
 xs = (2 * lb[1]):0.02:(2 * ub[1])
 ys = lb[2]:0.02:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V(hcat(states...)))
-dVdt_predict = vec(V̇(hcat(states...)))
+V_predict = vec(V(reduce(hcat, states)))
+dVdt_predict = vec(V̇(reduce(hcat, states)))
 
 #################################### Tests ####################################
 

@@ -10,8 +10,8 @@ These results will be represented by a confusion matrix using the simulation res
 
 ```julia
 using NeuralPDE, NeuralLyapunov, Lux
-import Boltz.Layers: PeriodicEmbedding
-using OptimizationOptimisers, OptimizationOptimJL
+using Boltz.Layers: PeriodicEmbedding
+import OptimizationOptimisers, OptimizationOptimJL
 using StableRNGs, Random
 
 rng = StableRNG(0)
@@ -22,8 +22,7 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     θ, ω = x
     ζ, ω_0 = p
     τ = u[]
-    return [ω
-            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+    return [ω, -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
 lb = [0.0, -2.0];
@@ -42,7 +41,7 @@ dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [Chain(
              PeriodicEmbedding([1], Float32[2π]),
-             Dense(3, dim_hidden, tanh),
+             Dense(dim_state + 1, dim_hidden, tanh),
              Dense(dim_hidden, dim_hidden, tanh),
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
@@ -70,11 +69,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Define optimization parameters
 opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
@@ -121,8 +116,7 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     θ, ω = x
     ζ, ω_0 = p
     τ = u[]
-    return [ω
-            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+    return [ω, -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
 lb = [0.0, -2.0];
@@ -169,11 +163,7 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 nothing # hide
 ```
 
@@ -181,7 +171,7 @@ At this point of the [policy search demo](policy_search.md), we constructed the 
 All of that occurs in the [`benchmark`](@ref) function, so we instead provide that function with the optimizer and optimization arguments to use.
 
 ```@example benchmarking
-using OptimizationOptimisers, OptimizationOptimJL
+import OptimizationOptimisers, OptimizationOptimJL
 
 # Define optimization parameters
 opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
