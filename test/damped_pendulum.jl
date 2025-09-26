@@ -1,5 +1,5 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
-import Boltz.Layers: PeriodicEmbedding
+using NeuralPDE, Lux, ComponentArrays, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
@@ -47,25 +47,30 @@ chain = [Chain(
              MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(1000)
+strategy = QuasiRandomTraining(2000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure and corresponding minimization condition
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2
+end
 structure = PositiveSemiDefiniteStructure(
     dim_output;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-κ = 20
-decrease_condition = AsymptoticStability(rectifier = (t) -> log(one(t) + exp(κ * t)) / κ)
+decrease_condition = AsymptoticStability(
+    strength = periodic_pos_def,
+    rectifier = (t) -> log(one(t) + exp(t))
+)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
@@ -81,9 +86,9 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(0.01); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.1); maxiters = 500)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
 

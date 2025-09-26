@@ -237,18 +237,19 @@ end
     strategy = QuadratureTraining()
 
     # Define neural Lyapunov structure and corresponding minimization condition
+    periodic_pos_def = function (state, fixed_point)
+        θ, ω = state
+        θ_eq, ω_eq = fixed_point
+        return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2
+    end
     structure = PositiveSemiDefiniteStructure(
         dim_output;
-        pos_def = function (state, fixed_point)
-            θ, ω = state
-            θ_eq, ω_eq = fixed_point
-            log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-        end
+        pos_def = (x, x0) -> log(1 + periodic_pos_def(x, x0))
     )
     minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
     # Define Lyapunov decrease condition
-    decrease_condition = AsymptoticStability()
+    decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 
     # Construct neural Lyapunov specification
     spec = NeuralLyapunovSpecification(
