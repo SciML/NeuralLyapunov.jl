@@ -13,7 +13,7 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 ## Copy-Pastable Code
 
 ```julia
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, ComponentArrays
 using ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
@@ -54,6 +54,8 @@ chain = [Chain(
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(5000)
@@ -159,7 +161,7 @@ Other than that, setting up the neural network using Lux and NeuralPDE training 
 For more on that aspect, see the [NeuralPDE documentation](https://docs.sciml.ai/NeuralPDE/stable/).
 
 ```@example policy_search
-using Lux
+using Lux, ComponentArrays
 import Boltz.Layers: PeriodicEmbedding
 using StableRNGs
 
@@ -180,6 +182,8 @@ chain = [Chain(
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 ```
 
 ```@example policy_search

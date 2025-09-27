@@ -25,9 +25,9 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     return [ω, -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
-lb = [0.0, -2.0];
-ub = [2π, 2.0];
-upright_equilibrium = [π, 0.0]
+lb = Float32[0.0, -2.0];
+ub = Float32[2π, 2.0];
+upright_equilibrium = Float32[π, 0.0]
 p = Float32[0.5, 1.0]
 state_syms = [:θ, :ω]
 parameter_syms = [:ζ, :ω_0]
@@ -54,12 +54,12 @@ strategy = QuasiRandomTraining(10000)
 periodic_pos_def = function (state, fixed_point)
     θ, ω = state
     θ_eq, ω_eq = fixed_point
-    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2 / 10
 end
 
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
+    pos_def = (x, x0) -> log(1 + periodic_pos_def(x, x0))
 )
 structure = add_policy_search(structure, dim_u)
 
@@ -72,7 +72,7 @@ decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Define optimization parameters
-opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
+opt = [OptimizationOptimisers.Adam(0.05f0), OptimizationOptimJL.BFGS()]
 optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
 # Run benchmark
@@ -119,9 +119,9 @@ function open_loop_pendulum_dynamics(x, u, p, t)
     return [ω, -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
 end
 
-lb = [0.0, -2.0];
-ub = [2π, 2.0];
-upright_equilibrium = [π, 0.0]
+lb = Float32[0.0, -2.0];
+ub = Float32[2π, 2.0];
+upright_equilibrium = Float32[π, 0.0]
 p = Float32[0.5, 1.0]
 state_syms = [:θ, :ω]
 parameter_syms = [:ζ, :ω_0]
@@ -148,12 +148,12 @@ strategy = QuasiRandomTraining(10000)
 periodic_pos_def = function (state, fixed_point)
     θ, ω = state
     θ_eq, ω_eq = fixed_point
-    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2 / 10
 end
 
 structure = PositiveSemiDefiniteStructure(
     dim_phi;
-    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
+    pos_def = (x, x0) -> log(1 + periodic_pos_def(x, x0))
 )
 structure = add_policy_search(structure, dim_u)
 
@@ -174,7 +174,7 @@ All of that occurs in the [`benchmark`](@ref) function, so we instead provide th
 import OptimizationOptimisers, OptimizationOptimJL
 
 # Define optimization parameters
-opt = [OptimizationOptimisers.Adam(0.05), OptimizationOptimJL.BFGS()]
+opt = [OptimizationOptimisers.Adam(0.05f0), OptimizationOptimJL.BFGS()]
 optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 nothing # hide
 ```

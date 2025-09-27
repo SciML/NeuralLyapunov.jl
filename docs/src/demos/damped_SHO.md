@@ -32,10 +32,10 @@ function f(state, p, t)
     vel = state[2]
     return [vel, -2ζ * ω_0 * vel - ω_0^2 * pos]
 end
-lb = [-5.0, -2.0];
-ub = [ 5.0,  2.0];
-p = [0.5, 1.0];
-fixed_point = [0.0, 0.0];
+lb = Float32[-5.0, -2.0];
+ub = Float32[ 5.0,  2.0];
+p = Float32[0.5, 1.0];
+fixed_point = Float32[0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 ####################### Specify neural Lyapunov problem #######################
@@ -56,7 +56,7 @@ strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure and corresponding minimization condition
-structure = NonnegativeStructure(dim_output; δ = 1e-6)
+structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
@@ -105,10 +105,10 @@ function f(state, p, t)
     vel = state[2]
     return [vel, -2ζ * ω_0 * vel - ω_0^2 * pos]
 end
-lb = [-5.0, -2.0];
-ub = [ 5.0,  2.0];
-p = [0.5, 1.0];
-fixed_point = [0.0, 0.0];
+lb = Float32[-5.0, -2.0];
+ub = Float32[ 5.0,  2.0];
+p = Float32[0.5, 1.0];
+fixed_point = Float32[0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 nothing # hide
 ```
@@ -132,6 +132,15 @@ chain = [Chain(
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+```
+
+Since `Lux.setup` defaults to `Float32` parameters for `Dense` layers, we set up the bounds and parameters using `Float32` as well.
+To use `Float64` parameters instead, add the following lines:
+
+```julia
+using ComponentArrays
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 ```
 
 ```@example SHO
@@ -159,7 +168,7 @@ To train for exponential stability we use [`ExponentialStability`](@ref), but we
 using NeuralLyapunov
 
 # Define neural Lyapunov structure and corresponding minimization condition
-structure = NonnegativeStructure(dim_output; δ = 1e-6)
+structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
