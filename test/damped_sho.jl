@@ -1,5 +1,8 @@
-using NeuralPDE, Lux, NeuralLyapunov
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
+using Boltz.Layers: MLP
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
@@ -15,7 +18,7 @@ function f(state, p, t)
     ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
-    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+    return vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
 end
 lb = [-5.0, -2.0];
 ub = [5.0, 2.0];
@@ -29,22 +32,17 @@ dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 dim_state = length(lb)
 dim_hidden = 10
 dim_output = 4
-chain = [Lux.Chain(
-             Dense(dim_state, dim_hidden, tanh),
-             Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1)
-         ) for _ in 1:dim_output]
+chain = [MLP(dim_state, (dim_hidden, dim_hidden, 1), tanh) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define training strategy
 strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
-structure = NonnegativeStructure(
-    dim_output;
-    δ = 5.0
-)
+# Define neural Lyapunov structure and corresponding minimization condition
+structure = NonnegativeStructure(dim_output; δ = 5.0)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
@@ -52,21 +50,11 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 decrease_condition = ExponentialStability(prod(p))
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    dynamics,
-    lb,
-    ub,
-    spec;
-    p
-)
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -75,13 +63,12 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 450)
+res = Optimization.solve(prob, Adam(); maxiters = 450)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
-V,
-V̇ = get_numerical_lyapunov_function(
+(V, V̇) = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,
@@ -97,8 +84,8 @@ V̇ = get_numerical_lyapunov_function(
 xs = lb[1]:Δx:ub[1]
 vs = lb[2]:Δv:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, vs))
-V_samples = vec(V(hcat(states...)))
-V̇_samples = vec(V̇(hcat(states...)))
+V_samples = vec(V(reduce(hcat, states)))
+V̇_samples = vec(V̇(reduce(hcat, states)))
 
 #################################### Tests ####################################
 

@@ -141,13 +141,13 @@ function benchmark(
         strategy,
         opt;
         n,
-        fixed_point = zeros(length(bounds)),
+        fixed_point = nothing,
         optimization_args = [],
         simulation_time,
         ode_solver = Tsit5(),
         ode_solver_args = [],
         atol = 1e-6,
-        endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
+        endpoint_check = nothing,
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
         init_states = nothing,
@@ -155,13 +155,6 @@ function benchmark(
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleThreads()
 )
-    @named pde_system = NeuralLyapunovPDESystem(
-        dynamics,
-        bounds,
-        spec;
-        fixed_point
-    )
-
     params = parameters(dynamics)
     f = if isempty(unbound_inputs(dynamics))
         ODEFunction(dynamics)
@@ -212,6 +205,25 @@ function benchmark(
         init_states
     end
 
+    fixed_point = if fixed_point === nothing
+        zeros(default_float_type, length(bounds))
+    else
+        fixed_point
+    end
+
+    endpoint_check = if endpoint_check === nothing
+        (x) -> ≈(x, fixed_point; atol = atol)
+    else
+        endpoint_check
+    end
+
+    @named pde_system = NeuralLyapunovPDESystem(
+        dynamics,
+        bounds,
+        spec;
+        fixed_point
+    )
+
     _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
 
     return _benchmark(
@@ -249,7 +261,7 @@ function benchmark(
         opt;
         n,
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
-        fixed_point = zeros(length(lb)),
+        fixed_point = nothing,
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
@@ -259,26 +271,13 @@ function benchmark(
         ode_solver = Tsit5(),
         ode_solver_args = [],
         atol = 1e-6,
-        endpoint_check = (x) -> ≈(x, fixed_point; atol = atol),
+        endpoint_check = nothing,
         init_params = nothing,
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleThreads()
 )
-    # Build PDESystem
-    @named pde_system = NeuralLyapunovPDESystem(
-        dynamics,
-        lb,
-        ub,
-        spec;
-        fixed_point,
-        p,
-        state_syms,
-        parameter_syms,
-        policy_search
-    )
-
     default_float_type = if simulation_time isa AbstractFloat
         typeof(simulation_time)
     elseif eltype(p) <: AbstractFloat
@@ -312,6 +311,30 @@ function benchmark(
     else
         init_states
     end
+
+    fixed_point = if fixed_point === nothing
+        zeros(default_float_type, length(lb))
+    else
+        fixed_point
+    end
+
+    endpoint_check = if endpoint_check === nothing
+        (x) -> ≈(x, fixed_point; atol = atol)
+    else
+        endpoint_check
+    end
+
+    @named pde_system = NeuralLyapunovPDESystem(
+        dynamics,
+        lb,
+        ub,
+        spec;
+        fixed_point,
+        p,
+        state_syms,
+        parameter_syms,
+        policy_search
+    )
 
     _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
 

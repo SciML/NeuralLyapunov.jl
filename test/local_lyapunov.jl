@@ -21,22 +21,22 @@ errs1 = @. abs(V1(states1) - states1 ⋅ states1)
 function f2(state::AbstractVector, p, t)
     ζ, ω_0 = p
     pos, vel = state
-    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+    return vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
 end
 function f2(states::AbstractMatrix, p, t)
     ζ, ω_0 = p
     pos, vel = states[1, :], states[2, :]
-    vcat(transpose(vel), transpose(-2ζ * ω_0 * vel - ω_0^2 * pos))
+    return vcat(transpose(vel), transpose(-2ζ * ω_0 * vel - ω_0^2 * pos))
 end
 p2 = [3.2, 5.1]
 
 # Find Lyapunov function and derivative
 V2, V̇2 = local_lyapunov(f2, 2, CSDP.Optimizer; p = p2)
-dV2dt = (state) -> ForwardDiff.derivative((δt) -> V2(state + δt * f2(state, p2, 0.0)), 0.0)
+dV2dt = (state) -> ForwardDiff.derivative(δt -> V2(state + δt * f2(state, p2, 0.0)), 0.0)
 
 # Test V̇2 = d/dt V2
 xs2 = -1:0.03:1
-states2 = hcat(Iterators.map(collect, Iterators.product(xs2, xs2))...)
+states2 = mapreduce(collect, hcat, Iterators.product(xs2, xs2))
 errs2 = abs.(V̇2(states2) .- dV2dt(states2))
 @test all(errs2 .< 1e-10)
 
