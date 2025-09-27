@@ -220,7 +220,7 @@ end
     damped_pendulum = structural_simplify(damped_pendulum)
     bounds = [
         θ ∈ Float32.((-π, π)),
-        Dt(θ) ∈ (-10f0, 10f0)
+        Dt(θ) ∈ (-10.0f0, 10.0f0)
     ]
 
     # Define neural network discretization

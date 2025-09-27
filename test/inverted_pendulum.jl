@@ -112,7 +112,7 @@ closed_loop_pendulum_dynamics(x) = open_loop_pendulum_dynamics(x, u(x), p, 0)
 
 ################################## Simulate ###################################
 
-θs = (-2f0 * π):0.02f0:(2f0 * π)
+θs = (-2.0f0 * π):0.02f0:(2.0f0 * π)
 ωs = lb[2]:0.02f0:ub[2]
 states = mapreduce(collect, hcat, Iterators.product(θs, ωs))
 V_predict = vec(V(states))
@@ -159,7 +159,7 @@ closed_loop_dynamics = ODEFunction(
 
 # Starting still at bottom
 downward_equilibrium = zeros(Float32, 2)
-ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, 75f0, p)
+ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, 75.0f0, p)
 sol = solve(ode_prob, Tsit5())
 # plot(sol)
 
@@ -170,7 +170,7 @@ x_end, y_end = sin(θ_end), -cos(θ_end)
 
 # Starting at a random point
 x0 = lb .+ rand(rng, Float32, 2) .* (ub .- lb)
-ode_prob = ODEProblem(closed_loop_dynamics, x0, 75f0, p)
+ode_prob = ODEProblem(closed_loop_dynamics, x0, 75.0f0, p)
 sol = solve(ode_prob, Tsit5())
 # plot(sol)
 
