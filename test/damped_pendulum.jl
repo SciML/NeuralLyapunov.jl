@@ -103,11 +103,11 @@ res = Optimization.solve(prob, BFGS(); maxiters = 500)
 
 ################################## Simulate ###################################
 
-xs = (2 * lb[1]):0.02:(2 * ub[1])
-ys = lb[2]:0.02:ub[2]
-states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V(reduce(hcat, states)))
-dVdt_predict = vec(V̇(reduce(hcat, states)))
+θs = (2 * lb[1]):0.02:(2 * ub[1])
+ωs = lb[2]:0.02:ub[2]
+states = mapreduce(collect, hcat, Iterators.product(θs, ωs))
+V_predict = vec(V(states))
+dVdt_predict = vec(V̇(states))
 
 #################################### Tests ####################################
 
@@ -146,8 +146,8 @@ println(
 # Plot results
 
 p1 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     V_predict,
     linetype = :contourf,
     title = "V",
@@ -158,8 +158,8 @@ p1 = plot(
 p1 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
 p1 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x);
 p2 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     dVdt_predict,
     linetype = :contourf,
     title = "dV/dt",
@@ -170,8 +170,8 @@ p2 = plot(
 p2 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
 p2 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
 p3 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     dVdt_predict .< 0,
     linetype = :contourf,
     title = "dV/dt < 0",

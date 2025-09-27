@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, NeuralLyapunov
+using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
 using Boltz.Layers: MLP
 import Optimization
 using OptimizationOptimisers: Adam
@@ -34,6 +34,8 @@ dim_hidden = 10
 dim_output = 4
 chain = [MLP(dim_state, (dim_hidden, dim_hidden, 1), tanh) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define training strategy
 strategy = QuasiRandomTraining(1000)

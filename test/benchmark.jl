@@ -219,8 +219,8 @@ end
 
     damped_pendulum = structural_simplify(damped_pendulum)
     bounds = [
-        θ ∈ (-π, π),
-        Dt(θ) ∈ (-10.0, 10.0)
+        θ ∈ Float32.((-π, π)),
+        Dt(θ) ∈ (-10f0, 10f0)
     ]
 
     # Define neural network discretization
@@ -229,7 +229,7 @@ end
     dim_hidden = 15
     dim_output = 2
     chain = [Chain(
-                 PeriodicEmbedding([1], [2π]),
+                 PeriodicEmbedding([1], Float32[2π]),
                  MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
              ) for _ in 1:dim_output]
 

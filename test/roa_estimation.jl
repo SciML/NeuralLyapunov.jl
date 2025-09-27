@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, NeuralLyapunov
+using NeuralPDE, Lux, ComponentArrays, NeuralLyapunov
 import Optimization
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
@@ -26,6 +26,8 @@ dim_hidden = 5
 dim_output = 2
 chain = [MLP(dim_state, (dim_hidden, dim_hidden, 1), tanh) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define training strategy
 strategy = QuadratureTraining()
@@ -39,11 +41,7 @@ minimization_condition = DontCheckNonnegativity()
 decrease_condition = make_RoA_aware(StabilityISL(rectifier = (t) -> log(one(t) + exp(t))))
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 

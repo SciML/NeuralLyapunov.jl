@@ -22,9 +22,9 @@ const gpud = gpu_device()
         vel = state[2]
         return vcat(vel, -vel - pos)
     end
-    lb = [-2.0, -2.0]
-    ub = [2.0, 2.0]
-    fixed_point = [0.0, 0.0]
+    lb = Float32[-2.0, -2.0]
+    ub = Float32[2.0, 2.0]
+    fixed_point = Float32[0.0, 0.0]
     dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 
     # Specify neural Lyapunov problem
@@ -51,7 +51,7 @@ const gpud = gpu_device()
 
     # Define Lyapunov decrease condition
     # This damped SHO has exponential decrease at a rate of k = 0.5, so we train to certify that
-    decrease_condition = ExponentialStability(0.5)
+    decrease_condition = ExponentialStability(0.5f0)
 
     # Construct neural Lyapunov specification
     spec = NeuralLyapunovSpecification(
@@ -62,7 +62,7 @@ const gpud = gpu_device()
 
     # Benchmarking
     # Define optimization parameters
-    opt = [Adam(0.01), Adam(), BFGS()]
+    opt = [Adam(0.01f0), Adam(), BFGS()]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
@@ -182,9 +182,9 @@ end
         dx[2] = -vel - pos
         nothing
     end
-    lb = [-2.0, -2.0]
-    ub = [2.0, 2.0]
-    fixed_point = [0.0, 0.0]
+    lb = Float32[-2.0, -2.0]
+    ub = Float32[2.0, 2.0]
+    fixed_point = Float32[0.0, 0.0]
     dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 
     # Specify neural Lyapunov problem
@@ -211,7 +211,7 @@ end
 
     # Define Lyapunov decrease condition
     # This damped SHO has exponential decrease at a rate of k = 0.5, so we train to certify that
-    decrease_condition = ExponentialStability(0.5)
+    decrease_condition = ExponentialStability(0.5f0)
 
     # Construct neural Lyapunov specification
     spec = NeuralLyapunovSpecification(
@@ -222,7 +222,7 @@ end
 
     # Benchmarking
     # Define optimization parameters
-    opt = [Adam(0.01), Adam(), BFGS()]
+    opt = [Adam(0.01f0), Adam(), BFGS()]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
@@ -263,7 +263,7 @@ end
 
     Dt = Differential(t)
     bounds = [
-        θ ∈ (0, 2π),
+        θ ∈ Float32.((0, 2π)),
         Dt(θ) ∈ (-2.0f0, 2.0f0)
     ]
 

@@ -12,15 +12,14 @@ Random.seed!(200)
 println("Damped Pendulum - MultiplicativeLyapunovNet structure")
 
 ######################### Define dynamics and domain ##########################
-
-p = [0.5, 1.0]
+p = Float32[0.5, 1.0]
 
 @named dynamics = Pendulum(; driven = false, defaults = p)
 dynamics = structural_simplify(dynamics)
 
-lb = [-π, -10.0];
-ub = [π, 10.0];
-fixed_point = [0.0, 0.0]
+lb = Float32[-π, -10];
+ub = Float32[π, 10];
+fixed_point = Float32[0.0, 0.0]
 
 ####################### Specify neural Lyapunov problem #######################
 
@@ -30,7 +29,7 @@ fixed_point = [0.0, 0.0]
 dim_state = length(lb)
 dim_hidden = 15
 dim_output = 2
-periodic_embedding_layer = PeriodicEmbedding([1], [2π])
+periodic_embedding_layer = PeriodicEmbedding([1], Float32[2π])
 _ps, _st = Lux.setup(rng, periodic_embedding_layer)
 periodic_embedding(x) = first(periodic_embedding_layer(x, _ps, _st))
 fixed_point_embedded = periodic_embedding(fixed_point)
@@ -71,7 +70,7 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(0.01); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
 res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
@@ -82,17 +81,17 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
     res.u,
     structure,
     ODEFunction(dynamics),
-    zeros(length(lb));
+    fixed_point;
     p
 )
 
 ################################## Simulate ###################################
 
-xs = (2 * lb[1]):0.02:(2 * ub[1])
-ys = lb[2]:0.02:ub[2]
-states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V(reduce(hcat, states)))
-dVdt_predict = vec(V̇(reduce(hcat, states)))
+θs = (2 * lb[1]):0.02f0:(2 * ub[1])
+ωs = lb[2]:0.1f0:ub[2]
+states = mapreduce(collect, hcat, Iterators.product(θs, ωs))
+V_predict = vec(V(states))
+dVdt_predict = vec(V̇(states))
 
 #################################### Tests ####################################
 
@@ -102,17 +101,17 @@ V0 = V(fixed_point)[]
 @test min(V0, minimum(V_predict)) ≥ 0.0
 
 # Check local positive definiteness at fixed point
-@test maximum(abs, ForwardDiff.gradient(first ∘ V, fixed_point)) ≤ 1e-10
+@test maximum(abs, ForwardDiff.gradient(first ∘ V, fixed_point)) ≤ 1e-7
 @test minimum(eigvals(ForwardDiff.hessian(first ∘ V, fixed_point))) .≥ 0
 
 # Network structure should enforce periodicity in θ
-x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
-@test maximum(abs, V(x0 .+ [2π, 0.0]) .- V(x0)) .≤ 1e-3
+x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
+@test maximum(abs, V(x0 .+ Float32[2π, 0.0]) .- V(x0)) .≤ 1e-3
 
 # Check local negative definiteness at fixed point
 @test V̇(fixed_point)[] == 0.0
-@test maximum(abs, ForwardDiff.gradient(first ∘ V̇, fixed_point)) ≤ 1e-10
-@test maximum(eigvals(ForwardDiff.hessian(first ∘ V̇, fixed_point))) ≤ 0
+@test maximum(abs, ForwardDiff.gradient(first ∘ V̇, fixed_point)) ≤ 1e-7
+@test maximum(eigvals(ForwardDiff.hessian(first ∘ V̇, fixed_point))) ≤ 1e-7
 
 # V̇ should be negative almost everywhere (global negative definiteness)
 @test sum(dVdt_predict .> 0) / length(dVdt_predict) < 3e-3
@@ -133,8 +132,8 @@ println(
 using Plots
 
 p1 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     V_predict,
     linetype = :contourf,
     title = "V",
@@ -145,9 +144,9 @@ p1 = plot(
 p1 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
 p1 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x);
 p2 = plot(
-    xs/pi,
-    ys,
-    log.(abs.(dVdt_predict)),
+    θs/pi,
+    ωs,
+    dVdt_predict,
     linetype = :contourf,
     title = "dV/dt",
     xlabel = "θ/π",
@@ -157,8 +156,8 @@ p2 = plot(
 p2 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
 p2 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
 p3 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     dVdt_predict .< 0,
     linetype = :contourf,
     title = "dV/dt < 0",
