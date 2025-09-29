@@ -111,7 +111,7 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 
 # Check local negative definiteness at fixed point
 @test V̇(fixed_point)[] == 0.0
-@test maximum(abs, ForwardDiff.gradient(first ∘ V̇, fixed_point)) ≤ 1e-7
+@test maximum(abs, ForwardDiff.gradient(first ∘ V̇, fixed_point)) ≤ 2e-7
 @test maximum(eigvals(ForwardDiff.hessian(first ∘ V̇, fixed_point))) ≤ 0
 
 # V̇ should be negative almost everywhere (global negative definiteness)

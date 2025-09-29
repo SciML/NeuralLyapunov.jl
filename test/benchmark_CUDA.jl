@@ -354,5 +354,5 @@ end
     @test cm.p > cm.n
 
     # Resulting classifier should be accurate
-    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
+    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.75
 end

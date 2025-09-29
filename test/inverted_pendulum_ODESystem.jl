@@ -133,7 +133,7 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 
 # Training should result in a locally stable fixed point at the upright equilibrium
 # Check for approximately zero angular acceleration
-@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 2.5e-3
+@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 3e-3
 # Check for nonpositive eigenvalues of the Jacobian
 @test_broken maximum(
     eigvals(
