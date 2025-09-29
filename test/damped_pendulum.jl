@@ -1,6 +1,8 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov
-import Boltz.Layers: PeriodicEmbedding
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+using NeuralPDE, Lux, ComponentArrays, ModelingToolkit, NeuralLyapunov
+import Boltz.Layers: PeriodicEmbedding, MLP
+import Optimization
+using OptimizationOptimisers: Adam
+using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
@@ -21,13 +23,7 @@ DDt = Dt^2
 
 eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 
-@named dynamics = ODESystem(
-    eqs,
-    t,
-    [θ],
-    [ζ, ω_0];
-    defaults
-)
+@named dynamics = ODESystem(eqs, t, [θ], [ζ, ω_0]; defaults)
 
 dynamics = structural_simplify(dynamics)
 bounds = [
@@ -48,47 +44,40 @@ dim_hidden = 15
 dim_output = 2
 chain = [Chain(
              PeriodicEmbedding([1], [2π]),
-             Dense(3, dim_hidden, tanh),
-             Dense(dim_hidden, dim_hidden, tanh),
-             Dense(dim_hidden, 1)
+             MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define neural network discretization
-strategy = QuasiRandomTraining(1000)
+strategy = QuasiRandomTraining(2000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
+# Define neural Lyapunov structure and corresponding minimization condition
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2
+end
 structure = PositiveSemiDefiniteStructure(
     dim_output;
-    pos_def = function (state, fixed_point)
-        θ, ω = state
-        θ_eq, ω_eq = fixed_point
-        log(1.0 + (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + (ω - ω_eq)^2)
-    end
+    pos_def = (x, x0) -> log(1.0 + periodic_pos_def(x, x0))
 )
 minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
 
 # Define Lyapunov decrease condition
-κ = 20.0
-decrease_condition = AsymptoticStability(rectifier = (t) -> log(1.0 + exp(κ * t)) / κ)
+decrease_condition = AsymptoticStability(
+    strength = periodic_pos_def,
+    rectifier = (t) -> log(one(t) + exp(t))
+)
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    ODEFunction(dynamics),
-    lb,
-    ub,
-    spec;
-    p
-)
+@named pde_system = NeuralLyapunovPDESystem(ODEFunction(dynamics), lb, ub, spec; p)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -97,14 +86,13 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.1); maxiters = 500)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, BFGS(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
 
-V,
-V̇ = get_numerical_lyapunov_function(
+(V, V̇) = get_numerical_lyapunov_function(
     discretization.phi,
     res.u.depvar,
     structure,
@@ -115,11 +103,11 @@ V̇ = get_numerical_lyapunov_function(
 
 ################################## Simulate ###################################
 
-xs = (2 * lb[1]):0.02:(2 * ub[1])
-ys = lb[2]:0.02:ub[2]
-states = Iterators.map(collect, Iterators.product(xs, ys))
-V_predict = vec(V(hcat(states...)))
-dVdt_predict = vec(V̇(hcat(states...)))
+θs = (2 * lb[1]):0.02:(2 * ub[1])
+ωs = lb[2]:0.02:ub[2]
+states = mapreduce(collect, hcat, Iterators.product(θs, ωs))
+V_predict = vec(V(states))
+dVdt_predict = vec(V̇(states))
 
 #################################### Tests ####################################
 
@@ -158,8 +146,8 @@ println(
 # Plot results
 
 p1 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     V_predict,
     linetype = :contourf,
     title = "V",
@@ -170,8 +158,8 @@ p1 = plot(
 p1 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
 p1 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x);
 p2 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     dVdt_predict,
     linetype = :contourf,
     title = "dV/dt",
@@ -182,8 +170,8 @@ p2 = plot(
 p2 = scatter!([-2*pi, 0, 2*pi]/pi, [0, 0, 0], label = "Stable Equilibria", color=:green, markershape=:+);
 p2 = scatter!([-pi, pi]/pi, [0, 0], label = "Unstable Equilibria", color=:red, markershape=:x, legend=false);
 p3 = plot(
-    xs/pi,
-    ys,
+    θs/pi,
+    ωs,
     dVdt_predict .< 0,
     linetype = :contourf,
     title = "dV/dt < 0",

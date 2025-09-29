@@ -17,7 +17,7 @@ We'll consider just the box domain ``x \in [-5, 5], v \in [-2, 2]``.
 
 ```julia
 using NeuralPDE, Lux, NeuralLyapunov
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization, OptimizationOptimisers
 using StableRNGs, Random
 
 rng = StableRNG(0)
@@ -30,12 +30,12 @@ function f(state, p, t)
     ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
-    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+    return [vel, -2ζ * ω_0 * vel - ω_0^2 * pos]
 end
-lb = [-5.0, -2.0];
-ub = [ 5.0,  2.0];
-p = [0.5, 1.0];
-fixed_point = [0.0, 0.0];
+lb = Float32[-5.0, -2.0];
+ub = Float32[ 5.0,  2.0];
+p = Float32[0.5, 1.0];
+fixed_point = Float32[0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 
 ####################### Specify neural Lyapunov problem #######################
@@ -55,11 +55,8 @@ ps, st = Lux.setup(rng, chain)
 strategy = QuasiRandomTraining(1000)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
-# Define neural Lyapunov structure
-structure = NonnegativeStructure(
-    dim_output;
-    δ = 1e-6
-)
+# Define neural Lyapunov structure and corresponding minimization condition
+structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
@@ -67,21 +64,11 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 decrease_condition = ExponentialStability(prod(p))
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    dynamics,
-    lb,
-    ub,
-    spec;
-    p
-)
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -95,14 +82,7 @@ res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 net = discretization.phi
 θ = res.u.depvar
 
-V, V̇ = get_numerical_lyapunov_function(
-    net,
-    θ,
-    structure,
-    f,
-    fixed_point;
-    p
-)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)
 ```
 
 ## Detailed description
@@ -123,12 +103,12 @@ function f(state, p, t)
     ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
-    vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+    return [vel, -2ζ * ω_0 * vel - ω_0^2 * pos]
 end
-lb = [-5.0, -2.0];
-ub = [ 5.0,  2.0];
-p = [0.5, 1.0];
-fixed_point = [0.0, 0.0];
+lb = Float32[-5.0, -2.0];
+ub = Float32[ 5.0,  2.0];
+p = Float32[0.5, 1.0];
+fixed_point = Float32[0.0, 0.0];
 dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
 nothing # hide
 ```
@@ -152,6 +132,15 @@ chain = [Chain(
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+```
+
+Since `Lux.setup` defaults to `Float32` parameters for `Dense` layers, we set up the bounds and parameters using `Float32` as well.
+To use `Float64` parameters instead, add the following lines:
+
+```julia
+using ComponentArrays
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 ```
 
 ```@example SHO
@@ -178,11 +167,8 @@ To train for exponential stability we use [`ExponentialStability`](@ref), but we
 ```@example SHO
 using NeuralLyapunov
 
-# Define neural Lyapunov structure
-structure = NonnegativeStructure(
-    dim_output;
-    δ = 1e-6
-)
+# Define neural Lyapunov structure and corresponding minimization condition
+structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
 minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
 # Define Lyapunov decrease condition
@@ -190,20 +176,10 @@ minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 decrease_condition = ExponentialStability(prod(p))
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Construct PDESystem
-@named pde_system = NeuralLyapunovPDESystem(
-    dynamics,
-    lb,
-    ub,
-    spec;
-    p
-)
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
 ```
 
 Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.
@@ -211,7 +187,7 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 ```@example SHO
 prob = discretize(pde_system, discretization)
 
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization, OptimizationOptimisers
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 
@@ -222,14 +198,7 @@ net = discretization.phi
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function.
 
 ```@example SHO
-V, V̇ = get_numerical_lyapunov_function(
-    net,
-    θ,
-    structure,
-    f,
-    fixed_point;
-    p
-)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)
 nothing # hide
 ```
 
@@ -242,8 +211,8 @@ We'll evaluate both ``V`` and ``\dot{V}`` on a ``101 \times 101`` grid:
 xs = lb[1]:Δx:ub[1]
 vs = lb[2]:Δv:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, vs))
-V_samples = vec(V(hcat(states...)))
-V̇_samples = vec(V̇(hcat(states...)))
+V_samples = vec(V(reduce(hcat, states)))
+V̇_samples = vec(V̇(reduce(hcat, states)))
 
 # Print statistics
 V_min, i_min = findmin(V_samples)

@@ -13,8 +13,8 @@ We'll train in the larger domain ``x \in [-2, 2]``.
 ## Copy-Pastable Code
 
 ```julia
-using NeuralPDE, Lux, NeuralLyapunov
-using Optimization, OptimizationOptimisers, OptimizationOptimJL
+using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
 using Random, StableRNGs
 
 rng = StableRNG(0)
@@ -39,6 +39,8 @@ chain = [Chain(
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 
 # Define training strategy
 strategy = GridTraining(0.1)
@@ -52,20 +54,11 @@ minimization_condition = DontCheckNonnegativity()
 decrease_condition = make_RoA_aware(AsymptoticStability())
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(
-    f,
-    lb,
-    ub,
-    spec
-)
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -81,13 +74,7 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 θ = res.u.depvar
 
-V, V̇ = get_numerical_lyapunov_function(
-    net,
-    θ,
-    structure,
-    f,
-    fixed_point
-)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point)
 
 ################################## Simulate ###################################
 states = lb[]:0.001:ub[]
@@ -123,7 +110,7 @@ For more on that aspect, see the [NeuralPDE documentation](https://docs.sciml.ai
 Since we're only considering one dimension, training on a grid isn't so bad in this case.
 
 ```@example RoA
-using Lux, StableRNGs
+using Lux, StableRNGs, ComponentArrays
 
 # Stable random number generator for doc stability
 rng = StableRNG(0)
@@ -138,6 +125,8 @@ chain = [Chain(
              Dense(dim_hidden, 1, use_bias = false)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+ps = ps |> ComponentArray |> f64
+st = st |> f64
 ```
 
 ```@example RoA
@@ -171,19 +160,10 @@ minimization_condition = DontCheckNonnegativity()
 decrease_condition = make_RoA_aware(AsymptoticStability())
 
 # Construct neural Lyapunov specification
-spec = NeuralLyapunovSpecification(
-    structure,
-    minimization_condition,
-    decrease_condition
-)
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Construct PDESystem 
-@named pde_system = NeuralLyapunovPDESystem(
-    f,
-    lb,
-    ub,
-    spec
-)
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec)
 ```
 
 Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.
@@ -204,13 +184,7 @@ net = discretization.phi
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, then sample on a finer grid than we trained on to find the estimated region of attraction.
 
 ```@example RoA
-V, V̇ = get_numerical_lyapunov_function(
-    net,
-    θ,
-    structure,
-    f,
-    fixed_point
-)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point)
 
 # Sample
 states = lb[]:0.001:ub[]
@@ -225,13 +199,7 @@ RoA = (first(RoA_states), last(RoA_states))
 # Print statistics
 println("V(0.,0.) = ", V(fixed_point))
 println("V ∋ [", min(V(fixed_point), minimum(V_samples)), ", ", maximum(V_samples), "]")
-println(
-    "V̇ ∋ [",
-    minimum(V̇_samples),
-    ", ",
-    max(V̇(fixed_point), maximum(V̇_samples)),
-    "]",
-)
+println("V̇ ∋ [", minimum(V̇_samples), ", ", max(V̇(fixed_point), maximum(V̇_samples)), "]")
 println("True region of attraction: (-1, 1)")
 println("Estimated region of attraction: ", RoA)
 ```
