@@ -19,6 +19,7 @@ StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 
 [compat]
 Boltz = "1.2"
+ComponentArrays = "0.15"
 ControlSystemsBase = "1.14.4"
 Documenter = "1"
 DocumenterCitations = "1.3"
