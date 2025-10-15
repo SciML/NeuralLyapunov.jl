@@ -88,6 +88,8 @@ the user or generated automatically).
   - `optimization_args`: arguments to be passed into the optimization solver, as a vector of
     `Pair`s. For more information, see the
     [Optimization.jl docs](https://docs.sciml.ai/Optimization/stable/API/solve/).
+  - `log_frequency`: frequency (in iterations) at which to log the training loss; defaults
+    to `50`.
   - `simulation_time`: simulation end time for checking if trajectory from a point reaches
     equilibrium
   - `ode_solver`: differential equation solver used in simulating the system for evaluation.
@@ -132,6 +134,10 @@ the user or generated automatically).
     with [`get_numerical_lyapunov_function`](@ref)).
   - `V`: the neural Lyapunov function.
   - `V̇`: the Lyapunov decrease function.
+  - `training_losses`: a `DataFrame` containing the training losses logged during training,
+    with columns:
+    - "Iteration": iteration number at which the loss was logged.
+    - "Loss": the full weighted training loss at that iteration.
 """
 function benchmark(
         dynamics::ODESystem,
@@ -153,7 +159,8 @@ function benchmark(
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
-        ensemble_alg = EnsembleThreads()
+        ensemble_alg = EnsembleThreads(),
+        log_frequency = 50
 )
     params = parameters(dynamics)
     f = if isempty(unbound_inputs(dynamics))
@@ -217,6 +224,8 @@ function benchmark(
         endpoint_check
     end
 
+    logger = NeuralLyapunovBenchmarkLogger{default_float_type}()
+
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
         bounds,
@@ -247,7 +256,9 @@ function benchmark(
         endpoint_check,
         init_params,
         init_states,
-        ensemble_alg
+        ensemble_alg,
+        log_frequency,
+        logger
     )
 end
 
@@ -276,7 +287,8 @@ function benchmark(
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
-        ensemble_alg = EnsembleThreads()
+        ensemble_alg = EnsembleThreads(),
+        log_frequency = 50
 )
     default_float_type = if simulation_time isa AbstractFloat
         typeof(simulation_time)
@@ -324,6 +336,8 @@ function benchmark(
         endpoint_check
     end
 
+    logger = NeuralLyapunovBenchmarkLogger{default_float_type}()
+
     @named pde_system = NeuralLyapunovPDESystem(
         dynamics,
         lb,
@@ -359,7 +373,9 @@ function benchmark(
         endpoint_check,
         init_params,
         init_states,
-        ensemble_alg
+        ensemble_alg,
+        log_frequency,
+        logger
     )
 end
 
@@ -384,11 +400,16 @@ function _benchmark(
         endpoint_check,
         init_params,
         init_states,
-        ensemble_alg
+        ensemble_alg,
+        log_frequency,
+        logger
 )
+    log_options = LogOptions(; log_frequency)
+
     t = @timed begin
         # Construct OptimizationProblem
-        discretization = PhysicsInformedNN(chain, strategy; init_params, init_states)
+        discretization = PhysicsInformedNN(
+            chain, strategy; init_params, init_states, logger, log_options)
         opt_prob = discretize(pde_system, discretization)
 
         # Solve OptimizationProblem
@@ -453,7 +474,9 @@ function _benchmark(
         "Classification" => classification
     )
 
-    return (; confusion_matrix, data, training_time, θ, phi, V, V̇)
+    training_losses = DataFrame("Iteration" => logger.iterations, "Loss" => logger.losses)
+
+    return (; confusion_matrix, data, training_time, θ, phi, V, V̇, training_losses)
 end
 
 function benchmark_solve(prob, opt, optimization_args)
