@@ -217,7 +217,8 @@ benchmarking_results = benchmark(
     ensemble_alg = EnsembleSerial(),
     endpoint_check,
     init_params = ps, 
-    init_states = st
+    init_states = st,
+    log_frequency = 1
 );
 nothing # hide
 ```
@@ -267,4 +268,24 @@ Similarly, the labels in the "Predicted in RoA" column are the results of the ne
 classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
 predicted = benchmarking_results.data[!, "Predicted in RoA"]
 all(classifier.(V_samples, V̇_samples, states) .== predicted)
+```
+
+Finally, the `benchmark` function also outputs a `DataFrame`, `training_losses` with the training loss, sampled every `log_frequency` iterations:
+
+```@example benchmarking
+benchmarking_results.training_losses[1:3, :]
+```
+
+```@example benchmarking
+using Plots
+
+plot(
+    benchmarking_results.training_losses.Iteration, 
+    benchmarking_results.training_losses.Loss, 
+    yaxis = :log, 
+    xlabel = "Iteration", 
+    ylabel = "Loss", 
+    title = "Training Loss",
+    legend = false
+)
 ```

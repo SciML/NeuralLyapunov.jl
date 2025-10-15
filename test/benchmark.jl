@@ -143,7 +143,7 @@ end
     )
 
     # Define optimization parameters
-    opt = [Adam(0.05), BFGS()]
+    opt = [Adam(0.05), Adam(0.001)]
     optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
     # Run benchmark

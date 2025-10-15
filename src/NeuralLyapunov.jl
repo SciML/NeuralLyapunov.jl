@@ -12,7 +12,8 @@ using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProbl
                  EnsembleThreads
 
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
-using NeuralPDE: PhysicsInformedNN, discretize
+using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
+import NeuralPDE
 using OrdinaryDiffEq: Tsit5
 using EvalMetrics: ConfusionMatrix
 import LuxCore
@@ -35,6 +36,7 @@ include("NeuralLyapunovPDESystem.jl")
 include("numerical_lyapunov_functions.jl")
 include("local_lyapunov.jl")
 include("policy_search.jl")
+include("logger.jl")
 include("benchmark_harness.jl")
 include("lux_structures.jl")
 

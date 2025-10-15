@@ -23,6 +23,7 @@ end
     # ForwardDiff doesn't export derivative, gradient, or jacobian, nor does SciMLBase with
     # NullParameters
     @test check_all_qualified_accesses_are_public(
-        NeuralLyapunov; ignore = (:NullParameters, :derivative, :gradient, :jacobian)) ===
-          nothing
+        NeuralLyapunov;
+        ignore = (:NullParameters, :derivative, :gradient, :jacobian, :logscalar)
+    ) === nothing
 end
