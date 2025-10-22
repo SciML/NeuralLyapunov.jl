@@ -9,7 +9,7 @@ using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, un
                        defaults, operation, unbound_inputs, defaults, structural_simplify
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
-                 EnsembleThreads
+                 EnsembleThreads, remake
 
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
@@ -22,7 +22,6 @@ using MLDataDevices: cpu_device
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
-using Optimization: remake
 using DataFrames: DataFrame
 
 const cpud = cpu_device()
