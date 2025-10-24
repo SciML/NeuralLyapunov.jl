@@ -1,5 +1,5 @@
 using NeuralPDE, Lux, ComponentArrays, NeuralLyapunov
-import Optimization
+import OptimizationBase
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
 using Boltz.Layers: MLP
@@ -54,9 +54,9 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
+res = OptimizationBase.solve(prob, Adam(); maxiters = 300)
+prob = OptimizationBase.remake(prob, u0 = res.u)
+res = OptimizationBase.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 (V, V̇) = get_numerical_lyapunov_function(

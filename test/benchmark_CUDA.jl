@@ -173,7 +173,7 @@ end
     function f(x, p, t)
         pos = x[1]
         vel = x[2]
-        return vcat(vel, -vel - pos)
+        return [vel, -vel - pos]
     end
     function f(dx, x, p, t)
         pos = x[1]
