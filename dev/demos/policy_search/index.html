@@ -3,7 +3,7 @@
 using ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import OptimizationBase, OptimizationOptimisers, OptimizationOptimJL
 using Random, StableRNGs
 
 rng = StableRNG(0)
@@ -83,9 +83,9 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = OptimizationBase.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+prob = OptimizationBase.remake(prob, u0 = res.u)
+res = OptimizationBase.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
@@ -182,11 +182,11 @@ max\left( 0, \left( 1 + \cos\left( \theta \right) \right)^{2} + \left( -1.2246 \
 \end{align}
  \]</p><p>Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.</p><pre><code class="language-julia hljs">prob = discretize(pde_system, discretization)
 
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import OptimizationBase, OptimizationOptimisers, OptimizationOptimJL
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = OptimizationBase.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+prob = OptimizationBase.remake(prob, u0 = res.u)
+res = OptimizationBase.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 net = discretization.phi
 _θ = res.u.depvar</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ComponentVector{Float64,SubArray...}(φ1 = (layer_1 = Float64[], layer_2 = (weight = [-0.10630219312852655 0.30294036510622624 -0.7721027691799023; 0.06930225086456113 0.4731486759423442 0.25335291298827756; … ; -0.9156553080946249 0.7618795294462143 -1.3797174533347816; -0.38923205008531775 -1.230001834844241 -0.8414133032083901], bias = [-0.5771665493682909, 0.20868006898374977, 0.49428653539320677, 0.6569960318426046, 0.34028312963453433, 0.4153009852163562, -0.48089057048062506, -0.38511110617371985, -0.24657062960192713, 0.06454426079568121, -0.7993806668379818, -0.3584197955325943, -0.0907141988751835, -0.61700594683061, 0.0930810696479888, 0.5163428023986955, -0.49188838612823793, -0.308387177864589, -0.2609858788989371, -0.626089059979299]), layer_3 = (weight = [-0.3389762586034682 -0.25966876496311725 … -0.1783065683492505 -0.24975611614885015; -0.3050048264283078 -0.6471606441948528 … -0.35902365688053645 -0.3162056916068286; … ; -0.041656762194190684 -0.685767365515216 … -0.5342172909375312 0.7797223594312337; -0.13512624188706626 0.42806875713501236 … -0.26499906278203345 0.3943758677667403], bias = [0.10764860454988491, -0.07935415334132719, 0.08362292636408189, 0.10275637975447065, -0.16365378836477687, 0.046555727821514944, -0.37575243882819276, -0.08647973363529836, -0.19048382674221553, 0.12259151910589822, 0.11886487809475879, 0.2239532260718827, 0.19406136310709235, -0.08744896166301455, -0.18402765067223295, 0.2668054417746105, 0.09234416417195582, -0.26607042891015964, -0.22708163258971617, 0.30102660435967576]), layer_4 = (weight = [-0.10271233404872779 -0.12670327358515326 … -0.13272879005134874 -0.1157082072158405], bias = [0.05858471654174773])), φ2 = (layer_1 = Float64[], layer_2 = (weight = [0.6234867821381099 1.2256831642286488 -0.2804532084755726; 0.29543149337335073 0.6878264715392519 -0.13928092619300786; … ; -1.4580876190451295 0.454091152287325 1.3405796191651493; 1.271279664564144 -0.9915480758998465 -1.6055232597374394], bias = [0.31664126003956805, -0.007927797953952933, -0.1417494006305087, -0.30576010252172797, 0.36296341533708354, 0.03641572588221217, -0.6262217795924444, 0.27128571448300987, -0.06878719447603959, -0.5212865311188504, 0.4674391900729992, 0.0589061510877171, -0.013605595257077562, -0.22576459814974745, 0.22822082548762637, -0.2845712557952203, -0.24062802413589432, 0.4649361477154171, -0.15244468523317478, 0.054818623533658836]), layer_3 = (weight = [-0.08238274691182003 -0.5504640918707759 … -0.6919556441456043 0.04284713940455707; 0.09580013746858632 -0.4310728673895367 … 0.14865690366310777 -0.09087387870828474; … ; -0.7926440052249528 -0.2541691036303003 … 0.470904564899999 -0.1746553500503606; -0.4670837510072816 -0.45566191530679245 … 0.25815997113665035 -0.8405214917105278], bias = [0.001453862110212591, 0.13666900074412858, 0.27682598001938863, -0.34315069929970116, -0.3571671661334445, 0.12866462766801617, 0.45851629304527053, 0.5069726410852309, 0.3227676959524276, -0.0773365510175729, -0.0068483818115063, -0.09072907712969382, 0.1836836691870408, 0.3726529681970134, 0.3818647563455194, 0.08032357623437705, -0.2809331805344359, -0.05572265983075839, 0.19176757776690093, -0.012308286551495573]), layer_4 = (weight = [0.1374724879593418 0.3467901662213224 … 0.2675235208458483 0.2971968138756291], bias = [0.43551622013249885])), φ3 = (layer_1 = Float64[], layer_2 = (weight = [1.3865987500107302 -0.6728921312431788 -1.425348326596021; -0.924220354137128 -0.468232447713478 -0.8032832826116326; … ; -1.0066556415768761 -0.9167828010609446 1.308875768678487; -0.4394740699144167 1.4356849050455003 -0.04176695822124455], bias = [0.3955172251041911, 0.5114779115363391, 0.4932376793218274, 0.44805035615578376, 0.35975073136945085, -0.5176355577178781, -0.2556257099531609, 0.6007069409348624, -0.19734238854694733, -0.608986149811936, -0.01718679841477509, -0.18703274284697083, 0.0770297897416235, -0.06779424389125452, -0.5632238199857457, 0.45284397606102683, -0.5500279491439556, 0.5700531809963292, -0.32295292413547405, 0.6314412781512415]), layer_3 = (weight = [0.7652868843540599 -0.181369783073288 … 0.5470707204680693 -0.87811674610223; -0.30377011792352887 0.17474609441737443 … 0.7032777094312184 -0.06523450108847381; … ; 0.19631655190850322 -0.6013682431791304 … 0.27843609300632116 -0.16146779123050772; 0.5793960573569977 0.36585681681630655 … -0.3888464316876808 0.011650865805001017], bias = [-0.192985999728566, -0.23105120749528127, -0.3492938579680119, -0.05069686243612474, -0.3008164514159303, 0.11712602048317805, 0.24309736844985996, 0.12116145003806486, 0.022976738241062923, 0.028993925553978023, 0.18429874424300188, 0.24736056946233878, 0.04709313730685346, 0.12535260918776622, -0.18204957424976193, -0.19672603703091832, 0.05291504137057351, 0.027080509489870022, -0.07021531836821542, -0.2520884550977861]), layer_4 = (weight = [-0.12625037415948753 0.2931706394104544 … -0.08772056690688532 -0.4010324040335064], bias = [0.24189317046246475])))</code></pre><p>We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the <a href="../../man/policy_search/#NeuralLyapunov.get_policy"><code>get_policy</code></a> function.</p><pre><code class="language-julia hljs">pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
@@ -279,7 +279,7 @@ p3 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
     label = &quot;Downward Equilibria&quot;, color = :green, markershape = :+);
 p3 = scatter!([-pi, pi] / pi, [0, 0], label = &quot;Upward Equilibria&quot;,
     color = :red, markershape = :x, legend = false);
-plot(p1, p2, p3)</code></pre><img src="97a2867a.svg" alt="Example block output"/><p>Now, let&#39;s simulate the closed-loop dynamics to verify that the controller can get our system to the upward equilibrium.</p><p>First, we&#39;ll start at the downward equilibrium:</p><pre><code class="language-julia hljs">state_order = map(st -&gt; SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
+plot(p1, p2, p3)</code></pre><img src="16eab9ca.svg" alt="Example block output"/><p>Now, let&#39;s simulate the closed-loop dynamics to verify that the controller can get our system to the upward equilibrium.</p><p>First, we&#39;ll start at the downward equilibrium:</p><pre><code class="language-julia hljs">state_order = map(st -&gt; SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
 state_syms = Symbol.(state_order)
 
 closed_loop_dynamics = ODEFunction(
@@ -293,7 +293,7 @@ using OrdinaryDiffEq: Tsit5
 downward_equilibrium = zeros(2)
 ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 120.0], p)
 sol = solve(ode_prob, Tsit5())
-plot(sol)</code></pre><img src="e3a92d93.svg" alt="Example block output"/><pre><code class="language-julia hljs"># ...the system should make it to the top
+plot(sol)</code></pre><img src="923d484c.svg" alt="Example block output"/><pre><code class="language-julia hljs"># ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
 [x_end, y_end, ω_end] # Should be approximately [0.0, 1.0, 0.0]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
@@ -303,10 +303,10 @@ x_end, y_end = sin(θ_end), -cos(θ_end)
 x0 = lb .+ rand(2) .* (ub .- lb)
 ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 150.0], p)
 sol = solve(ode_prob, Tsit5())
-plot(sol)</code></pre><img src="654430fe.svg" alt="Example block output"/><pre><code class="language-julia hljs"># ...the system should make it to the top
+plot(sol)</code></pre><img src="5909e36c.svg" alt="Example block output"/><pre><code class="language-julia hljs"># ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
 [x_end, y_end, ω_end] # Should be approximately [0.0, 1.0, 0.0]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
  -0.0064771184072154025
   0.9999790232485574
- -5.954954074253317e-8</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../roa_estimation/">« Estimating the Region of Attraction</a><a class="docs-footer-nextpage" href="../benchmarking/">Benchmarking a neural Lyapunov method »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 24 October 2025 19:41">Friday 24 October 2025</span>. Using Julia version 1.11.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ -5.954954074253317e-8</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../roa_estimation/">« Estimating the Region of Attraction</a><a class="docs-footer-nextpage" href="../benchmarking/">Benchmarking a neural Lyapunov method »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 24 October 2025 23:31">Friday 24 October 2025</span>. Using Julia version 1.11.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
