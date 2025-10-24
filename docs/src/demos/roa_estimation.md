@@ -14,7 +14,7 @@ We'll train in the larger domain ``x \in [-2, 2]``.
 
 ```julia
 using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import OptimizationBase, OptimizationOptimisers, OptimizationOptimJL
 using Random, StableRNGs
 
 rng = StableRNG(0)
@@ -66,9 +66,9 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = OptimizationBase.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+prob = OptimizationBase.remake(prob, u0 = res.u)
+res = OptimizationBase.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 net = discretization.phi
@@ -171,11 +171,11 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 ```@example RoA
 prob = discretize(pde_system, discretization)
 
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import OptimizationBase, OptimizationOptimisers, OptimizationOptimJL
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = OptimizationBase.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+prob = OptimizationBase.remake(prob, u0 = res.u)
+res = OptimizationBase.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 
 net = discretization.phi
 θ = res.u.depvar

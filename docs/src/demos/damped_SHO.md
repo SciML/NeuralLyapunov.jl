@@ -17,7 +17,7 @@ We'll consider just the box domain ``x \in [-5, 5], v \in [-2, 2]``.
 
 ```julia
 using NeuralPDE, Lux, NeuralLyapunov
-import Optimization, OptimizationOptimisers
+import OptimizationBase, OptimizationOptimisers
 using StableRNGs, Random
 
 rng = StableRNG(0)
@@ -76,7 +76,7 @@ prob = discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+res = OptimizationBase.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
 net = discretization.phi
@@ -187,9 +187,9 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 ```@example SHO
 prob = discretize(pde_system, discretization)
 
-import Optimization, OptimizationOptimisers
+import OptimizationBase, OptimizationOptimisers
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+res = OptimizationBase.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 
 net = discretization.phi
 θ = res.u.depvar
