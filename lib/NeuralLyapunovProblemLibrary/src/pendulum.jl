@@ -1,7 +1,7 @@
 """
     Pendulum(; driven = true, name, defaults)
 
-Create an `ODESystem` representing a damped, driven or undriven pendulum, depending on the
+Create an `System` representing a damped, driven or undriven pendulum, depending on the
 value of driven (defaults to `true`, i.e., driven pendulum).
 
 The equation used in this model is
@@ -11,7 +11,7 @@ damping parameter, ``ω_0`` is the resonant angular frequency, and ``τ`` is the
 divided by the moment of inertia of the pendulum around the pivot (`driven = false` sets
 ``τ ≡ 0``).
 
-The name of the `ODESystem` is `name`.
+The name of the `System` is `name`.
 
 Users may optionally provide default values of the parameters through `defaults`: a vector
 of the default values for `[ζ, ω_0]`.
@@ -66,7 +66,7 @@ function Pendulum(; driven = true, name, defaults = NullParameters())
 
     eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ torque]
 
-    return ODESystem(
+    return System(
         eqs,
         t,
         variables,

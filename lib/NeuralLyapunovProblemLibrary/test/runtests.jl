@@ -1,8 +1,8 @@
-using SafeTestsets
+using Test, SafeTestsets
 
 const GROUP = lowercase(get(ENV, "GROUP", "all"))
 
-@time begin
+@time @testset "NeuralLyapunovProblemLibrary" begin
     if GROUP == "all" || GROUP == "pendula"
         @time @safetestset "Simple pendulum" begin
             include("pendulum_test.jl")
