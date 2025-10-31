@@ -127,7 +127,7 @@ the user or generated automatically).
       `fixed_point` (as determined by `endpoint_check`).
     - "Classification": classification of each point, either "TP" (true positive),
       "TN" (true negative), "FP" (false positive), or "FN" (false negative).
-  - `training_time`: time taken to train the neural Lyapunov function.
+  - `training_time`: time taken to train the neural Lyapunov function (in seconds).
   - `θ`: the parameters of the neural Lyapunov function.
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output (to be used
