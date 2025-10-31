@@ -1,6 +1,6 @@
 module NeuralLyapunovProblemLibrary
 
-using ModelingToolkit: @independent_variables, @parameters, ODESystem
+using ModelingToolkit: @independent_variables, @parameters, System
 using Symbolics: @variables, Differential
 using SciMLBase: NullParameters
 using LinearAlgebra: ×
