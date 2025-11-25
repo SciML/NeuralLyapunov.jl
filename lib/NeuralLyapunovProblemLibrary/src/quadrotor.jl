@@ -2,7 +2,7 @@
 """
     QuadrotorPlanar(; name, defaults)
 
-Create an `ODESystem` representing a planar approximation of the quadrotor (technically a
+Create an `System` representing a planar approximation of the quadrotor (technically a
 birotor).
 
 This birotor is a rigid body with two rotors in line with the center of mass.
@@ -23,9 +23,9 @@ The equations governing the planar quadrotor are:
 \\end{align}
 ```
 
-The name of the `ODESystem` is `name`.
+The name of the `System` is `name`.
 
-# ODESystem Parameters
+# System Parameters
   - `m`: mass of the quadrotor.
   - `I_quad`: moment of inertia of the quadrotor around its center of mass.
   - `g`: gravitational acceleration in the direction of the negative ``y``-axis (defaults to
@@ -58,7 +58,7 @@ function QuadrotorPlanar(; name, defaults = NullParameters())
         (; name, defaults = Dict(params .=> defaults))
     end
 
-    return ODESystem(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
+    return System(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
 end
 
 ####################################### 3D quadrotor #######################################
@@ -66,12 +66,12 @@ end
 """
     Quadrotor3D(; name, defaults)
 
-Create an `ODESystem` representing a quadrotor in 3D space.
+Create an `System` representing a quadrotor in 3D space.
 
 The quadrotor is a rigid body in an X-shape (90°-angles between the rotors).
 The equations governing the quadrotor can be found in [quadrotor](@cite).
 
-# ODESystem State Variables
+# System State Variables
   - `x`: ``x``-position (world frame).
   - `y`: ``y``-position (world frame).
   - `z`: ``z``-position (world frame).
@@ -85,7 +85,7 @@ The equations governing the quadrotor can be found in [quadrotor](@cite).
   - `ωθ`: pitch angular velocity (world frame).
   - `ωψ`: yaw angular velocity (world frame).
 
-# ODESystem Input Variables
+# System Input Variables
   - `T`: thrust (should be nonnegative).
   - `τφ`: roll torque.
   - `τθ`: pitch torque.
@@ -95,7 +95,7 @@ Not only should the aggregate thrust be nonnegative, but the torques should have
 generated from nonnegative individual rotor thrusts.
 The model calculates individual rotor thrusts and replaces any negative values with 0.
 
-# ODESystem Parameters
+# System Parameters
   - `m`: mass of the quadrotor.
   - `g`: gravitational acceleration in the direction of the negative ``z``-axis (defaults to
     9.81).
@@ -169,7 +169,7 @@ function Quadrotor3D(; name, defaults = NullParameters())
         (; name, defaults = Dict(params .=> defaults))
     end
 
-    return ODESystem(
+    return System(
         eqs,
         t,
         vcat(position_world, attitude, velocity_world, ω_world, T, τφ, τθ, τψ),
