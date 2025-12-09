@@ -84,7 +84,8 @@ const gpud = gpu_device()
 
     # AdditiveLyapunovNet should have no trouble with the globally stable damped SHO, so we
     # expect it to correctly classify everything as within the region of attraction.
-    @test out.confusion_matrix.p + out.confusion_matrix.n == out.confusion_matrix.tp
+    cm = out.confusion_matrix
+    @test sum(cm.Count) == cm.Count[1]
 end
 
 @testset "Simple harmonic oscillator benchmarking (CPU training, CUDA evaluation)" begin
@@ -157,10 +158,10 @@ end
     cm = out.confusion_matrix
 
     # SHO is globally asymptotically stable
-    @test cm.n == 0
+    @test sum(cm.Count[2:3]) == 0
 
     # Should accurately classify
-    @test cm.fn / cm.p < 0.5
+    @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
 end
 
 @testset "Simple harmonic oscillator benchmarking (CUDA training + evaluation)" begin
@@ -245,7 +246,8 @@ end
 
     # AdditiveLyapunovNet should have no trouble with the globally stable damped SHO, so we
     # expect it to correctly classify everything as within the region of attraction.
-    @test out.confusion_matrix.p + out.confusion_matrix.n == out.confusion_matrix.tp
+    cm = out.confusion_matrix
+    @test sum(cm.Count) == cm.Count[1]
 end
 
 ####################### Inverted pendulum policy search #######################
@@ -351,8 +353,8 @@ end
     cm = out.confusion_matrix
 
     # Resulting controller should drive more states to equilibrium than not
-    @test cm.p > cm.n
+    @test cm.Count[1] + cm.Count[4] > sum(cm.Count[2:3])
 
     # Resulting classifier should be accurate
-    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.75
+    @test (cm.Count[1] + cm.Count[3]) / sum(cm.Count) > 0.75
 end

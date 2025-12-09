@@ -446,7 +446,7 @@ function _benchmark(
     V_samples = vec(V(states))
     V̇_samples = vec(V̇(states))
 
-    (; confusion_matrix, endpoints, actual, predicted) = build_confusion_matrix(
+    (; endpoints, actual, predicted) = simulate_ensemble(
         eachcol(states),
         V_samples,
         V̇_samples,
@@ -460,9 +460,30 @@ function _benchmark(
         ensemble_alg
     )
 
-    classification = map(zip(actual, predicted)) do (a, p)
-        (a == p ? "T" : "F") * (p ? "P" : "N")
+    classification = Vector{String}(undef, length(actual))
+    tp = 0; fp = 0; tn = 0; fn = 0
+    for (i, (a, p)) in enumerate(zip(actual, predicted))
+        if a && p
+            classification[i] = "TP"
+            tp += 1
+        elseif !a && p
+            classification[i] = "FP"
+            fp += 1
+        elseif !a && !p
+            classification[i] = "TN"
+            tn += 1
+        else
+            classification[i] = "FN"
+            fn += 1
+        end
     end
+
+    confusion_matrix = DataFrame(
+        "Classification" => [
+            "True Positives", "False Positives", "True Negatives", "False Negatives"
+        ],
+        "Count" => [tp, fp, tn, fn]
+    )
 
     data = DataFrame(
         "Initial State" => eachcol(states),
@@ -517,7 +538,7 @@ function benchmark_solve(prob, opt::AbstractVector, optimization_args)
     return res[].u
 end
 
-function build_confusion_matrix(
+function simulate_ensemble(
         states,
         V_samples,
         V̇_samples,
@@ -547,9 +568,7 @@ function build_confusion_matrix(
 
     actual = endpoint_check.(endpoints)
 
-    confusion_matrix = ConfusionMatrix(vec(actual), vec(predicted))
-
-    return (; confusion_matrix, endpoints, actual, predicted)
+    return (; endpoints, actual, predicted)
 end
 
 function get_init_params(chain, rng)
