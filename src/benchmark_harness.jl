@@ -461,7 +461,11 @@ function _benchmark(
     )
 
     classification = Vector{String}(undef, length(actual))
-    tp = 0; fp = 0; tn = 0; fn = 0
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+
     for (i, (a, p)) in enumerate(zip(actual, predicted))
         if a && p
             classification[i] = "TP"
