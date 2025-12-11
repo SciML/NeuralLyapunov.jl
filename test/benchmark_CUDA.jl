@@ -62,7 +62,7 @@ const gpud = gpu_device()
 
     # Benchmarking
     # Define optimization parameters
-    opt = [Adam(1f-2), Adam(), Adam(1f-5)]
+    opt = [Adam(1.0f-2), Adam(), Adam(1.0f-5)]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
@@ -223,7 +223,7 @@ end
 
     # Benchmarking
     # Define optimization parameters
-    opt = [Adam(1f-2), Adam(), Adam(1f-5)]
+    opt = [Adam(1.0f-2), Adam(), Adam(1.0f-5)]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
