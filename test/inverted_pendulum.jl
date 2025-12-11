@@ -134,7 +134,7 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 # Check for approximately zero angular acceleration
 @test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 6e-3
 # Check for nonpositive eigenvalues of the Jacobian
-@test_broken maximum(
+@test maximum(
     eigvals(
     ForwardDiff.jacobian(closed_loop_pendulum_dynamics, upright_equilibrium)
 )
