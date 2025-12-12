@@ -15,7 +15,6 @@ using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
 import NeuralPDE
 using OrdinaryDiffEq: Tsit5
-using EvalMetrics: ConfusionMatrix
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
 using MLDataDevices: cpu_device

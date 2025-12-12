@@ -73,10 +73,10 @@ using Test
     cm = out.confusion_matrix
 
     # SHO is globally asymptotically stable
-    @test cm.n == 0
+    @test sum(cm.Count[2:3]) == 0
 
     # Should accurately classify
-    @test cm.fn / cm.p < 0.5
+    @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
 end
 
 ####################### Inverted pendulum policy search #######################
@@ -173,10 +173,10 @@ end
 
     # Resulting controller should drive more states to equilibrium than not
     cm = benchmarking_results.confusion_matrix
-    @test cm.p > cm.n
+    @test cm.Count[1] + cm.Count[4] > sum(cm.Count[2:3])
 
     # Resulting classifier should be accurate
-    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
+    @test (cm.Count[1] + cm.Count[3]) / sum(cm.Count) > 0.9
 
     # Generate numerical Lyapunov function for testing
     (V, V̇) = get_numerical_lyapunov_function(
@@ -279,10 +279,10 @@ end
     cm = out.confusion_matrix
 
     # Damped pendulum is globally asymptotically stable, except at upright equilibrium
-    @test cm.n == 0
+    @test sum(cm.Count[2:3]) == 0
 
     # Should accurately classify
-    @test cm.fn / cm.p < 0.5
+    @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
 end
 
 ####################### Inverted pendulum policy search #######################
@@ -373,8 +373,8 @@ end
     cm = out.confusion_matrix
 
     # Resulting controller should drive more states to equilibrium than not
-    @test cm.p > cm.n
+    @test cm.Count[1] + cm.Count[4] > sum(cm.Count[2:3])
 
     # Resulting classifier should be accurate
-    @test (cm.tp + cm.tn) / (cm.p + cm.n) > 0.9
+    @test (cm.Count[1] + cm.Count[3]) / sum(cm.Count) > 0.9
 end
