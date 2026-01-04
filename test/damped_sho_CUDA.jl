@@ -101,7 +101,7 @@ V_min, state_min = if V0 ≤ V_min
 else
     V_min, state_min
 end
-@test V_min ≥ -1e-2
+@test V_min ≥ -1.0e-2
 
 # Trained for V's minimum to be near the fixed point
 @test all(abs.(state_min .- fixed_point) .≤ 10 * [Δx, Δv])
@@ -112,7 +112,7 @@ end
 @test_broken maximum(eigvals(ForwardDiff.hessian(x -> (V̇(x) |> cpud)[], fixed_point))) ≤ 0
 
 # V̇ should be negative almost everywhere
-@test sum(V̇_samples .> 0) / length(V̇_samples) < 5e-3
+@test sum(V̇_samples .> 0) / length(V̇_samples) < 5.0e-3
 
 #=
 # Print statistics

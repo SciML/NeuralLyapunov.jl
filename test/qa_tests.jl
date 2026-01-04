@@ -18,7 +18,8 @@ end
     # We need a couple Symbolics internals (diff2term and value) and a ModelingToolkit
     # internal (unbound_inputs), and for some reason QuasiMonteCarlo doesn't export sample
     @test check_all_explicit_imports_are_public(
-        NeuralLyapunov; ignore = (:diff2term, :value, :sample, :unbound_inputs)) === nothing
+        NeuralLyapunov; ignore = (:diff2term, :value, :sample, :unbound_inputs)
+    ) === nothing
 
     # ForwardDiff doesn't export derivative, gradient, or jacobian, nor does SciMLBase with
     # NullParameters

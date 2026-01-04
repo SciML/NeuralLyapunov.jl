@@ -49,7 +49,7 @@ function NeuralLyapunovPDESystem(
         parameter_syms = [],
         policy_search::Bool = false,
         name
-)::PDESystem
+    )::PDESystem
     ########################## Define state symbols ###########################
     state_dim = length(lb)
 
@@ -110,17 +110,29 @@ function NeuralLyapunovPDESystem(
         parameter_syms = [],
         policy_search::Bool = dynamics isa ODEInputFunction,
         name
-)::PDESystem
+    )::PDESystem
     if dynamics.mass_matrix !== I
-        throw(ErrorException("DAEs are not supported at this time. Please supply dynamics" *
-                             " without a mass matrix."))
+        throw(
+            ErrorException(
+                "DAEs are not supported at this time. Please supply dynamics" *
+                    " without a mass matrix."
+            )
+        )
     end
     if policy_search && (dynamics isa ODEFunction)
-        throw(ErrorException("Got policy_search == true when dynamics were supplied as an" *
-                             " ODEFunction f(x,p,t), so no input can be supplied."))
+        throw(
+            ErrorException(
+                "Got policy_search == true when dynamics were supplied as an" *
+                    " ODEFunction f(x,p,t), so no input can be supplied."
+            )
+        )
     elseif !policy_search && (dynamics isa ODEInputFunction)
-        throw(ErrorException("Got policy_search == false when dynamics were supplied as " *
-                             "an ODEInputFunction f(x,u,p,t)."))
+        throw(
+            ErrorException(
+                "Got policy_search == false when dynamics were supplied as " *
+                    "an ODEInputFunction f(x,u,p,t)."
+            )
+        )
     end
 
     # Extract state and parameter symbols from ODEFunction/ODEInputFunction
@@ -172,15 +184,16 @@ function NeuralLyapunovPDESystem(
         spec::NeuralLyapunovSpecification;
         fixed_point = zeros(length(bounds)),
         name
-)::PDESystem
+    )::PDESystem
     ######################### Check for policy search #########################
     policy_search = !isempty(unbound_inputs(dynamics))
 
     f,
-    x = if policy_search
+        x = if policy_search
         dynamics_io_sys,
-        _ = structural_simplify(
-            dynamics, (unbound_inputs(dynamics), []); split = false)
+            _ = structural_simplify(
+            dynamics, (unbound_inputs(dynamics), []); split = false
+        )
         (ODEInputFunction(dynamics_io_sys), unknowns(dynamics_io_sys))
     else
         (ODEFunction(dynamics), unknowns(dynamics))
@@ -200,8 +213,10 @@ function NeuralLyapunovPDESystem(
     )
     domain_vars = map(d -> d.variables, domains)
     if Set(_state) != Set(domain_vars)
-        error("Domain variables from `domains` do not match those extracted from " *
-              "`dynamics`. Got $_state from `dynamics` and $domain_vars from `domains`.")
+        error(
+            "Domain variables from `domains` do not match those extracted from " *
+                "`dynamics`. Got $_state from `dynamics` and $domain_vars from `domains`."
+        )
     end
 
     ########################### Construct PDESystem ###########################
@@ -228,7 +243,7 @@ function _NeuralLyapunovPDESystem(
         defaults,
         policy_search::Bool,
         name
-)::PDESystem
+    )::PDESystem
     ########################## Unpack specifications ##########################
     structure = spec.structure
     minimization_condition = spec.minimization_condition
@@ -249,7 +264,7 @@ function _NeuralLyapunovPDESystem(
 
     # V̇(x) is the symbolic time derivative of the Lyapunov function
     function V̇(x)
-        structure.V̇(
+        return structure.V̇(
             φ,
             y -> Symbolics.jacobian(φ(y), y),
             dynamics,

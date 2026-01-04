@@ -63,7 +63,7 @@ struct LyapunovDecreaseCondition{RM, S, R} <: AbstractLyapunovDecreaseCondition
 end
 
 function check_decrease(cond::LyapunovDecreaseCondition)::Bool
-    cond.check_decrease
+    return cond.check_decrease
 end
 
 function get_decrease_condition(cond::LyapunovDecreaseCondition)
@@ -118,10 +118,10 @@ The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the in
 but differentiable approximations of this function may be employed.
 """
 function AsymptoticStability(;
-        C::Real = 1e-6,
+        C::Real = 1.0e-6,
         strength = (x, x0) -> C * (x - x0) ⋅ (x - x0),
         rectifier = (t) -> max(zero(t), t)
-)::LyapunovDecreaseCondition
+    )::LyapunovDecreaseCondition
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt,
@@ -145,7 +145,7 @@ but differentiable approximations of this function may be employed.
 function ExponentialStability(
         k::Real;
         rectifier = (t) -> max(zero(t), t)
-)::LyapunovDecreaseCondition
+    )::LyapunovDecreaseCondition
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt + k * V,

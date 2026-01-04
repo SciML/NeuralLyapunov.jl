@@ -122,7 +122,7 @@ end
     strategy = QuasiRandomTraining(1000)
 
     # Define neural Lyapunov structure and corresponding minimization condition
-    structure = NonnegativeStructure(dim_output; δ = 1e-6)
+    structure = NonnegativeStructure(dim_output; δ = 1.0e-6)
     minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
     # Define Lyapunov decrease condition
@@ -266,7 +266,7 @@ end
     Dt = Differential(t)
     bounds = [
         θ ∈ Float32.((0, 2π)),
-        Dt(θ) ∈ (-2.0f0, 2.0f0)
+        Dt(θ) ∈ (-2.0f0, 2.0f0),
     ]
 
     upright_equilibrium = Float32[π, 0.0f0]
@@ -299,7 +299,7 @@ end
                 fixed_point_embedded,
                 [0.0f0]
             )
-        )
+        ),
     ]
     ps, st = Lux.setup(rng, chain)
     ps = ps .|> ComponentArray |> gpud |> f32
@@ -317,8 +317,8 @@ end
     # Define Lyapunov decrease condition
     decrease_condition = AsymptoticStability(
         strength = function (state, fixed_point)
-        return sum(abs2, periodic_embedding(state) .- periodic_embedding(fixed_point))
-    end
+            return sum(abs2, periodic_embedding(state) .- periodic_embedding(fixed_point))
+        end
     )
 
     # Construct neural Lyapunov specification

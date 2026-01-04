@@ -2,7 +2,7 @@ using NeuralLyapunov
 using Test
 
 struct UnimplementedMinimizationCondition <:
-       NeuralLyapunov.AbstractLyapunovMinimizationCondition end
+    NeuralLyapunov.AbstractLyapunovMinimizationCondition end
 
 cond = UnimplementedMinimizationCondition()
 

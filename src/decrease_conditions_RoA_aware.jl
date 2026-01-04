@@ -68,7 +68,7 @@ employed.
 See also: [`AbstractLyapunovDecreaseCondition`](@ref), [`LyapunovDecreaseCondition`](@ref)
 """
 struct RoAAwareDecreaseCondition{C <: AbstractLyapunovDecreaseCondition, S, R <: Real, P} <:
-       AbstractLyapunovDecreaseCondition
+    AbstractLyapunovDecreaseCondition
     cond::C
     sigmoid::S
     ρ::R
@@ -86,8 +86,8 @@ function get_decrease_condition(cond::RoAAwareDecreaseCondition)
             _V̇ = dVdt(x)
             _V̇ = _V̇ isa AbstractVector ? _V̇[] : _V̇
             return cond.sigmoid(cond.ρ - _V) * in_RoA_penalty(V, dVdt, x, fixed_point) +
-                   cond.sigmoid(_V - cond.ρ) *
-                   cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point, cond.ρ)
+                cond.sigmoid(_V - cond.ρ) *
+                cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point, cond.ρ)
         end
     else
         return nothing
@@ -136,7 +136,7 @@ function make_RoA_aware(
         ρ = 1.0,
         out_of_RoA_penalty = (V, dVdt, state, fixed_point, _ρ) -> 0.0,
         sigmoid = (x) -> x .≥ zero.(x)
-)::RoAAwareDecreaseCondition
+    )::RoAAwareDecreaseCondition
     return RoAAwareDecreaseCondition(
         cond,
         sigmoid,

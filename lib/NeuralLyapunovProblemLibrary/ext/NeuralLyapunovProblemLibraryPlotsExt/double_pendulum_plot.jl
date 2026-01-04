@@ -25,7 +25,7 @@ function NeuralLyapunovProblemLibrary.plot_double_pendulum(
         N = 500,
         angle1_symbol = :θ1,
         angle2_symbol = :θ2
-)
+    )
     t = LinRange(sol.t[1], sol.t[end], N)
     θ1 = sol(t)[angle1_symbol]
     θ2 = sol(t)[angle2_symbol]
@@ -66,6 +66,6 @@ function NeuralLyapunovProblemLibrary.plot_double_pendulum(θ1, θ2, p, t; title
         xlims!(-L, L)
         ylims!(-L, L)
         title!(title)
-        annotate!(-0.5L, 0.75L, "time= $(rpad(round(t[i]; digits=1),4,"0"))")
+        annotate!(-0.5L, 0.75L, "time= $(rpad(round(t[i]; digits = 1), 4, "0"))")
     end
 end

@@ -15,7 +15,7 @@ V1(x) = _V1(x) ./ _V1([0, 0, 1])
 xs1 = -1:0.1:1
 states1 = Iterators.map(collect, Iterators.product(xs1, xs1, xs1))
 errs1 = @. abs(V1(states1) - states1 ⋅ states1)
-@test all(errs1 .< 1e-10)
+@test all(errs1 .< 1.0e-10)
 
 ########################## Simple harmonic oscillator #########################
 function f2(state::AbstractVector, p, t)
@@ -38,7 +38,7 @@ dV2dt = (state) -> ForwardDiff.derivative(δt -> V2(state + δt * f2(state, p2, 
 xs2 = -1:0.03:1
 states2 = mapreduce(collect, hcat, Iterators.product(xs2, xs2))
 errs2 = abs.(V̇2(states2) .- dV2dt(states2))
-@test all(errs2 .< 1e-10)
+@test all(errs2 .< 1.0e-10)
 
 # Test V̇2 ≺ 0
 @test all(V̇2(states2) .< 0)

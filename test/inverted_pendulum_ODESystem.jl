@@ -21,7 +21,7 @@ t, = independent_variables(driven_pendulum)
 Dt = Differential(t)
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-2, 2)
+    Dt(θ) ∈ (-2, 2),
 ]
 
 upright_equilibrium = Float32[π, 0.0]
@@ -35,10 +35,12 @@ dim_hidden = 25
 dim_phi = 3
 dim_u = 1
 dim_output = dim_phi + dim_u
-chain = [Chain(
-             PeriodicEmbedding([1], Float32[2π]),
-             MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-         ) for _ in 1:dim_output]
+chain = [
+    Chain(
+            PeriodicEmbedding([1], Float32[2π]),
+            MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+        ) for _ in 1:dim_output
+]
 ps, st = Lux.setup(rng, chain)
 
 # Define neural network discretization
@@ -92,7 +94,8 @@ net = discretization.phi
 _θ = res.u.depvar
 
 (driven_pendulum_io, _) = structural_simplify(
-    driven_pendulum, ([τ], []); simplify = true, split = false)
+    driven_pendulum, ([τ], []); simplify = true, split = false
+)
 open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
 state_order = unknowns(driven_pendulum_io)
 
@@ -129,11 +132,11 @@ V̇_samples = vec(V̇(states))
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
-@test maximum(abs, V(x0 .+ Float32[2π, 0.0]) .- V(x0)) < 1e-3
+@test maximum(abs, V(x0 .+ Float32[2π, 0.0]) .- V(x0)) < 1.0e-3
 
 # Training should result in a locally stable fixed point at the upright equilibrium
 # Check for approximately zero angular acceleration
-@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 3e-3
+@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 3.0e-3
 # Check for nonpositive eigenvalues of the Jacobian
 #=
 @test maximum(
@@ -172,7 +175,7 @@ sol = solve(ode_prob, Tsit5())
 # ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 5e-3
+@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 5.0e-3
 
 # Starting at a random point ...
 x0 = lb .+ rand(rng, Float32, 2) .* (ub .- lb)
@@ -183,7 +186,7 @@ sol = solve(ode_prob, Tsit5())
 # ...the system should make it to the top
 θ_end, ω_end = sol.u[end]
 x_end, y_end = sin(θ_end), -cos(θ_end)
-@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 5e-3
+@test maximum(abs, [x_end, y_end, ω_end] .- [0.0, 1.0, 0.0]) < 5.0e-3
 
 #=
 # Print statistics

@@ -152,7 +152,7 @@ function benchmark(
         simulation_time,
         ode_solver = Tsit5(),
         ode_solver_args = [],
-        atol = 1e-6,
+        atol = 1.0e-6,
         endpoint_check = nothing,
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
@@ -161,14 +161,15 @@ function benchmark(
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleThreads(),
         log_frequency = 50
-)
+    )
     params = parameters(dynamics)
     f = if isempty(unbound_inputs(dynamics))
         ODEFunction(dynamics)
     else
         dynamics_io_sys,
-        _ = structural_simplify(
-            dynamics, (unbound_inputs(dynamics), []); split = false)
+            _ = structural_simplify(
+            dynamics, (unbound_inputs(dynamics), []); split = false
+        )
         ODEInputFunction(dynamics_io_sys; simplify = true, split = false)
     end
 
@@ -281,7 +282,7 @@ function benchmark(
         simulation_time,
         ode_solver = Tsit5(),
         ode_solver_args = [],
-        atol = 1e-6,
+        atol = 1.0e-6,
         endpoint_check = nothing,
         init_params = nothing,
         init_states = nothing,
@@ -289,7 +290,7 @@ function benchmark(
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleThreads(),
         log_frequency = 50
-)
+    )
     default_float_type = if simulation_time isa AbstractFloat
         typeof(simulation_time)
     elseif eltype(p) <: AbstractFloat
@@ -403,13 +404,14 @@ function _benchmark(
         ensemble_alg,
         log_frequency,
         logger
-)
+    )
     log_options = LogOptions(; log_frequency)
 
     t = @timed begin
         # Construct OptimizationProblem
         discretization = PhysicsInformedNN(
-            chain, strategy; init_params, init_states, logger, log_options)
+            chain, strategy; init_params, init_states, logger, log_options
+        )
         opt_prob = discretize(pde_system, discretization)
 
         # Solve OptimizationProblem
@@ -421,8 +423,10 @@ function _benchmark(
     end
     training_time = t.time
     θ = t.value |> cpud
-    phi = PhysicsInformedNN(chain, strategy; init_params = init_params |> cpud,
-        init_states = init_states |> cpud).phi
+    phi = PhysicsInformedNN(
+        chain, strategy; init_params = init_params |> cpud,
+        init_states = init_states |> cpud
+    ).phi
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,
@@ -484,7 +488,7 @@ function _benchmark(
 
     confusion_matrix = DataFrame(
         "Classification" => [
-            "True Positives", "False Positives", "True Negatives", "False Negatives"
+            "True Positives", "False Positives", "True Negatives", "False Negatives",
         ],
         "Count" => [tp, fp, tn, fn]
     )
@@ -516,7 +520,7 @@ function benchmark_solve(
         prob,
         opt::AbstractVector,
         optimization_args::AbstractVector{<:AbstractVector}
-)
+    )
     # Solve OptimizationProblem
     res = Ref{Any}()
     for (_opt, args) in zip(opt, optimization_args)
@@ -554,7 +558,7 @@ function simulate_ensemble(
         ode_solver_args,
         ensemble_alg,
         endpoint_check
-)
+    )
     predicted = classifier.(V_samples, V̇_samples, states)
 
     ensemble_prob = EnsembleProblem(

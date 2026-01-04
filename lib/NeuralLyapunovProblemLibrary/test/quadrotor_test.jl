@@ -32,7 +32,7 @@ end
 @named quadrotor_3d = Quadrotor3D()
 
 quadrotor_3d_simplified,
-_ = structural_simplify(
+    _ = structural_simplify(
     quadrotor_3d,
     (inputs(quadrotor_3d), []);
     simplify = true,
@@ -85,17 +85,17 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, z_end, φ_end, θ_end, ψ_end = sol[q][end]
 vx_end, vy_end, vz_end, ωφ_end, ωθ_end, ωψ_end = sol[q̇][end]
-@test x_end≈0.0 atol=1e-4
-@test y_end≈0.0 atol=1e-4
-@test z_end≈0.0 atol=1e-4
-@test φ_end≈0.0 atol=1e-4
-@test θ_end≈0.0 atol=1e-4
-@test vx_end≈0.0 atol=1e-4
-@test vy_end≈0.0 atol=1e-4
-@test vz_end≈0.0 atol=1e-4
-@test ωφ_end≈0.0 atol=1e-4
-@test ωθ_end≈0.0 atol=1e-4
-@test ωψ_end≈x0[q̇[6]] atol=1e-4
+@test x_end ≈ 0.0 atol = 1.0e-4
+@test y_end ≈ 0.0 atol = 1.0e-4
+@test z_end ≈ 0.0 atol = 1.0e-4
+@test φ_end ≈ 0.0 atol = 1.0e-4
+@test θ_end ≈ 0.0 atol = 1.0e-4
+@test vx_end ≈ 0.0 atol = 1.0e-4
+@test vy_end ≈ 0.0 atol = 1.0e-4
+@test vz_end ≈ 0.0 atol = 1.0e-4
+@test ωφ_end ≈ 0.0 atol = 1.0e-4
+@test ωθ_end ≈ 0.0 atol = 1.0e-4
+@test ωψ_end ≈ x0[q̇[6]] atol = 1.0e-4
 
 anim = plot_quadrotor_3d(
     sol,
@@ -123,7 +123,7 @@ function quadrotor_3d_lqr_matrix(
         u_eq = [p[1] * p[2], 0, 0, 0],
         Q = I(12),
         R = I(4)
-)
+    )
     u = inputs(quadrotor_3d)
     x = setdiff(unknowns(quadrotor_3d), u)
     params = parameters(quadrotor_3d)
@@ -153,7 +153,7 @@ end
 @named quadrotor_3d = Quadrotor3D()
 
 quadrotor_3d_simplified,
-_ = structural_simplify(
+    _ = structural_simplify(
     quadrotor_3d,
     (inputs(quadrotor_3d), []);
     simplify = true,
@@ -204,18 +204,18 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, z_end, φ_end, θ_end, ψ_end = sol[q][end]
 vx_end, vy_end, vz_end, ωφ_end, ωθ_end, ωψ_end = sol[q̇][end]
-@test x_end≈0.0 atol=1e-4
-@test y_end≈0.0 atol=1e-4
-@test z_end≈0.0 atol=1e-4
-@test φ_end≈0.0 atol=1e-4
-@test θ_end≈0.0 atol=1e-4
-@test ψ_end≈0.0 atol=1e-4
-@test vx_end≈0.0 atol=1e-4
-@test vy_end≈0.0 atol=1e-4
-@test vz_end≈0.0 atol=1e-4
-@test ωφ_end≈0.0 atol=1e-4
-@test ωθ_end≈0.0 atol=1e-4
-@test ωψ_end≈0.0 atol=1e-4
+@test x_end ≈ 0.0 atol = 1.0e-4
+@test y_end ≈ 0.0 atol = 1.0e-4
+@test z_end ≈ 0.0 atol = 1.0e-4
+@test φ_end ≈ 0.0 atol = 1.0e-4
+@test θ_end ≈ 0.0 atol = 1.0e-4
+@test ψ_end ≈ 0.0 atol = 1.0e-4
+@test vx_end ≈ 0.0 atol = 1.0e-4
+@test vy_end ≈ 0.0 atol = 1.0e-4
+@test vz_end ≈ 0.0 atol = 1.0e-4
+@test ωφ_end ≈ 0.0 atol = 1.0e-4
+@test ωθ_end ≈ 0.0 atol = 1.0e-4
+@test ωψ_end ≈ 0.0 atol = 1.0e-4
 
 anim = plot_quadrotor_3d(
     sol,

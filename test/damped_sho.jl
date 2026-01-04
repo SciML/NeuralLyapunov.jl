@@ -108,7 +108,7 @@ end
 # @test maximum(eigvals(ForwardDiff.hessian(V̇, fixed_point))) ≤ 0.0
 
 # V̇ should be negative almost everywhere
-@test sum(V̇_samples .> 0) / length(V̇_samples) < 1e-3
+@test sum(V̇_samples .> 0) / length(V̇_samples) < 1.0e-3
 
 #=
 # Print statistics

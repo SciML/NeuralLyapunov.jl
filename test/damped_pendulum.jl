@@ -28,7 +28,7 @@ eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 dynamics = structural_simplify(dynamics)
 bounds = [
     θ ∈ (-π, π),
-    Dt(θ) ∈ (-10.0, 10.0)
+    Dt(θ) ∈ (-10.0, 10.0),
 ]
 lb = [-π, -10.0];
 ub = [π, 10.0];
@@ -42,10 +42,12 @@ fixed_point = [0.0, 0.0]
 dim_state = length(bounds)
 dim_hidden = 15
 dim_output = 2
-chain = [Chain(
-             PeriodicEmbedding([1], [2π]),
-             MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-         ) for _ in 1:dim_output]
+chain = [
+    Chain(
+            PeriodicEmbedding([1], [2π]),
+            MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+        ) for _ in 1:dim_output
+]
 ps, st = Lux.setup(rng, chain)
 ps = ps |> ComponentArray |> f64
 st = st |> f64
@@ -121,7 +123,7 @@ dVdt_predict = vec(V̇(states))
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
-@test maximum(abs, V(x0 .+ [2π, 0.0]) .- V(x0)) .≤ 1e-3
+@test maximum(abs, V(x0 .+ [2π, 0.0]) .- V(x0)) .≤ 1.0e-3
 
 # Check local negative definiteness at fixed point
 @test V̇(fixed_point) == 0.0
@@ -129,7 +131,7 @@ x0 = (ub .- lb) .* rand(rng, 2, 100) .+ lb
 @test maximum(eigvals(ForwardDiff.hessian(V̇, fixed_point))) ≤ 0
 
 # V̇ should be negative almost everywhere (global negative definiteness)
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1.0e-3
 
 #=
 # Print statistics

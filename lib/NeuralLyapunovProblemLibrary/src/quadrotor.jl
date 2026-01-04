@@ -47,9 +47,11 @@ function QuadrotorPlanar(; name, defaults = NullParameters())
     ũ1 = max(0, u1)
     ũ2 = max(0, u2)
 
-    eqs = [m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
-           m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
-           I_quad * DDt(θ) ~ r * (ũ1 - ũ2)]
+    eqs = [
+        m * DDt(x) ~ -(ũ1 + ũ2) * sin(θ);
+        m * DDt(y) ~ (ũ1 + ũ2) * cos(θ) - m * g;
+        I_quad * DDt(θ) ~ r * (ũ1 - ũ2)
+    ]
 
     params = [m, I_quad, g, r]
     kwargs = if defaults == NullParameters()
@@ -151,7 +153,7 @@ function Quadrotor3D(; name, defaults = NullParameters())
 
     # Parameters
     # m-mass, g-gravitational accelerationz
-    @parameters m g=9.81 Ixx Ixy Ixz Iyy Iyz Izz
+    @parameters m g = 9.81 Ixx Ixy Ixz Iyy Iyz Izz
     params = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
     g_vec = [0, 0, -g]
     inertia_matrix = [Ixx Ixy Ixz; Ixy Iyy Iyz; Ixz Ixy Izz]
