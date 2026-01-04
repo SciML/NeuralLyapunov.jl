@@ -27,8 +27,10 @@ end
 NeuralLyapunovBenchmarkLogger{T}() where {T} = NeuralLyapunovBenchmarkLogger{T, Int64}()
 NeuralLyapunovBenchmarkLogger() = NeuralLyapunovBenchmarkLogger{Float64}()
 
-function NeuralPDE.logscalar(logger::NeuralLyapunovBenchmarkLogger, scalar::Real,
-        name::AbstractString, step::Integer)
+function NeuralPDE.logscalar(
+        logger::NeuralLyapunovBenchmarkLogger, scalar::Real,
+        name::AbstractString, step::Integer
+    )
     if name == "weighted_loss/full_weighted_loss"
         push!(logger.losses, scalar)
         push!(logger.iterations, step)

@@ -48,7 +48,7 @@ function get_numerical_lyapunov_function(
         deriv = ForwardDiff.derivative,
         jac = ForwardDiff.jacobian,
         J_net = nothing
-)
+    )
     # network_func is the numerical form of neural network output
     network_func = phi_to_net(phi, θ)
 
@@ -58,7 +58,7 @@ function get_numerical_lyapunov_function(
         V(states::AbstractMatrix) = mapslices(V, states, dims = [1])
     end
 
-    if use_V̇_structure
+    return if use_V̇_structure
         # Make Jacobian of network_func
         network_jacobian = if isnothing(J_net)
             let net = network_func, J = jac
@@ -71,7 +71,7 @@ function get_numerical_lyapunov_function(
         end
 
         let _V = V, V̇_structure = structure.V̇, net = network_func, x0 = fixed_point,
-            f = dynamics, params = p, _J_net = network_jacobian
+                f = dynamics, params = p, _J_net = network_jacobian
 
             # Numerical time derivative of Lyapunov function
             V̇(state::AbstractVector) = V̇_structure(net, _J_net, f, state, params, 0.0, x0)
@@ -81,7 +81,7 @@ function get_numerical_lyapunov_function(
         end
     else
         let f_call = structure.f_call, _V = V, net = network_func, f = dynamics, params = p,
-            _deriv = deriv
+                _deriv = deriv
 
             # Numerical time derivative of Lyapunov function
             function V̇(state::AbstractVector)
@@ -124,7 +124,7 @@ end
 function phi_to_net(phi::Vector, θ; idx = eachindex(phi))
     let _θ = θ, φ = phi, _idx = idx
         return function (x)
-            reduce(
+            return reduce(
                 vcat,
                 Array(φ[i](x, _θ[Symbol(:φ, i)])) for i in _idx
             )

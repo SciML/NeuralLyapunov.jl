@@ -11,7 +11,7 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 """
 function NoAdditionalStructure()::NeuralLyapunovStructure
-    NeuralLyapunovStructure(
+    return NeuralLyapunovStructure(
         (net, x, x0) -> net(x),
         (net, grad_net, f, x, p, t, x0) -> grad_net(x) ⋅ f(x, p, t),
         (f, net, x, p, t) -> f(x, p, t),
@@ -59,8 +59,8 @@ function NonnegativeStructure(
         pos_def = (x, x0) -> log(1.0 + (x - x0) ⋅ (x - x0)),
         grad_pos_def = nothing,
         grad = ForwardDiff.gradient
-)::NeuralLyapunovStructure
-    if δ == 0.0
+    )::NeuralLyapunovStructure
+    return if δ == 0.0
         NeuralLyapunovStructure(
             (net, x, x0) -> net(x) ⋅ net(x),
             (net, J_net, f, x, p, t, x0) -> 2 * dot(net(x), J_net(x), f(x, p, t)),
@@ -76,7 +76,7 @@ function NonnegativeStructure(
         NeuralLyapunovStructure(
             (net, x, x0) -> net(x) ⋅ net(x) + δ * pos_def(x, x0),
             function (net, J_net, f, x, p, t, x0)
-                2 * dot(net(x), J_net(x), f(x, p, t)) + δ * grad_pos_def(x, x0) ⋅ f(x, p, t)
+                return 2 * dot(net(x), J_net(x), f(x, p, t)) + δ * grad_pos_def(x, x0) ⋅ f(x, p, t)
             end,
             (f, net, x, p, t) -> f(x, p, t),
             network_dim
@@ -132,7 +132,7 @@ function PositiveSemiDefiniteStructure(
         grad_pos_def = nothing,
         grad_non_neg = nothing,
         grad = ForwardDiff.gradient
-)::NeuralLyapunovStructure
+    )::NeuralLyapunovStructure
     _grad(f, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
     _grad(f, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)
@@ -145,7 +145,7 @@ function PositiveSemiDefiniteStructure(
     else
         grad_non_neg
     end
-    NeuralLyapunovStructure(
+    return NeuralLyapunovStructure(
         (net, x, x0) -> pos_def(x, x0) * non_neg(net, x, x0),
         function (net, J_net, f, x, p, t, x0)
             ẋ = f(x, p, t)

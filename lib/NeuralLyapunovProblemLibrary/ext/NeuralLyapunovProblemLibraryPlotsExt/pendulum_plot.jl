@@ -16,7 +16,8 @@ Plot the pendulum's trajectory.
   - `angle_symbol`: The symbol of the angle in `sol`; defaults to `:θ`.
 """
 function NeuralLyapunovProblemLibrary.plot_pendulum(
-        sol; title = "", N = 500, angle_symbol = :θ)
+        sol; title = "", N = 500, angle_symbol = :θ
+    )
     t = LinRange(sol.t[1], sol.t[end], N)
     θ = sol(t)[angle_symbol]
     return plot_pendulum(θ, t; title)
@@ -50,6 +51,6 @@ function NeuralLyapunovProblemLibrary.plot_pendulum(θ, t; title = "")
         xlims!(-1.5, 1.5)
         ylims!(-1.5, 1.5)
         title!(title)
-        annotate!(-0.75, 1.25, "time= $(rpad(round(t[i]; digits=1),4,"0"))")
+        annotate!(-0.75, 1.25, "time= $(rpad(round(t[i]; digits = 1), 4, "0"))")
     end
 end

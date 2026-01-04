@@ -37,7 +37,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
         θ_symbol = :θ,
         u1_symbol = :u1,
         u2_symbol = :u2
-)
+    )
     t = LinRange(sol.t[1], sol.t[end], N)
     x = sol(t)[x_symbol]
     y = sol(t)[y_symbol]
@@ -55,7 +55,8 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(x, y, θ, p, t; titl
 end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
-        x, y, θ, u1, u2, p, t; title = "")
+        x, y, θ, u1, u2, p, t; title = ""
+    )
     function quadrotor_body(x, y, θ, r; aspect_ratio = 10)
         pos = [x, y]
         r_vec = [r * cos(θ), r * sin(θ)]
@@ -79,7 +80,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
         arrow2 = [arrow2_begin, arrow2_end]
         return (
             (first.(arrow1), last.(arrow1)),
-            (first.(arrow2), last.(arrow2))
+            (first.(arrow2), last.(arrow2)),
         )
     end
 
@@ -168,7 +169,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         τφ_symbol = :τφ,
         τθ_symbol = :τθ,
         τψ_symbol = :τψ
-)
+    )
     t = LinRange(sol.t[1], sol.t[end], N)
     x = sol(t)[x_symbol]
     y = sol(t)[y_symbol]
@@ -185,7 +186,7 @@ end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         x, y, z, φ, θ, ψ, p, t; title = ""
-)
+    )
     m, g = p[1:2]
     T = fill(m * g / 4, length(t))
     τφ = zeros(length(t))
@@ -196,7 +197,7 @@ end
 
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = ""
-)
+    )
     m, g = p[1:2]
     L = 1.0
     k = 1.0
@@ -260,7 +261,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
             quiver = (
                 [F1[1], F2[1], F3[1], F4[1]],
                 [F1[2], F2[2], F3[2], F4[2]],
-                [F1[3], F2[3], F3[3], F4[3]]
+                [F1[3], F2[3], F3[3], F4[3]],
             ),
             markersize = 3,
             markershape = :utriangle,

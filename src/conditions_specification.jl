@@ -70,8 +70,10 @@ Return `true` if `cond` specifies training to meet the Lyapunov minimization con
 `false` if `cond` specifies no training to meet this condition.
 """
 function check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)::Bool
-    error("check_nonnegativity not implemented for AbstractLyapunovMinimizationCondition " *
-          "of type $(typeof(cond))")
+    error(
+        "check_nonnegativity not implemented for AbstractLyapunovMinimizationCondition " *
+            "of type $(typeof(cond))"
+    )
 end
 
 """
@@ -81,8 +83,10 @@ Return `true` if `cond` specifies training for the Lyapunov function to equal ze
 fixed point, and `false` if `cond` specifies no training to meet this condition.
 """
 function check_minimal_fixed_point(cond::AbstractLyapunovMinimizationCondition)::Bool
-    error("check_minimal_fixed_point not implemented for " *
-          "AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+    error(
+        "check_minimal_fixed_point not implemented for " *
+            "AbstractLyapunovMinimizationCondition of type $(typeof(cond))"
+    )
 end
 
 """
@@ -96,8 +100,10 @@ Note that the first input, ``V``, is a function, so the minimization condition c
 the value of the candidate Lyapunov function at multiple points.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
-    error("get_minimization_condition not implemented for " *
-          "AbstractLyapunovMinimizationCondition of type $(typeof(cond))")
+    error(
+        "get_minimization_condition not implemented for " *
+            "AbstractLyapunovMinimizationCondition of type $(typeof(cond))"
+    )
 end
 
 """
@@ -107,8 +113,10 @@ Return `true` if `cond` specifies training to meet the Lyapunov decrease conditi
 `false` if `cond` specifies no training to meet this condition.
 """
 function check_decrease(cond::AbstractLyapunovDecreaseCondition)::Bool
-    error("check_decrease not implemented for AbstractLyapunovDecreaseCondition of type " *
-          string(typeof(cond)))
+    error(
+        "check_decrease not implemented for AbstractLyapunovDecreaseCondition of type " *
+            string(typeof(cond))
+    )
 end
 
 """
@@ -121,6 +129,8 @@ Note that the first two inputs, ``V`` and ``V̇``, are functions, so the decreas
 can depend on the value of these functions at multiple points.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
-    error("get_decrease_condition not implemented for AbstractLyapunovDecreaseCondition " *
-          "of type $(typeof(cond))")
+    error(
+        "get_decrease_condition not implemented for AbstractLyapunovDecreaseCondition " *
+            "of type $(typeof(cond))"
+    )
 end

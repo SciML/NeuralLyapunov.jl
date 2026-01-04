@@ -47,7 +47,7 @@ function AdditiveLyapunovNet(
         r = SoSPooling(),
         dim_ϕ,
         kwargs...
-)
+    )
     if :dim_m in keys(kwargs)
         dim_m = kwargs[:dim_m]
         if :fixed_point in keys(kwargs)
@@ -137,7 +137,7 @@ function MultiplicativeLyapunovNet(
         m = NoOpLayer(),
         r = SoSPooling(),
         kwargs...
-)
+    )
     if :dim_m in keys(kwargs)
         dim_m = kwargs[:dim_m]
         if :fixed_point in keys(kwargs)

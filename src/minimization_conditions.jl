@@ -53,11 +53,11 @@ struct LyapunovMinimizationCondition{S, R} <: AbstractLyapunovMinimizationCondit
 end
 
 function check_nonnegativity(cond::LyapunovMinimizationCondition)::Bool
-    cond.check_nonnegativity
+    return cond.check_nonnegativity
 end
 
 function check_minimal_fixed_point(cond::LyapunovMinimizationCondition)::Bool
-    cond.check_fixed_point
+    return cond.check_fixed_point
 end
 
 function get_minimization_condition(cond::LyapunovMinimizationCondition)
@@ -87,10 +87,10 @@ exactly represents ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``. ``C`` defaults to `
 """
 function StrictlyPositiveDefinite(;
         check_fixed_point = true,
-        C::Real = 1e-6,
+        C::Real = 1.0e-6,
         rectifier = (t) -> max(zero(t), t)
-)::LyapunovMinimizationCondition
-    LyapunovMinimizationCondition(
+    )::LyapunovMinimizationCondition
+    return LyapunovMinimizationCondition(
         true,
         (state, fixed_point) -> C * (state - fixed_point) ⋅ (state - fixed_point),
         rectifier,
@@ -112,8 +112,8 @@ The inequality is approximated by ``\\texttt{rectifier}( -V(x) ) = 0`` and the d
 function PositiveSemiDefinite(;
         check_fixed_point = true,
         rectifier = (t) -> max(zero(t), t)
-)::LyapunovMinimizationCondition
-    LyapunovMinimizationCondition(
+    )::LyapunovMinimizationCondition
+    return LyapunovMinimizationCondition(
         true,
         (state, fixed_point) -> 0.0,
         rectifier,
@@ -135,7 +135,7 @@ where ``V(x_0) = 0`` is enforced structurally, the equation will reduce to `0.0 
 which gets automatically removed in most cases.
 """
 function DontCheckNonnegativity(; check_fixed_point = true)::LyapunovMinimizationCondition
-    LyapunovMinimizationCondition(
+    return LyapunovMinimizationCondition(
         false,
         (state, fixed_point) -> 0.0,
         (t) -> zero(t),

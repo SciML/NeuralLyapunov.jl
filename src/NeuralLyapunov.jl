@@ -6,10 +6,10 @@ using LinearAlgebra: I, dot, ⋅
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term, value
 using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, unknowns,
-                       defaults, operation, unbound_inputs, defaults, structural_simplify
+    defaults, operation, unbound_inputs, defaults, structural_simplify
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
-                 EnsembleThreads, remake
+    EnsembleThreads, remake
 
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
@@ -40,19 +40,19 @@ include("lux_structures.jl")
 
 # Lyapunov function structures
 export NeuralLyapunovStructure, NoAdditionalStructure, NonnegativeStructure,
-       PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
+    PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
 
 # Lux structures
 export AdditiveLyapunovNet, MultiplicativeLyapunovNet, SoSPooling,
-       StrictlyPositiveSoSPooling
+    StrictlyPositiveSoSPooling
 
 # Minimization conditions
 export LyapunovMinimizationCondition, StrictlyPositiveDefinite, PositiveSemiDefinite,
-       DontCheckNonnegativity
+    DontCheckNonnegativity
 
 # Decrease conditions
 export LyapunovDecreaseCondition, StabilityISL, AsymptoticStability, ExponentialStability,
-       DontCheckDecrease
+    DontCheckDecrease
 
 # Setting up the PDESystem for NeuralPDE
 export NeuralLyapunovSpecification, NeuralLyapunovPDESystem

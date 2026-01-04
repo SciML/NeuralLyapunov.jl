@@ -37,7 +37,7 @@ using Test
     strategy = QuasiRandomTraining(1000)
 
     # Define neural Lyapunov structure and corresponding minimization condition
-    structure = NonnegativeStructure(dim_output; δ = 1e-6)
+    structure = NonnegativeStructure(dim_output; δ = 1.0e-6)
     minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
 
     # Define Lyapunov decrease condition
@@ -90,8 +90,10 @@ end
         θ, ω = x
         ζ, ω_0 = p
         τ = u[]
-        return [ω
-                -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ]
+        return [
+            ω
+            -2ζ * ω_0 * ω - ω_0^2 * sin(θ) + τ
+        ]
     end
 
     lb = [0.0, -2.0]
@@ -108,10 +110,12 @@ end
     dim_phi = 3
     dim_u = 1
     dim_output = dim_phi + dim_u
-    chain = [Chain(
-                 PeriodicEmbedding([1], Float32[2π]),
-                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-             ) for _ in 1:dim_output]
+    chain = [
+        Chain(
+                PeriodicEmbedding([1], Float32[2π]),
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+            ) for _ in 1:dim_output
+    ]
     ps, st = Lux.setup(StableRNG(0), chain)
 
     # Define neural network discretization
@@ -147,7 +151,7 @@ end
     optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
     # Run benchmark
-    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
+    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5.0e-3)
     classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x)
     benchmarking_results = benchmark(
         open_loop_pendulum_dynamics,
@@ -220,7 +224,7 @@ end
     damped_pendulum = structural_simplify(damped_pendulum)
     bounds = [
         θ ∈ Float32.((-π, π)),
-        Dt(θ) ∈ (-10.0f0, 10.0f0)
+        Dt(θ) ∈ (-10.0f0, 10.0f0),
     ]
 
     # Define neural network discretization
@@ -228,10 +232,12 @@ end
     dim_state = length(bounds)
     dim_hidden = 15
     dim_output = 2
-    chain = [Chain(
-                 PeriodicEmbedding([1], Float32[2π]),
-                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-             ) for _ in 1:dim_output]
+    chain = [
+        Chain(
+                PeriodicEmbedding([1], Float32[2π]),
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+            ) for _ in 1:dim_output
+    ]
 
     # Define neural network discretization
     strategy = QuadratureTraining()
@@ -273,7 +279,7 @@ end
         simulation_time = 300,
         n = 200,
         optimization_args,
-        endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol = 1e-3),
+        endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol = 1.0e-3),
         rng = StableRNG(0)
     )
     cm = out.confusion_matrix
@@ -300,7 +306,7 @@ end
     Dt = Differential(t)
     bounds = [
         θ ∈ (0, 2π),
-        Dt(θ) ∈ (-2.0, 2.0)
+        Dt(θ) ∈ (-2.0, 2.0),
     ]
 
     upright_equilibrium = [π, 0.0]
@@ -312,10 +318,12 @@ end
     dim_phi = 3
     dim_u = 1
     dim_output = dim_phi + dim_u
-    chain = [Chain(
-                 PeriodicEmbedding([1], [2π]),
-                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-             ) for _ in 1:dim_output]
+    chain = [
+        Chain(
+                PeriodicEmbedding([1], [2π]),
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+            ) for _ in 1:dim_output
+    ]
     ps, st = Lux.setup(StableRNG(0), chain)
     ps = ps |> f64
     st = st |> f64
@@ -353,7 +361,7 @@ end
     optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
     # Run benchmark
-    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
+    endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5.0e-3)
     out = benchmark(
         driven_pendulum,
         bounds,

@@ -23,7 +23,7 @@ function π_vertical_only(x, p; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
 end
 
 quadrotor_planar_simplified,
-_ = structural_simplify(
+    _ = structural_simplify(
     quadrotor_planar,
     (inputs(quadrotor_planar), []);
     simplify = true,
@@ -35,7 +35,8 @@ Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 
 params = map(
-    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
+    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar))
+)
 u = map(
     Base.Fix1(getproperty, quadrotor_planar),
     toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
@@ -72,12 +73,12 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, θ_end = sol[q][end]
 v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
-@test x_end≈0.0 atol=1e-4
-@test y_end≈0.0 atol=1e-4
-@test θ_end≈0.0 atol=1e-4
-@test v_x_end≈0.0 atol=1e-4
-@test v_y_end≈0.0 atol=1e-4
-@test v_θ_end≈0.0 atol=1e-4
+@test x_end ≈ 0.0 atol = 1.0e-4
+@test y_end ≈ 0.0 atol = 1.0e-4
+@test θ_end ≈ 0.0 atol = 1.0e-4
+@test v_x_end ≈ 0.0 atol = 1.0e-4
+@test v_y_end ≈ 0.0 atol = 1.0e-4
+@test v_θ_end ≈ 0.0 atol = 1.0e-4
 
 anim = plot_quadrotor_planar(
     sol,
@@ -120,7 +121,7 @@ end
 @named quadrotor_planar = QuadrotorPlanar()
 
 quadrotor_planar_simplified,
-_ = structural_simplify(
+    _ = structural_simplify(
     quadrotor_planar,
     (inputs(quadrotor_planar), []);
     simplify = true,
@@ -131,7 +132,8 @@ t, = independent_variables(quadrotor_planar)
 Dt = Differential(t)
 q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
 params = map(
-    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar)))
+    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar))
+)
 u = map(
     Base.Fix1(getproperty, quadrotor_planar),
     toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
@@ -168,12 +170,12 @@ sol = solve(prob, Tsit5())
 
 x_end, y_end, θ_end = sol[q][end]
 v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
-@test x_end≈0.0 atol=1e-4
-@test y_end≈0.0 atol=1e-4
-@test θ_end≈0.0 atol=1e-4
-@test v_x_end≈0.0 atol=1e-4
-@test v_y_end≈0.0 atol=1e-4
-@test v_θ_end≈0.0 atol=1e-4
+@test x_end ≈ 0.0 atol = 1.0e-4
+@test y_end ≈ 0.0 atol = 1.0e-4
+@test θ_end ≈ 0.0 atol = 1.0e-4
+@test v_x_end ≈ 0.0 atol = 1.0e-4
+@test v_y_end ≈ 0.0 atol = 1.0e-4
+@test v_θ_end ≈ 0.0 atol = 1.0e-4
 
 anim = plot_quadrotor_planar(
     sol,

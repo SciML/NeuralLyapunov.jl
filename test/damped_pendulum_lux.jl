@@ -102,20 +102,20 @@ V0 = V(fixed_point)[]
 @test min(V0, minimum(V_predict)) ≥ 0.0
 
 # Check local positive definiteness at fixed point
-@test maximum(abs, ForwardDiff.gradient(first ∘ V, fixed_point)) ≤ 1e-6
+@test maximum(abs, ForwardDiff.gradient(first ∘ V, fixed_point)) ≤ 1.0e-6
 @test minimum(eigvals(ForwardDiff.hessian(first ∘ V, fixed_point))) .≥ 0
 
 # Network structure should enforce periodicity in θ
 x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
-@test maximum(abs, V(x0 .+ Float32[2π, 0.0]) .- V(x0)) .≤ 1e-3
+@test maximum(abs, V(x0 .+ Float32[2π, 0.0]) .- V(x0)) .≤ 1.0e-3
 
 # Check local negative definiteness at fixed point
 @test V̇(fixed_point)[] == 0.0
-@test maximum(abs, ForwardDiff.gradient(first ∘ V̇, fixed_point)) ≤ 2e-7
+@test maximum(abs, ForwardDiff.gradient(first ∘ V̇, fixed_point)) ≤ 2.0e-7
 @test maximum(eigvals(ForwardDiff.hessian(first ∘ V̇, fixed_point))) ≤ 0
 
 # V̇ should be negative almost everywhere (global negative definiteness)
-@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1e-3
+@test sum(dVdt_predict .> 0) / length(dVdt_predict) < 1.0e-3
 
 #=
 # Print statistics
