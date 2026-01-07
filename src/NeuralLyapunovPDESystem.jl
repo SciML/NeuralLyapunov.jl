@@ -279,12 +279,12 @@ function _NeuralLyapunovPDESystem(
     eqs = Equation[]
 
     if check_nonnegativity(minimization_condition)
-        cond = get_minimization_condition(minimization_condition)
+        cond = get_minimization_condition(minimization_condition)::Function
         push!(eqs, cond(V, state, fixed_point) ~ 0.0)
     end
 
     if check_decrease(decrease_condition)
-        cond = get_decrease_condition(decrease_condition)
+        cond = get_decrease_condition(decrease_condition)::Function
         push!(eqs, cond(V, V̇, state, fixed_point) ~ 0.0)
     end
 

@@ -82,4 +82,12 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
             end
         end
     end
+
+    if GROUP == "all" || GROUP == "jet"
+        if DEVICE == "cpu"
+            @time @safetestset "JET Static Analysis" begin
+                include("jet_tests.jl")
+            end
+        end
+    end
 end

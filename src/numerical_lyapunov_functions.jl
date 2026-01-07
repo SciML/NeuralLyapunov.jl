@@ -42,9 +42,9 @@ function get_numerical_lyapunov_function(
         θ,
         structure::NeuralLyapunovStructure,
         dynamics,
-        fixed_point;
+        fixed_point::AbstractVector;
         p = SciMLBase.NullParameters(),
-        use_V̇_structure = false,
+        use_V̇_structure::Bool = false,
         deriv = ForwardDiff.derivative,
         jac = ForwardDiff.jacobian,
         J_net = nothing
