@@ -561,11 +561,18 @@ function simulate_ensemble(
     )
     predicted = classifier.(V_samples, V̇_samples, states)
 
+    x0 = first(states)
     ensemble_prob = EnsembleProblem(
-        ODEProblem(dynamics, first(states), simulation_time, p);
+        ODEProblem(dynamics, x0, simulation_time, p);
         prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
-        output_func = (sol, i) -> (sol.u[end], false)
+        output_func = (sol, i) -> (sol.u[end], false),
+        u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
+        reduction = function(u, data, I)
+            u[I] = data
+            u, false
+        end
     )
+
     endpoints = solve(
         ensemble_prob,
         ode_solver,
