@@ -99,7 +99,7 @@ the user or generated automatically).
     more information, see the
     [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/).
   - `ensemble_alg`: controls how the evaluation simulations are handled; defaults to
-    `EnsembleThreads()`, which uses multithreading (local parallelism only); see the
+    `EnsembleDistributed()`, which uses `pmap` internally; see the
     [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/)
     for more information.
   - `endpoint_check`: function of the endpoint of a simulation that returns `true` when the
@@ -159,7 +159,7 @@ function benchmark(
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
-        ensemble_alg = EnsembleThreads(),
+        ensemble_alg = EnsembleDistributed(),
         log_frequency = 50
     )
     params = parameters(dynamics)
@@ -288,7 +288,7 @@ function benchmark(
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
-        ensemble_alg = EnsembleThreads(),
+        ensemble_alg = EnsembleDistributed(),
         log_frequency = 50
     )
     default_float_type = if simulation_time isa AbstractFloat
