@@ -567,9 +567,9 @@ function simulate_ensemble(
         prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
         output_func = (sol, i) -> (sol.u[end], false),
         u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
-        reduction = function(u, data, I)
+        reduction = function (u, data, I)
             u[I] = data
-            u, false
+            return u, false
         end
     )
 
