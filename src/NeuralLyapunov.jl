@@ -9,12 +9,12 @@ using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, un
     defaults, operation, unbound_inputs, defaults, structural_simplify
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
-    EnsembleThreads, remake
+    EnsembleDistributed, remake
 
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
 import NeuralPDE
-using OrdinaryDiffEq: Tsit5
+using OrdinaryDiffEq: AutoTsit5, Rosenbrock23
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
 using MLDataDevices: cpu_device

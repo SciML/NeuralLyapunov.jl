@@ -99,7 +99,7 @@ the user or generated automatically).
     more information, see the
     [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/).
   - `ensemble_alg`: controls how the evaluation simulations are handled; defaults to
-    `EnsembleThreads()`, which uses multithreading (local parallelism only); see the
+    `EnsembleDistributed()`, which uses `pmap` internally; see the
     [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/)
     for more information.
   - `endpoint_check`: function of the endpoint of a simulation that returns `true` when the
@@ -150,7 +150,7 @@ function benchmark(
         fixed_point = nothing,
         optimization_args = [],
         simulation_time,
-        ode_solver = Tsit5(),
+        ode_solver = AutoTsit5(Rosenbrock23()),
         ode_solver_args = [],
         atol = 1.0e-6,
         endpoint_check = nothing,
@@ -159,7 +159,7 @@ function benchmark(
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
-        ensemble_alg = EnsembleThreads(),
+        ensemble_alg = EnsembleDistributed(),
         log_frequency = 50
     )
     params = parameters(dynamics)
@@ -280,7 +280,7 @@ function benchmark(
         policy_search = false,
         optimization_args = [],
         simulation_time,
-        ode_solver = Tsit5(),
+        ode_solver = AutoTsit5(Rosenbrock23()),
         ode_solver_args = [],
         atol = 1.0e-6,
         endpoint_check = nothing,
@@ -288,7 +288,7 @@ function benchmark(
         init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
-        ensemble_alg = EnsembleThreads(),
+        ensemble_alg = EnsembleDistributed(),
         log_frequency = 50
     )
     default_float_type = if simulation_time isa AbstractFloat
@@ -561,11 +561,18 @@ function simulate_ensemble(
     )
     predicted = classifier.(V_samples, V̇_samples, states)
 
+    x0 = first(states)
     ensemble_prob = EnsembleProblem(
-        ODEProblem(dynamics, first(states), simulation_time, p);
+        ODEProblem(dynamics, x0, simulation_time, p);
         prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
-        output_func = (sol, i) -> (sol.u[end], false)
+        output_func = (sol, i) -> (sol.u[end], false),
+        u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
+        reduction = function (u, data, I)
+            u[I] = data
+            return u, false
+        end
     )
+
     endpoints = solve(
         ensemble_prob,
         ode_solver,

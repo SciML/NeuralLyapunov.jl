@@ -188,12 +188,13 @@ nothing # hide
 
 Finally, we can run the [`benchmark`](@ref) function.
 For demonstration purposes, we'll use `EnsembleSerial()`, which simulates each trajectory without any parallelism when evaluating the trained Lyapunov function and controller.
-The default `ensemble_alg` is `EnsembleThreads()`, which uses multithreading (local parallelism only); see the [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) for more information and other options.
-Another option is [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/), which parallelizes the ODE solves on the GPU.
+The default `ensemble_alg` is [`EnsembleDistributed()`](https://docs.sciml.ai/DiffEqDocs/dev/features/ensemble/#EnsembleAlgorithms), which uses `pmap` internally; see the [DifferentialEquations.jl docs](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) for more information and other options.
+When trajectories are expected to be "quick" (sub-millisecond), multithreading with [`EnsembleThreads`](https://docs.sciml.ai/DiffEqDocs/dev/features/ensemble/#EnsembleAlgorithms) is likely preferable.
+Another option is  [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/), which parallelizes the ODE solves on the GPU.
 Note that this option is imported from `DiffEqGPU` and has certain restrictions on the dynamics.
 For example, the dynamics may not allocate memory (build arrays), so in-place dynamics must be defined in addition to the out-of-place dynamics that NeuralLyapunov usually requires.
 (Providing both can be achieved by defining both methods for the same function and passing in an `ODEFunction` made from that function.)
-For this reason, the default value of `EnsembleThreads()` is recommended, even when training occurs on GPU.
+For this reason, using `EnsembleDistributed()` or `EnsembleThreads()` is recommended, even when training occurs on GPU.
 
 ```@example benchmarking
 using OrdinaryDiffEq: EnsembleSerial
