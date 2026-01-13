@@ -11,3 +11,13 @@ jobs:
         uses: actions/checkout@v6
       - name: Check spelling
         uses: crate-ci/typos@v1.34.0
+  runic:
+    name: Runic Formatting Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Actions Repository
+        uses: actions/checkout@v6
+      - name: Check formatting with Runic
+        uses: fredrikekre/runic-action@v1
+        with:
+          version: '1'
