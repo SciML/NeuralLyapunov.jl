@@ -21,8 +21,8 @@ StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
-[sources]
-NeuralLyapunovProblemLibrary = {path = "lib/NeuralLyapunovProblemLibrary"}
+[sources.NeuralLyapunovProblemLibrary]
+path = "lib/NeuralLyapunovProblemLibrary"
 
 [compat]
 Aqua = "0.8.11"
@@ -33,7 +33,7 @@ DataFrames = "1.4"
 DiffEqGPU = "3.5"
 ExplicitImports = "1.11.2"
 ForwardDiff = "0.10.36, 1"
-JET = "0.9.19"
+JET = "0.9.19, 0.11"
 JuMP = "1"
 LinearAlgebra = "1"
 Lux = "1.2"
