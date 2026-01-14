@@ -1,16 +1,16 @@
 using Test, NeuralLyapunov
-using JET: JET, @test_opt
+using JET: report_package, get_reports, @test_opt
 
 @testset "JET Static Analysis" begin
 
     # Test key exported functions for type stability
     # Note: We use report_package with target_modules to analyze just NeuralLyapunov code
     @testset "Package-level JET analysis" begin
-        result = JET.report_package(
+        result = report_package(
             NeuralLyapunov;
             target_modules = (NeuralLyapunov,)
         )
-        reports = JET.get_reports(result)
+        reports = get_reports(result)
         # Filter out JuMP-related reports which are false positives from JuMP's macro system
         # These are issues in JuMP's @variable macro, not in NeuralLyapunov code
         relevant_reports = filter(reports) do r
