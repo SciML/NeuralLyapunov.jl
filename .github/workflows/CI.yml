@@ -69,6 +69,7 @@ jobs:
         with:
           project: ${{ matrix.project }}
           allow_reresolve: false
+          force_latest_compatible_version: false
         env:
           GROUP: "all"
   docs:
