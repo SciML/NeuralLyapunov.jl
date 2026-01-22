@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs
+import ModelingToolkit: inputs, D_nounits as Dt
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -17,7 +17,9 @@ p = rand(rng, 2)
 τ = 1 / prod(p)
 prob = ODEProblem(structural_simplify(pendulum_undriven), x0, 15τ, p)
 sol = solve(prob, Tsit5())
-x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
+
+θ = pendulum_undriven.θ
+x_end, y_end, ω_end = sin(sol[θ][end]), -cos(sol[θ][end]), sol[Dt(θ)][end]
 @test sqrt(sum(abs2, [x_end, y_end] .- [0, -1])) ≈ 0 atol = 1.0e-4
 @test ω_end ≈ 0 atol = 1.0e-4
 
@@ -28,34 +30,12 @@ anim = plot_pendulum(sol)
 ############################# Feedback cancellation controller #############################
 println("Simple pendulum feedback cancellation test")
 
-@named pendulum = Pendulum()
+@named pendulum_driven = Pendulum()
 
-π_cancellation(x, p) = 2 * p[2]^2 * sin(x[1])
+π_cancellation(x, p, t) = 2 * p[2]^2 * sin(x[1])
 
-pendulum_simplified,
-    _ = structural_simplify(
-    pendulum,
-    (inputs(pendulum), []);
-    simplify = true,
-    split = false
-)
+@named pendulum_feedback_cancellation = control_pendulum(pendulum_driven, π_cancellation)
 
-t, = independent_variables(pendulum)
-Dt = Differential(t)
-
-p = map(Base.Fix1(getproperty, pendulum), toexpr.(parameters(pendulum)))
-u = map(
-    Base.Fix1(getproperty, pendulum),
-    toexpr.(getproperty.(inputs(pendulum_simplified), :f))
-)
-
-@named cancellation_controller = ODESystem(
-    u .~ π_cancellation([pendulum.θ, Dt(pendulum.θ)], p),
-    t,
-    u,
-    p
-)
-@named pendulum_feedback_cancellation = compose(cancellation_controller, pendulum)
 pendulum_feedback_cancellation = structural_simplify(pendulum_feedback_cancellation)
 
 # Swing up to upward equilibrium
@@ -64,6 +44,12 @@ p = rand(rng, 2)
 τ = 1 / prod(p)
 prob = ODEProblem(pendulum_feedback_cancellation, x0, 15τ, p)
 sol = solve(prob, Tsit5())
-x_end, y_end, ω_end = sin(sol.u[end][1]), -cos(sol.u[end][1]), sol.u[end][2]
+
+θ = pendulum_driven.θ
+x_end, y_end, ω_end = sin(sol[θ][end]), -cos(sol[θ][end]), sol[Dt(θ)][end]
 @test sqrt(sum(abs2, [x_end, y_end] .- [0, 1])) ≈ 0 atol = 1.0e-4
 @test ω_end ≈ 0 atol = 1.0e-4
+
+anim = plot_pendulum(sol; angle_symbol = θ)
+@test anim isa Plots.Animation
+# gif(anim, fps=50)

@@ -36,9 +36,6 @@ Users may optionally provide default values of the parameters through `defaults`
 of the default values for `[m, I_quad, g, r]`.
 """
 function QuadrotorPlanar(; name, defaults = NullParameters())
-    @independent_variables t
-    Dt = Differential(t)
-    DDt = Dt^2
     @variables x(t) y(t) θ(t)
     @variables u1(t) [input = true] u2(t) [input = true]
     @parameters m I_quad g r
@@ -61,6 +58,62 @@ function QuadrotorPlanar(; name, defaults = NullParameters())
     end
 
     return ODESystem(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
+end
+
+"""
+    control_quadrotor_planar(quadrotor, controller; name)
+
+Control the given planar quadrotor `quadrotor` using the provided `controller` function.
+
+The `controller` function should have the signature `controller(x, p, t)`, where `x` is the
+state vector `[x, y, θ, vx, vy, ω]`, `p` is the parameter vector `[m, I_quad, g, r]`, and
+`t` is time.
+The function should return the thrusts `[u1, u2]` to be applied to the quadrotor (both
+nonnegative).
+
+The resulting controlled quadrotor system will have the name `name`.
+"""
+function control_quadrotor_planar(quadrotor, controller; name)
+    q = [quadrotor.x, quadrotor.y, quadrotor.θ]
+    x = vcat(q, Dt.(q))
+    p = [quadrotor.m, quadrotor.I_quad, quadrotor.g, quadrotor.r]
+    u = [quadrotor.u1, quadrotor.u2]
+
+    eqs = u .~ controller(x, p, t)
+
+    controller_sys = ODESystem(eqs, t, q, []; name = Symbol(name, :_controller))
+    return compose(controller_sys, quadrotor; name)
+end
+
+"""
+    get_quadrotor_planar_state_symbols(quadrotor)
+
+Get the state variable symbols of the given planar quadrotor `quadrotor` as a vector:
+`[x, y, θ, vx, vy, ω]`, where ``vx = \\dot{x}``, ``vy = \\dot{y}``, and ``ω = \\dot{θ}``.
+"""
+function get_quadrotor_planar_state_symbols(quadrotor)
+    q = [quadrotor.x, quadrotor.y, quadrotor.θ]
+    return vcat(q, Dt.(q))
+end
+
+"""
+    get_quadrotor_planar_param_symbols(quadrotor)
+
+Get the parameter symbols of the given planar quadrotor `quadrotor` as a vector:
+`[m, I_quad, g, r]`.
+"""
+function get_quadrotor_planar_param_symbols(quadrotor)
+    return [quadrotor.m, quadrotor.I_quad, quadrotor.g, quadrotor.r]
+end
+
+"""
+    get_quadrotor_planar_input_symbols(quadrotor)
+
+Get the input variable symbols of the given planar quadrotor `quadrotor` as a vector:
+`[u1, u2]`.
+"""
+function get_quadrotor_planar_input_symbols(quadrotor)
+    return [quadrotor.u1, quadrotor.u2]
 end
 
 ####################################### 3D quadrotor #######################################
@@ -117,8 +170,6 @@ of the default values for `[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
 function Quadrotor3D(; name, defaults = NullParameters())
     # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
     # https://doi.org/10.1109/ICRA.2011.5980409
-    @independent_variables t
-    Dt = Differential(t)
 
     # Position (world frame)
     @variables x(t) y(t) z(t)
@@ -179,6 +230,92 @@ function Quadrotor3D(; name, defaults = NullParameters())
         kwargs...
     )
 end
+
+"""
+    control_quadrotor_3d(quadrotor, controller; name)
+
+Control the given 3D quadrotor `quadrotor` using the provided `controller` function.
+
+The `controller` function should have the signature `controller(x, p, t)`, where `x` is the
+state vector `[x, y, z, φ, θ, ψ, vx, vy, vz, ωφ, ωθ, ωψ]`, `p` is the parameter vector
+`[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`, and `t` is time.
+The function should return the thrust and torques `[T, τφ, τθ, τψ]` to be applied to the
+quadrotor.
+Not only should the aggregate thrust be nonnegative, but the torques should have been
+generated from nonnegative individual rotor thrusts.
+See [`Quadrotor3D`](@ref) for more model details.
+
+The resulting controlled quadrotor system will have the name `name`.
+"""
+function control_quadrotor_3d(quadrotor, controller; name)
+    position_world = [quadrotor.x, quadrotor.y, quadrotor.z]
+    attitude = [quadrotor.φ, quadrotor.θ, quadrotor.ψ]
+    velocity_world = [quadrotor.vx, quadrotor.vy, quadrotor.vz]
+    ω_world = [quadrotor.ωφ, quadrotor.ωθ, quadrotor.ωψ]
+    x = vcat(position_world, attitude, velocity_world, ω_world)
+
+    p = [
+        quadrotor.m,
+        quadrotor.g,
+        quadrotor.Ixx,
+        quadrotor.Ixy,
+        quadrotor.Ixz,
+        quadrotor.Iyy,
+        quadrotor.Iyz,
+        quadrotor.Izz,
+    ]
+    u = [quadrotor.T, quadrotor.τφ, quadrotor.τθ, quadrotor.τψ]
+
+    eqs = u .~ controller(x, p, t)
+
+    controller_sys = ODESystem(eqs, t, x, []; name = Symbol(name, :_controller))
+    return compose(controller_sys, quadrotor; name)
+end
+
+"""
+    get_quadrotor_3d_state_symbols(quadrotor)
+
+Get the state variable symbols of the given 3D quadrotor `quadrotor` as a vector:
+`[x, y, z, φ, θ, ψ, vx, vy, vz, ωφ, ωθ, ωψ]`.
+"""
+function get_quadrotor_3d_state_symbols(quadrotor)
+    position_world = [quadrotor.x, quadrotor.y, quadrotor.z]
+    attitude = [quadrotor.φ, quadrotor.θ, quadrotor.ψ]
+    velocity_world = [quadrotor.vx, quadrotor.vy, quadrotor.vz]
+    ω_world = [quadrotor.ωφ, quadrotor.ωθ, quadrotor.ωψ]
+    return vcat(position_world, attitude, velocity_world, ω_world)
+end
+
+"""
+    get_quadrotor_3d_param_symbols(quadrotor)
+
+Get the parameter symbols of the given 3D quadrotor `quadrotor` as a vector:
+`[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
+"""
+function get_quadrotor_3d_param_symbols(quadrotor)
+    return [
+        quadrotor.m,
+        quadrotor.g,
+        quadrotor.Ixx,
+        quadrotor.Ixy,
+        quadrotor.Ixz,
+        quadrotor.Iyy,
+        quadrotor.Iyz,
+        quadrotor.Izz,
+    ]
+end
+
+"""
+    get_quadrotor_3d_input_symbols(quadrotor)
+
+Get the input variable symbols of the given 3D quadrotor `quadrotor` as a vector:
+`[T, τφ, τθ, τψ]`.
+"""
+function get_quadrotor_3d_input_symbols(quadrotor)
+    return [quadrotor.T, quadrotor.τφ, quadrotor.τθ, quadrotor.τψ]
+end
+
+#################################### Plotting Functions ####################################
 
 """
     plot_quadrotor_planar(x, y, θ, [u1, u2,] p, t; title)

@@ -16,6 +16,10 @@ The planar quadrotor ([`QuadrotorPlanar`](@ref), technically a birotor) is a rig
 
 ```@docs
 QuadrotorPlanar
+control_quadrotor_planar
+get_quadrotor_planar_state_symbols
+get_quadrotor_planar_param_symbols
+get_quadrotor_planar_input_symbols
 ```
 
 ### Copy-Pastable Code
@@ -28,8 +32,6 @@ using OrdinaryDiffEq
 using Plots
 using LinearAlgebra
 using ControlSystemsBase: lqr, Continuous
-
-@named quadrotor_planar = QuadrotorPlanar()
 
 function π_lqr(p; x_eq = zeros(6), Q = I(6), R = I(2))
     m, I_quad, g, r = p
@@ -47,16 +49,10 @@ function π_lqr(p; x_eq = zeros(6), Q = I(6), R = I(2))
     K = lqr(Continuous, A_lin, B_lin, Q, R)
 
     T0 = m * g / 2
-    return (x) -> -K * (x - x_eq) + [T0, T0]
+    return (x, _p, _t) -> -K * (x - x_eq) + [T0, T0]
 end
 
-t, = independent_variables(quadrotor_planar)
-Dt = Differential(t)
-
-params = [quadrotor_planar.m, quadrotor_planar.I_quad, quadrotor_planar.g, quadrotor_planar.r]
-q = [quadrotor_planar.x, quadrotor_planar.y, quadrotor_planar.θ]
-u = [quadrotor_planar.u1, quadrotor_planar.u2]
-x = vcat(q, Dt.(q))
+@named quadrotor_planar = QuadrotorPlanar()
 
 # Assume rotors are negligible mass when calculating the moment of inertia
 m, r = ones(2)
@@ -64,33 +60,29 @@ g = 1.0
 I_quad = m * r^2 / 12
 p = [m, I_quad, g, r]
 
-# Create controller system and combine with quadrotor_planar, then simplify
-@named lqr_controller = ODESystem(
-    u .~ π_lqr(p)(x),
-    t,
-    vcat(x, u),
-    params
-)
-@named quadrotor_planar_lqr = compose(lqr_controller, quadrotor_planar)
+@named quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
 quadrotor_planar_lqr = structural_simplify(quadrotor_planar_lqr)
 
 # Random initialization
 # structural_simplify sometimes rearranges variables, so we use a Dict to provide the
 # initialization and parameters when constructing the ODEProblem
+x = get_quadrotor_planar_state_symbols(quadrotor_planar)
 x0 = Dict(x .=> 2 * rand(6) .- 1)
-p = Dict(params .=> [m, I_quad, g, r])
+params = get_quadrotor_planar_param_symbols(quadrotor_planar)
+p_dict = Dict(params .=> p)
 τ = sqrt(r / g)
 
-prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ, p)
+prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ, p_dict)
 sol = solve(prob, Tsit5())
 
+u = get_quadrotor_planar_input_symbols(quadrotor_planar)
 gif(
     plot_quadrotor_planar(
         sol,
-        [m, I_quad, g, r];
-        x_symbol=q[1],
-        y_symbol=q[2],
-        θ_symbol=q[3],
+        p;
+        x_symbol=x[1],
+        y_symbol=x[2],
+        θ_symbol=x[3],
         u1_symbol=u[1],
         u2_symbol=u[2]
     );
@@ -112,6 +104,10 @@ A full 3D model from [quadrotor](@cite) is provided via [`Quadrotor3D`](@ref).
 
 ```@docs
 Quadrotor3D
+control_quadrotor_3d
+get_quadrotor_3d_state_symbols
+get_quadrotor_3d_param_symbols
+get_quadrotor_3d_input_symbols
 ```
 
 ### Copy-Pastable Code
@@ -128,16 +124,16 @@ using ControlSystemsBase: lqr, Continuous
 
 # Define LQR controller
 function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R = I(4))
-    @named quadrotor_3d = Quadrotor3D()
+    @named quad = Quadrotor3D()
 
     # Use equilibrium as linearization point
-    u = inputs(quadrotor_3d)
-    x = setdiff(unknowns(quadrotor_3d), u)
-    params = parameters(quadrotor_3d)
+    u = inputs(quad)
+    x = setdiff(unknowns(quad), u)
+    params = parameters(quad)
     op = Dict(vcat(x .=> x_eq, u .=> u_eq, params .=> p))
 
     # Linearize with ModelingToolkit
-    mats, sys = linearize(quadrotor_3d, u, x; op)
+    mats, sys = linearize(quad, u, x; op)
 
     # Sometimes linearization will reorder the variables, but we can undo that with
     # permutation matrices Px : x_new = Px * x and Pu : u_new = Pu * u
@@ -151,47 +147,10 @@ function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R =
     B_lin = Px' * mats[:B] * Pu
 
     K = lqr(Continuous, A_lin, B_lin, Q, R)
-    return (x) -> -K * (x - x_eq) + u_eq
+    return (x, _p, _t) -> -K * (x - x_eq) + u_eq
 end
 
 @named quadrotor_3d = Quadrotor3D()
-
-# Set up variable symbols
-t, = independent_variables(quadrotor_3d)
-Dt = Differential(t)
-
-x = [
-    quadrotor_3d.x,
-    quadrotor_3d.y,
-    quadrotor_3d.z,
-    quadrotor_3d.φ,
-    quadrotor_3d.θ,
-    quadrotor_3d.ψ,
-    quadrotor_3d.vx,
-    quadrotor_3d.vy,
-    quadrotor_3d.vz,
-    quadrotor_3d.ωφ,
-    quadrotor_3d.ωθ,
-    quadrotor_3d.ωψ
-]
-
-u = [
-    quadrotor_3d.T,
-    quadrotor_3d.τφ,
-    quadrotor_3d.τθ,
-    quadrotor_3d.τψ
-]
-
-params = [
-    quadrotor_3d.m,
-    quadrotor_3d.g,
-    quadrotor_3d.Ixx,
-    quadrotor_3d.Ixy,
-    quadrotor_3d.Ixz,
-    quadrotor_3d.Iyy,
-    quadrotor_3d.Iyz,
-    quadrotor_3d.Izz
-]
 
 # Assume rotors are negligible mass when calculating the moment of inertia
 m, L = ones(2)
@@ -202,31 +161,27 @@ Ixy = Ixz = Iyz = 0.0
 p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
 
 # Create controller system and combine with quadrotor_3d, then simplify
-@named lqr_controller = ODESystem(
-    u .~ π_lqr(p)(x),
-    t,
-    vcat(x, u),
-    params
-)
-
-@named quadrotor_3d_lqr = compose(lqr_controller, quadrotor_3d)
+@named quadrotor_3d_lqr = control_quadrotor_3d(quadrotor_3d, π_lqr(p))
 quadrotor_3d_lqr = structural_simplify(quadrotor_3d_lqr)
 
 # Random initialization
 # structural_simplify sometimes rearranges variables, so we use a Dict to provide the
-# initialization and parameters when constructing the ODEProblemp = Dict(params .=> p)
+# initialization and parameters when constructing the ODEProblem
 δ = 0.5
+x = get_quadrotor_3d_state_symbols(quadrotor_3d)
 x0 = Dict(x .=> δ .* (2 .* rand(12) .- 1))
 τ = sqrt(L / g)
-p = Dict(params .=> [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz])
+params = get_quadrotor_3d_param_symbols(quadrotor_3d)
+p_dict = Dict(params .=> p)
 
-prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p)
+prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p_dict)
 sol = solve(prob, Tsit5())
 
+u = get_quadrotor_3d_input_symbols(quadrotor_3d)
 gif(
     plot_quadrotor_3d(
         sol,
-        [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz];
+        p;
         x_symbol=x[1],
         y_symbol=x[2],
         z_symbol=x[3],

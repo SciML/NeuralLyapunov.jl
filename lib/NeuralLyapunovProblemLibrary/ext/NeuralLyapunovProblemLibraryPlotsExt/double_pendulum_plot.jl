@@ -16,7 +16,9 @@ Plot the pendulum's trajectory.
   - `N`: The number of points to plot; when using `θ` and `t`, uses `length(t)`; defaults to
     500 when using `sol`.
   - `angle1_symbol`: The symbol of the angle of the first link in `sol`; defaults to `:θ1`.
+    Typically necessary when used in conjunction with `control_double_pendulum`.
   - `angle2_symbol`: The symbol of the angle of the second link in `sol`; defaults to `:θ2`.
+    Typically necessary when used in conjunction with `control_double_pendulum`.
 """
 function NeuralLyapunovProblemLibrary.plot_double_pendulum(
         sol,

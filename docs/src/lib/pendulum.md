@@ -7,6 +7,9 @@ Additionally, when also using the Plots.jl package, the convenience plotting fun
 
 ```@docs
 Pendulum
+control_pendulum
+get_pendulum_state_symbols
+get_pendulum_param_symbols
 ```
 
 ## Copy-Pastable Code
