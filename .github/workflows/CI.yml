@@ -67,6 +67,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
+          precompile: yes
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
