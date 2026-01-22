@@ -18,11 +18,14 @@ export DoublePendulum, Acrobot, Pendubot, control_double_pendulum,
     get_double_pendulum_state_symbols, get_double_pendulum_param_symbols
 export plot_double_pendulum
 
-include("quadrotor.jl")
+include("planar_quadrotor.jl")
 export QuadrotorPlanar, control_quadrotor_planar, get_quadrotor_planar_state_symbols,
     get_quadrotor_planar_param_symbols, get_quadrotor_planar_input_symbols
+export plot_quadrotor_planar
+
+include("quadrotor_3d.jl")
 export Quadrotor3D, control_quadrotor_3d, get_quadrotor_3d_state_symbols,
     get_quadrotor_3d_param_symbols, get_quadrotor_3d_input_symbols
-export plot_quadrotor_planar, plot_quadrotor_3d
+export plot_quadrotor_3d
 
 end
