@@ -6,6 +6,7 @@
 [![codecov](https://codecov.io/gh/SciML/NeuralLyapunov.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/NeuralLyapunov.jl)
 [![Build Status](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/SciML/NeuralLyapunov.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Build status](https://badge.buildkite.com/201fa9f55f9b9f77b4a9e0cd6835e5a52ddbe7bc7fd7b724d3.svg)](https://buildkite.com/julialang/neurallyapunov-dot-jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor%27s%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
