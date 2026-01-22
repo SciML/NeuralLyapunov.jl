@@ -1,7 +1,8 @@
-using Test, NeuralLyapunovProblemLibrary
+using Test: @test, @testset
+import NeuralLyapunovProblemLibrary
 
 @testset "Aqua: Quality Assurance" begin
-    using Aqua
+    import Aqua
 
     Aqua.test_all(NeuralLyapunovProblemLibrary)
 end
@@ -16,7 +17,7 @@ end
     @test check_all_explicit_imports_via_owners(NeuralLyapunovProblemLibrary) === nothing
     @test check_all_qualified_accesses_via_owners(NeuralLyapunovProblemLibrary) === nothing
     @test check_all_explicit_imports_are_public(
-        NeuralLyapunovProblemLibrary; ignore = (:NullParameters,)
+        NeuralLyapunovProblemLibrary; ignore = (:NullParameters, :unbound_inputs)
     ) === nothing
     @test check_all_qualified_accesses_are_public(NeuralLyapunovProblemLibrary) === nothing
 end

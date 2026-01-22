@@ -13,7 +13,8 @@ Plot the pendulum's trajectory.
   - `title`: The title of the plot; defaults to no title (i.e., `title=""`).
   - `N`: The number of points to plot; when using `θ` and `t`, uses `length(t)`; defaults to
     500 when using `sol`.
-  - `angle_symbol`: The symbol of the angle in `sol`; defaults to `:θ`.
+  - `angle_symbol`: The symbol of the angle in `sol`; defaults to `:θ`. Typically necessary
+    when used in conjunction with `control_pendulum`.
 """
 function NeuralLyapunovProblemLibrary.plot_pendulum(
         sol; title = "", N = 500, angle_symbol = :θ

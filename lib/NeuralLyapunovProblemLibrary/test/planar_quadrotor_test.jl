@@ -14,7 +14,7 @@ println("Planar quadrotor vertical only test")
 
 @named quadrotor_planar = QuadrotorPlanar()
 
-function π_vertical_only(x, p; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
+function π_vertical_only(x, p, t; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
     y, ẏ = x[2], x[5]
     m, I_quad, g, r = p
     T0 = m * g / 2
@@ -22,57 +22,31 @@ function π_vertical_only(x, p; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
     return [T, T]
 end
 
-quadrotor_planar_simplified,
-    _ = structural_simplify(
+@named quadrotor_planar_vertical_only = control_quadrotor_planar(
     quadrotor_planar,
-    (inputs(quadrotor_planar), []);
-    simplify = true,
-    split = false
+    π_vertical_only
 )
-
-t, = independent_variables(quadrotor_planar)
-Dt = Differential(t)
-q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
-
-params = map(
-    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar))
-)
-u = map(
-    Base.Fix1(getproperty, quadrotor_planar),
-    toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
-)
-q = map(
-    Base.Fix1(getproperty, quadrotor_planar),
-    toexpr.(getproperty.(q, :f))
-)
-x = vcat(q, Dt.(q))
-
-@named vertical_only_controller = ODESystem(
-    u .~ π_vertical_only(x, params),
-    t,
-    vcat(x, u),
-    params
-)
-
-@named quadrotor_planar_vertical_only = compose(vertical_only_controller, quadrotor_planar)
 quadrotor_planar_vertical_only = structural_simplify(quadrotor_planar_vertical_only)
 
 # Hovering
 # Assume rotors are negligible mass when calculating the moment of inertia
-x0 = Dict(x .=> zeros(6))
-x0[q[2]] = rand(rng)
-x0[x[5]] = rand(rng)
 m, r = ones(2)
 g = 1.0
 I_quad = m * r^2 / 12
-p = Dict(params .=> [m, I_quad, g, r])
+p = [m, I_quad, g, r]
 τ = sqrt(r / g)
 
-prob = ODEProblem(quadrotor_planar_vertical_only, x0, 15τ, p)
+x = get_quadrotor_planar_state_symbols(quadrotor_planar)
+x0 = Dict(x .=> [0, rand(rng), 0, 0, rand(rng), 0])
+p_dict = Dict(get_quadrotor_planar_param_symbols(quadrotor_planar) .=> p)
+
+prob = ODEProblem(quadrotor_planar_vertical_only, x0, 15τ, p_dict)
 sol = solve(prob, Tsit5())
 
+q = x[1:3]
+q̇ = x[4:6]
 x_end, y_end, θ_end = sol[q][end]
-v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
+v_x_end, v_y_end, v_θ_end = sol[q̇][end]
 @test x_end ≈ 0.0 atol = 1.0e-4
 @test y_end ≈ 0.0 atol = 1.0e-4
 @test θ_end ≈ 0.0 atol = 1.0e-4
@@ -80,14 +54,15 @@ v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
 @test v_y_end ≈ 0.0 atol = 1.0e-4
 @test v_θ_end ≈ 0.0 atol = 1.0e-4
 
+u1, u2 = get_quadrotor_planar_input_symbols(quadrotor_planar)
 anim = plot_quadrotor_planar(
     sol,
-    [m, I_quad, g, r];
+    p;
     x_symbol = q[1],
     y_symbol = q[2],
     θ_symbol = q[3],
-    u1_symbol = u[1],
-    u2_symbol = u[2]
+    u1_symbol = u1,
+    u2_symbol = u2
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)
@@ -115,34 +90,10 @@ function π_lqr(p; x_eq = zeros(6), Q = I(6), R = I(2))
     L = quadrotor_planar_lqr_matrix(p; Q, R)
     m, _, g, _ = p
     T0 = m * g / 2
-    return (x) -> -L * (x - x_eq) + [T0, T0]
+    return (x, _p, _t) -> -L * (x - x_eq) + [T0, T0]
 end
 
 @named quadrotor_planar = QuadrotorPlanar()
-
-quadrotor_planar_simplified,
-    _ = structural_simplify(
-    quadrotor_planar,
-    (inputs(quadrotor_planar), []);
-    simplify = true,
-    split = false
-)
-
-t, = independent_variables(quadrotor_planar)
-Dt = Differential(t)
-q = setdiff(unknowns(quadrotor_planar), inputs(quadrotor_planar))
-params = map(
-    Base.Fix1(getproperty, quadrotor_planar), toexpr.(parameters(quadrotor_planar))
-)
-u = map(
-    Base.Fix1(getproperty, quadrotor_planar),
-    toexpr.(getproperty.(inputs(quadrotor_planar_simplified), :f))
-)
-q = map(
-    Base.Fix1(getproperty, quadrotor_planar),
-    toexpr.(getproperty.(q, :f))
-)
-x = vcat(q, Dt.(q))
 
 # Assume rotors are negligible mass when calculating the moment of inertia
 m, r = ones(2)
@@ -150,26 +101,22 @@ g = 1.0
 I_quad = m * r^2 / 12
 p = [m, I_quad, g, r]
 
-@named lqr_controller = ODESystem(
-    u .~ π_lqr(p)(x),
-    t,
-    vcat(x, u),
-    params
-)
-
-@named quadrotor_planar_lqr = compose(lqr_controller, quadrotor_planar)
+@named quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
 quadrotor_planar_lqr = structural_simplify(quadrotor_planar_lqr)
 
 # Fly to origin
+x = get_quadrotor_planar_state_symbols(quadrotor_planar)
 x0 = Dict(x .=> 2 * rand(rng, 6) .- 1)
-p = Dict(params .=> [m, I_quad, g, r])
+p_dict = Dict(get_quadrotor_planar_param_symbols(quadrotor_planar) .=> p)
 τ = sqrt(r / g)
 
-prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ, p)
+prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ, p_dict)
 sol = solve(prob, Tsit5())
 
+q = x[1:3]
+q̇ = x[4:6]
 x_end, y_end, θ_end = sol[q][end]
-v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
+v_x_end, v_y_end, v_θ_end = sol[q̇][end]
 @test x_end ≈ 0.0 atol = 1.0e-4
 @test y_end ≈ 0.0 atol = 1.0e-4
 @test θ_end ≈ 0.0 atol = 1.0e-4
@@ -177,14 +124,15 @@ v_x_end, v_y_end, v_θ_end = sol[Dt.(q)][end]
 @test v_y_end ≈ 0.0 atol = 1.0e-4
 @test v_θ_end ≈ 0.0 atol = 1.0e-4
 
+u1, u2 = get_quadrotor_planar_input_symbols(quadrotor_planar)
 anim = plot_quadrotor_planar(
     sol,
-    [m, I_quad, g, r];
+    p;
     x_symbol = q[1],
     y_symbol = q[2],
     θ_symbol = q[3],
-    u1_symbol = u[1],
-    u2_symbol = u[2]
+    u1_symbol = u1,
+    u2_symbol = u2
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)
