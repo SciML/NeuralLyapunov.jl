@@ -2,6 +2,17 @@ using NeuralLyapunov
 using NeuralLyapunovProblemLibrary
 using Documenter, DocumenterCitations
 
+cp(
+    joinpath(@__DIR__, "Manifest.toml"),
+    joinpath(@__DIR__, "src", "assets", "Manifest.toml");
+    force = true
+)
+cp(
+    joinpath(@__DIR__, "Project.toml"),
+    joinpath(@__DIR__, "src", "assets", "Project.toml");
+    force = true
+)
+
 DocMeta.setdocmeta!(
     NeuralLyapunov, :DocTestSetup, :(using NeuralLyapunov); recursive = true
 )
@@ -48,9 +59,9 @@ makedocs(;
     authors = "Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com> and contributors",
     sitename = "NeuralLyapunov.jl",
     format = Documenter.HTML(;
-        canonical = "https://SciML.github.io/NeuralLyapunov.jl",
+        canonical = "https://docs.sciml.ai/NeuralLyapunov/stable/",
         edit_link = "master",
-        assets = String[]
+        assets = ["assets/favicon.ico"]
     ),
     pages = [
         "Home" => "index.md",
@@ -63,5 +74,6 @@ makedocs(;
 
 deploydocs(;
     repo = "github.com/SciML/NeuralLyapunov.jl",
-    devbranch = "master"
+    devbranch = "master",
+    push_preview = true
 )
