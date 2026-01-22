@@ -2173,13 +2173,13 @@ version = "1.2.0"
 
 [[deps.NeuralLyapunov]]
 deps = ["Boltz", "DataFrames", "ForwardDiff", "JuMP", "LinearAlgebra", "Lux", "LuxCore", "MLDataDevices", "ModelingToolkit", "NeuralPDE", "OrdinaryDiffEq", "QuasiMonteCarlo", "SciMLBase", "StableRNGs", "SymbolicIndexingInterface", "Symbolics"]
-path = ".."
+path = "/home/runner/work/NeuralLyapunov.jl/NeuralLyapunov.jl"
 uuid = "61252e1c-87f0-426a-93a7-3cdb1ed5a867"
 version = "0.2.6"
 
 [[deps.NeuralLyapunovProblemLibrary]]
 deps = ["LinearAlgebra", "ModelingToolkit", "Rotations", "SciMLBase", "Symbolics"]
-path = "../lib/NeuralLyapunovProblemLibrary"
+path = "/home/runner/work/NeuralLyapunov.jl/NeuralLyapunov.jl/lib/NeuralLyapunovProblemLibrary"
 uuid = "83723521-ca9c-4edc-8e64-505178d150fe"
 version = "0.0.1"
 weakdeps = ["Plots"]
