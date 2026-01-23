@@ -24,6 +24,53 @@ struct NeuralLyapunovStructure{TV, TDV, F, D <: Integer}
     network_dim::D
 end
 
+function Base.show(io::IO, s::NeuralLyapunovStructure)
+    n = s.network_dim
+    if n > 1
+        @variables φ(..)[1:n] Jφ(..)[1:n] f(..) x x_0 p t
+        println(io, "NeuralLyapunovStructure")
+        println(io)
+        println(io, "Network dimension: ", n)
+        try
+            println(io, "V(x) = ", s.V(φ, x, x_0))
+        catch e
+            println(io, "V(x) = <could not display: $(e)>")
+        end
+        try
+            V̇ = string(s.V̇(φ, Jφ, f, x, p, t, x_0))
+            V̇ = replace(V̇, r"broadcast\(\*,\s*(.+?),\s*Ref\(((?:[^()]|\((?:[^()]|\([^)]*\))*\))*)\)\)" => s"\1 * \2")
+            println(io, "V̇(x) = ", V̇)
+        catch e
+            println(io, "V̇(x) = <could not display: $(e)>")
+        end
+        try
+            print(io, "f_call(x) = ", s.f_call(f, φ, x, p, t))
+        catch e
+            println(io, "f_call(x) = <could not display: $(e)>")
+        end
+    else
+        @variables φ(..) Jφ(..) f(..) x x_0 p t
+        println(io, "NeuralLyapunovStructure")
+        println(io)
+        println(io, "Network dimension: ", n)
+        try
+            println(io, "V(x) = ", s.V(φ, x, x_0))
+        catch e
+            println(io, "V(x) = <could not display: $(e)>")
+        end
+        try
+            println(io, "V̇(x) = ", s.V̇(φ, Jφ, f, x, p, t, x_0))
+        catch e
+            println(io, "V̇(x) = <could not display: $(e)>")
+        end
+        try
+            print(io, "f_call(x) = ", s.f_call(f, φ, x, p, t))
+        catch e
+            println(io, "f_call(x) = <could not display: $(e)>")
+        end
+    end
+end
+
 """
     AbstractLyapunovMinimizationCondition
 

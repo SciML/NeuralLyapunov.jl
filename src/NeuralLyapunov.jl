@@ -10,7 +10,7 @@ using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, un
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake
-
+import Base.show
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
 import NeuralPDE
