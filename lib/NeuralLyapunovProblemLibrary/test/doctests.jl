@@ -1,5 +1,7 @@
 using Test, Documenter, NeuralLyapunovProblemLibrary
 
+println("Running doctests for NeuralLyapunovProblemLibrary")
+
 DocMeta.setdocmeta!(
     NeuralLyapunovProblemLibrary,
     :DocTestSetup,
