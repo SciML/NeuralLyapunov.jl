@@ -28,4 +28,11 @@ const GROUP = lowercase(get(ENV, "GROUP", "all"))
             include("qa_tests.jl")
         end
     end
+
+    if GROUP == "all" || GROUP == "doctests"
+        @time @safetestset "Doctests" begin
+            include("doctests.jl")
+        end
+
+    end
 end

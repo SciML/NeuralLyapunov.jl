@@ -2,12 +2,14 @@ using Test: @test, @testset
 import NeuralLyapunovProblemLibrary
 
 @testset "Aqua: Quality Assurance" begin
+    println("Aqua quality assurance tests")
     import Aqua
 
     Aqua.test_all(NeuralLyapunovProblemLibrary)
 end
 
 @testset "Explicit Imports: Quality Assurance" begin
+    println("Explicit imports tests")
     using ExplicitImports
 
     @test check_no_implicit_imports(NeuralLyapunovProblemLibrary; skip = (Base, Core)) ===
