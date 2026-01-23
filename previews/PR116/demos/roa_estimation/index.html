@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Estimating the Region of Attraction · NeuralLyapunov.jl</title><meta name="title" content="Estimating the Region of Attraction · NeuralLyapunov.jl"/><meta property="og:title" content="Estimating the Region of Attraction · NeuralLyapunov.jl"/><meta property="twitter:title" content="Estimating the Region of Attraction · NeuralLyapunov.jl"/><meta name="description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:description" content="Documentation for NeuralLyapunov.jl."/><meta property="twitter:description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:url" content="https://docs.sciml.ai/NeuralLyapunov/stable/demos/roa_estimation/"/><meta property="twitter:url" content="https://docs.sciml.ai/NeuralLyapunov/stable/demos/roa_estimation/"/><link rel="canonical" href="https://docs.sciml.ai/NeuralLyapunov/stable/demos/roa_estimation/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="NeuralLyapunov.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">NeuralLyapunov.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../man/">Components of a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/pdesystem/">Solving a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/minimization/">Lyapunov Minimization Condition</a></li><li><a class="tocitem" href="../../man/decrease/">Lyapunov Decrease Condition</a></li><li><a class="tocitem" href="../../man/structure/">Structuring a Neural Lyapunov function</a></li><li><a class="tocitem" href="../../man/roa/">Training for Region of Attraction Identification</a></li><li><a class="tocitem" href="../../man/policy_search/">Policy Search and Network-Dependent Dynamics</a></li><li><a class="tocitem" href="../../man/local_lyapunov/">Local Lyapunov analysis</a></li></ul></li><li><span class="tocitem">Demonstrations</span><ul><li><a class="tocitem" href="../damped_SHO/">Damped Simple Harmonic Oscillator</a></li><li class="is-active"><a class="tocitem" href>Estimating the Region of Attraction</a><ul class="internal"><li><a class="tocitem" href="#Copy-Pastable-Code"><span>Copy-Pastable Code</span></a></li><li><a class="tocitem" href="#Detailed-description"><span>Detailed description</span></a></li></ul></li><li><a class="tocitem" href="../policy_search/">Policy Search on the Driven Inverted Pendulum</a></li><li><a class="tocitem" href="../benchmarking/">Benchmarking a neural Lyapunov method</a></li></ul></li><li><span class="tocitem">Test Problem Library</span><ul><li><a class="tocitem" href="../../lib/">NeuralLyapunovProblemLibrary.jl</a></li><li><a class="tocitem" href="../../lib/pendulum/">Pendulum Model</a></li><li><a class="tocitem" href="../../lib/double_pendulum/">Double Pendulum Model</a></li><li><a class="tocitem" href="../../lib/quadrotor/">Quadrotor Models</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Demonstrations</a></li><li class="is-active"><a href>Estimating the Region of Attraction</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Estimating the Region of Attraction</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl/blob/master/docs/src/demos/roa_estimation.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Estimating-the-Region-of-Attraction"><a class="docs-heading-anchor" href="#Estimating-the-Region-of-Attraction">Estimating the Region of Attraction</a><a id="Estimating-the-Region-of-Attraction-1"></a><a class="docs-heading-anchor-permalink" href="#Estimating-the-Region-of-Attraction" title="Permalink"></a></h1><p>In this demonstration, we add awareness of the region of attraction (RoA) estimation task to our training.</p><p>We&#39;ll be examining the simple one-dimensional differential equation:</p><p class="math-container">\[\frac{dx}{dt} = - x + x^3.\]</p><p>This system has a fixed point at <span>$x = 0$</span> which has a RoA of <span>$x \in (-1, 1)$</span>, which we will attempt to identify.</p><p>We&#39;ll train in the larger domain <span>$x \in [-2, 2]$</span>.</p><h2 id="Copy-Pastable-Code"><a class="docs-heading-anchor" href="#Copy-Pastable-Code">Copy-Pastable Code</a><a id="Copy-Pastable-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Copy-Pastable-Code" title="Permalink"></a></h2><pre><code class="language-julia hljs">using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
+using Random, StableRNGs
+
+rng = StableRNG(0)
+Random.seed!(200)
+
+######################### Define dynamics and domain ##########################
+
+f(x, p, t) = -x .+ x .^ 3
+lb = [-2.0];
+ub = [ 2.0];
+fixed_point = [0.0];
+
+####################### Specify neural Lyapunov problem #######################
+
+# Define neural network discretization
+dim_state = length(lb)
+dim_hidden = 5
+dim_output = 2
+chain = [Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
+ps, st = Lux.setup(rng, chain)
+ps = ps |&gt; ComponentArray |&gt; f64
+st = st |&gt; f64
+
+# Define training strategy
+strategy = GridTraining(0.1)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+
+# Define neural Lyapunov structure
+structure = PositiveSemiDefiniteStructure(dim_output)
+minimization_condition = DontCheckNonnegativity()
+
+# Define Lyapunov decrease condition
+decrease_condition = make_RoA_aware(AsymptoticStability())
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
+
+############################# Construct PDESystem #############################
+
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec)
+
+######################## Construct OptimizationProblem ########################
+
+prob = discretize(pde_system, discretization)
+
+########################## Solve OptimizationProblem ##########################
+
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+prob = Optimization.remake(prob, u0 = res.u)
+res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+
+###################### Get numerical numerical functions ######################
+net = discretization.phi
+θ = res.u.depvar
+
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point)
+
+################################## Simulate ###################################
+states = lb[]:0.001:ub[]
+V_samples = vec(V(states&#39;))
+V̇_samples = vec(V̇(states&#39;))
+
+# Calculated RoA estimate
+ρ = decrease_condition.ρ
+RoA_states = states[vec(V(transpose(states))) .≤ ρ]
+RoA = (first(RoA_states), last(RoA_states))</code></pre><h2 id="Detailed-description"><a class="docs-heading-anchor" href="#Detailed-description">Detailed description</a><a id="Detailed-description-1"></a><a class="docs-heading-anchor-permalink" href="#Detailed-description" title="Permalink"></a></h2><p>In this example, we set up the dynamics as a Julia function and don&#39;t bother specifying the symbols for the variables (so <span>$x$</span> will be called the default <code>state1</code> in the PDESystem).</p><pre><code class="language-julia hljs">f(x, p, t) = -x .+ x .^ 3
+lb = [-2.0];
+ub = [ 2.0];
+fixed_point = [0.0];</code></pre><p>Setting up the neural network using Lux and NeuralPDE training strategy is no different from any other physics-informed neural network problem. For more on that aspect, see the <a href="https://docs.sciml.ai/NeuralPDE/stable/">NeuralPDE documentation</a>. Since we&#39;re only considering one dimension, training on a grid isn&#39;t so bad in this case.</p><pre><code class="language-julia hljs">using Lux, StableRNGs, ComponentArrays
+
+# Stable random number generator for doc stability
+rng = StableRNG(0)
+
+# Define neural network discretization
+dim_state = length(lb)
+dim_hidden = 5
+dim_output = 2
+chain = [Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1, use_bias = false)
+         ) for _ in 1:dim_output]
+ps, st = Lux.setup(rng, chain)
+ps = ps |&gt; ComponentArray |&gt; f64
+st = st |&gt; f64</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{@NamedTuple{layer_1::@NamedTuple{}, layer_2::@NamedTuple{}, layer_3::@NamedTuple{}}}:
+ (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple())
+ (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple())</code></pre><pre><code class="language-julia hljs">using NeuralPDE
+
+# Define training strategy
+strategy = GridTraining(0.1)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>For this example, let&#39;s use the default Lyapunov candidate from <a href="../../man/structure/#NeuralLyapunov.PositiveSemiDefiniteStructure"><code>PositiveSemiDefiniteStructure</code></a>:</p><p class="math-container">\[V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVert^2 \right),\]</p><p>which structurally enforces positive definiteness. We therefore use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity()</code></a>.</p><p>We only require asymptotic stability in this example, but we use <a href="../../man/roa/#NeuralLyapunov.make_RoA_aware"><code>make_RoA_aware</code></a> to only penalize positive values of <span>$\dot{V}(x)$</span> when <span>$V(x) \le 1$</span>.</p><pre><code class="language-julia hljs">using NeuralLyapunov
+
+# Define neural Lyapunov structure
+structure = PositiveSemiDefiniteStructure(dim_output)
+minimization_condition = DontCheckNonnegativity()
+
+# Define Lyapunov decrease condition
+decrease_condition = make_RoA_aware(AsymptoticStability())
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
+
+# Construct PDESystem
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec)</code></pre><p class="math-container">\[ \begin{align}
+max\left( 0, \frac{2 \mathtt{state1} \left(  - \mathtt{state1} + \mathtt{state1}^{3} \right) \left( 1 + \left( \mathtt{{\varphi}1}\left( \mathtt{state1} \right) \right)^{2} + \left( \mathtt{{\varphi}2}\left( \mathtt{state1} \right) \right)^{2} \right)}{1 + \mathtt{state1}^{2}} + 1 \cdot 10^{-6} \mathtt{state1}^{2} + \left(  - \mathtt{state1} + \mathtt{state1}^{3} \right) \left( 2 \frac{\mathrm{d} \mathtt{{\varphi}1}\left( \mathtt{state1} \right)}{\mathrm{d}state1} \mathtt{{\varphi}1}\left( \mathtt{state1} \right) + 2 \frac{\mathrm{d} \mathtt{{\varphi}2}\left( \mathtt{state1} \right)}{\mathrm{d}state1} \mathtt{{\varphi}2}\left( \mathtt{state1} \right) \right) \log\left( 1 + \mathtt{state1}^{2} \right) \right) \left( 1 - \left( 1 + \left( \mathtt{{\varphi}1}\left( \mathtt{state1} \right) \right)^{2} + \left( \mathtt{{\varphi}2}\left( \mathtt{state1} \right) \right)^{2} \right) \log\left( 1 + \mathtt{state1}^{2} \right) \geq 0 \right) &amp;= 0
+\end{align}
+ \]</p><p>Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.</p><pre><code class="language-julia hljs">prob = discretize(pde_system, discretization)
+
+import Optimization, OptimizationOptimisers, OptimizationOptimJL
+
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
+prob = Optimization.remake(prob, u0 = res.u)
+res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+
+net = discretization.phi
+θ = res.u.depvar</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ComponentVector{Float64,SubArray...}(φ1 = (layer_1 = (weight = [-0.4578486382961273; -0.06867478042840958; … ; 1.6441099643707275; 0.23668336868286133;;], bias = [0.34184861183166504, -0.9780089855194092, -0.04572296142578125, -0.8118267059326172, 0.055347442626953125]), layer_2 = (weight = [-0.34389057755470276 0.9279804229736328 … 0.07996013015508652 -1.0231869220733643; -1.203420877456665 0.2879287600517273 … 0.2310013771057129 0.06449579447507858; … ; -0.5013081431388855 -0.6881240010261536 … -0.5247265696525574 0.8011581897735596; -0.9508798718452454 -0.13354729115962982 … 0.5574626326560974 0.5449771285057068], bias = [0.2723175585269928, 0.33674874901771545, -0.11881285905838013, 0.1314016431570053, -0.3838435113430023]), layer_3 = (weight = [-0.2886456251144409 0.13539186120033264 … -0.14496836066246033 -0.17473424971103668])), φ2 = (layer_1 = (weight = [2.2938613891601562; -2.124943733215332; … ; 1.8151359558105469; 2.6265342235565186;;], bias = [-0.9846765995025635, -0.6382620334625244, 0.5142543315887451, -0.46349334716796875, -0.03649091720581055]), layer_2 = (weight = [-0.02004436030983925 -1.2301450967788696 … -1.070192813873291 0.8329293131828308; 0.6985112428665161 1.016635775566101 … -1.0654730796813965 -0.8717480301856995; … ; -1.1370961666107178 1.029000997543335 … -1.1567752361297607 -0.5575475692749023; -0.8275012969970703 0.5202121138572693 … -0.1531342715024948 -0.9814570546150208], bias = [-0.1508704423904419, -0.12097594141960144, -0.4097283184528351, -0.2462950050830841, -0.04345227777957916]), layer_3 = (weight = [-0.13673631846904755 0.2019369751214981 … -0.49816328287124634 -0.4100285470485687])))</code></pre><p>We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, then sample on a finer grid than we trained on to find the estimated region of attraction.</p><pre><code class="language-julia hljs">V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point)
+
+# Sample
+states = lb[]:0.001:ub[]
+V_samples = vec(V(states&#39;))
+V̇_samples = vec(V̇(states&#39;))
+
+# Calculate RoA estimate
+ρ = decrease_condition.ρ
+RoA_states = states[vec(V(transpose(states))) .≤ ρ]
+RoA = (first(RoA_states), last(RoA_states))
+
+# Print statistics
+println(&quot;V(0.,0.) = &quot;, V(fixed_point))
+println(&quot;V ∋ [&quot;, min(V(fixed_point), minimum(V_samples)), &quot;, &quot;, maximum(V_samples), &quot;]&quot;)
+println(&quot;V̇ ∋ [&quot;, minimum(V̇_samples), &quot;, &quot;, max(V̇(fixed_point), maximum(V̇_samples)), &quot;]&quot;)
+println(&quot;True region of attraction: (-1, 1)&quot;)
+println(&quot;Estimated region of attraction: &quot;, RoA)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">V(0.,0.) = 0.0
+V ∋ [0.0, 3.525150757887429]
+V̇ ∋ [-0.7213744871117956, 11.087439221178085]
+True region of attraction: (-1, 1)
+Estimated region of attraction: (-0.788, 0.821)</code></pre><p>The estimated region of attraction is within the true region of attraction.</p><pre><code class="language-julia hljs">using Plots
+
+p_V = plot(states, V_samples, label = &quot;V&quot;, xlabel = &quot;x&quot;, linewidth=2);
+p_V = hline!([ρ], label = &quot;V = ρ&quot;, legend = :top);
+p_V = vspan!(collect(RoA); label = &quot;Estimated Region of Attraction&quot;, color = :gray, fillstyle = :/);
+p_V = vspan!([-1, 1]; label = &quot;True Region of Attraction&quot;, opacity = 0.2, color = :green);
+
+p_V̇ = plot(states, V̇_samples, label = &quot;dV/dt&quot;, xlabel = &quot;x&quot;, linewidth=2);
+p_V̇ = hline!([0.0], label = &quot;dV/dt = 0&quot;, legend = :top);
+p_V̇ = vspan!(collect(RoA); label = &quot;Estimated Region of Attraction&quot;, color = :gray, fillstyle = :/);
+p_V̇ = vspan!([-1, 1]; label = &quot;True Region of Attraction&quot;, opacity = 0.2, color = :green);
+
+plt = plot(p_V, p_V̇)</code></pre><img src="2dfc5325.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../damped_SHO/">« Damped Simple Harmonic Oscillator</a><a class="docs-footer-nextpage" href="../policy_search/">Policy Search on the Driven Inverted Pendulum »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 23 January 2026 01:13">Friday 23 January 2026</span>. Using Julia version 1.11.8.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
