@@ -6,18 +6,57 @@ on:
       - master
     tags: '*'
   pull_request:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch || github.ref != 'refs/tags/v*' }}
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: "Documentation"
+  test:
+    name: doctests
     runs-on: ubuntu-latest
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+    permissions:
+      actions: write # needed to allow julia-actions/cache to proactively delete old caches that it has created
+      contents: write
+      statuses: write
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@latest
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11'
+      - uses: julia-actions/cache@v2
+      - name: Configure doc environment
+        shell: julia --project=docs --color=yes {0}
+        run: |
+          using Pkg
+          dev_pkgs = Pkg.PackageSpec[]
+          for pkg in (pwd(), pwd() * "/lib/NeuralLyapunovProblemLibrary")
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          Pkg.develop(dev_pkgs)
+          Pkg.instantiate()
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run doctests
+        shell: julia --project=docs --color=yes {0}
+        run: |
+          using Documenter: DocMeta, doctest
+          using NeuralLyapunov
+          DocMeta.setdocmeta!(NeuralLyapunov, :DocTestSetup, :(using NeuralLyapunov); recursive=true)
+          doctest(NeuralLyapunov)
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch || github.ref != 'refs/tags/v*' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1.11'
       - name: Install dependencies

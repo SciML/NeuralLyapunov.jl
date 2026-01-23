@@ -1,0 +1,56 @@
+name: Downgrade
+
+on:
+  push:
+    branches:
+      - master
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  downgrade:
+    name: Downgrade
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
+        downgrade_mode:
+          - alldeps
+          - forcedeps
+        include:
+          - version: '1.11'
+            os: ubuntu-latest
+            arch: x64
+            allow_failure: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          projects: ${{ format('{0}, {0}/test', matrix.project) }}
+          skip: LinearAlgebra, Pkg, Random, Test
+          julia_version: ${{ matrix.version }}
+          mode: ${{ matrix.downgrade_mode }}
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: ${{ matrix.project }}
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          project: ${{ matrix.project }}
+          allow_reresolve: false
+          force_latest_compatible_version: false
+        env:
+          GROUP: "all"
+  
