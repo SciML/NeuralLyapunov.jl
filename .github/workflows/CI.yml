@@ -37,5 +37,5 @@ jobs:
     with:
       julia-version: "${{ matrix.version }}"
       project: "${{ matrix.project }}"
-      group: "all"
+      group: "ci"
     secrets: "inherit"

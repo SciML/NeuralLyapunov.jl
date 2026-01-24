@@ -21,3 +21,27 @@ jobs:
         uses: fredrikekre/runic-action@v1
         with:
           version: '1'
+  tests:
+    name: Quality Assurance Tests
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            version: '1.11'
+            allow_failure: false
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      project: "${{ matrix.project }}"
+      group: "qa"
+    secrets: "inherit"

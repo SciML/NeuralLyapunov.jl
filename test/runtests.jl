@@ -4,7 +4,7 @@ const GROUP = lowercase(get(ENV, "GROUP", "all"))
 const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
 
 @time begin
-    if GROUP == "all" || GROUP == "core"
+    if GROUP == "all" || GROUP == "ci" || GROUP == "core"
         if DEVICE == "cpu"
             @time @safetestset "Damped simple harmonic oscillator" begin
                 include("damped_sho.jl")
@@ -27,7 +27,7 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
-    if GROUP == "all" || GROUP == "policy_search"
+    if GROUP == "all" || GROUP == "ci" || GROUP == "policy_search"
         if DEVICE == "cpu"
             @time @safetestset "Policy search - inverted pendulum" begin
                 include("inverted_pendulum.jl")
@@ -38,7 +38,7 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
-    if GROUP == "all" || GROUP == "roa"
+    if GROUP == "all" || GROUP == "ci" || GROUP == "roa"
         if DEVICE == "cpu"
             @time @safetestset "Region of attraction estimation" begin
                 include("roa_estimation.jl")
@@ -46,7 +46,7 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
-    if GROUP == "all" || GROUP == "local_lyapunov"
+    if GROUP == "all" || GROUP == "ci" || GROUP == "local_lyapunov"
         if DEVICE == "cpu"
             @time @safetestset "Local Lyapunov function search" begin
                 include("local_lyapunov.jl")
@@ -54,7 +54,7 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
-    if GROUP == "all" || GROUP == "benchmarking"
+    if GROUP == "all" || GROUP == "ci" || GROUP == "benchmarking"
         if DEVICE == "cpu"
             @time @safetestset "Benchmarking tool" begin
                 include("benchmark.jl")
@@ -67,15 +67,7 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
-    if GROUP == "all" || GROUP == "doctests"
-        if DEVICE == "cpu"
-            @time @safetestset "Doctests" begin
-                include("doctests.jl")
-            end
-        end
-    end
-
-    if GROUP == "all" || GROUP == "unimplemented"
+    if GROUP == "all" || GROUP == "ci" || GROUP == "unimplemented"
         if DEVICE == "cpu"
             @time @safetestset "Errors for partially-implemented extensions" begin
                 include("unimplemented.jl")
@@ -83,18 +75,22 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
+    # The following test run in different GitHub actions, so aren't in the "ci" group
     if GROUP == "all" || GROUP == "qa"
         if DEVICE == "cpu"
             @time @safetestset "Quality Assurance" begin
                 include("qa_tests.jl")
             end
+            @time @safetestset "JET: Static Analysis" begin
+                include("jet_tests.jl")
+            end
         end
     end
 
-    if GROUP == "all" || GROUP == "jet"
+    if GROUP == "all" || GROUP == "doctests"
         if DEVICE == "cpu"
-            @time @safetestset "JET Static Analysis" begin
-                include("jet_tests.jl")
+            @time @safetestset "Doctests" begin
+                include("doctests.jl")
             end
         end
     end

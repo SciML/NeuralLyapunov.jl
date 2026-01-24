@@ -9,45 +9,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  doctests:
     name: doctests
-    runs-on: ubuntu-latest
     concurrency:
       # Skip intermediate builds: always.
       # Cancel intermediate builds: only if it is a pull request build.
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-    permissions:
-      actions: write # needed to allow julia-actions/cache to proactively delete old caches that it has created
-      contents: write
-      statuses: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.11'
-      - uses: julia-actions/cache@v2
-      - name: Configure doc environment
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Pkg
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in (pwd(), pwd() * "/lib/NeuralLyapunovProblemLibrary")
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
-          Pkg.instantiate()
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Documenter: DocMeta, doctest
-          using NeuralLyapunov
-          DocMeta.setdocmeta!(NeuralLyapunov, :DocTestSetup, :(using NeuralLyapunov); recursive=true)
-          doctest(NeuralLyapunov)
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            version: '1.11'
+            allow_failure: false
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      project: "${{ matrix.project }}"
+      group: "doctests"
+    secrets: "inherit"
   build:
     name: Build
     runs-on: ubuntu-latest
