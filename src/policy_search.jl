@@ -25,11 +25,10 @@ as specified originally by `lyapunov_structure`.
 add_policy_search(NonnegativeStructure(1), 1)
 # output
 NeuralLyapunovStructure
-
-Network dimension: 2
-V(x) = ((φ(x))[1:1, Colon()])[1, 1]^2
-V̇(x) = 2((Jφ(x))[1:1, Colon()] * f(x, (φ(x))[2:2], p, t))[1, 1]*((φ(x))[1:1])[1]
-f_call(x) = f(x, (φ(x))[2:2], p, t)
+    Network dimension: 2
+    V(x) = ((φ(x))[1:1, Colon()])[1, 1]^2
+    V̇(x) = 2((Jφ(x))[1:1, Colon()] * f(x, (φ(x))[2:2], p, t))[1, 1]*((φ(x))[1:1])[1]
+    f_call(x) = f(x, (φ(x))[2:2], p, t)
 ```
 """
 function add_policy_search(

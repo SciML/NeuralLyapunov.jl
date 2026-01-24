@@ -12,14 +12,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 
 # Example
 ```jldoctest
-NoAdditionalStructure()
-# output
+julia> NoAdditionalStructure()
 NeuralLyapunovStructure
-
-Network dimension: 1
-V(x) = φ(x)
-V̇(x) = f(x, p, t)*Jφ(x)
-f_call(x) = f(x, p, t)
+    Network dimension: 1
+    V(x) = φ(x)
+    V̇(x) = f(x, p, t)*Jφ(x)
+    f_call(x) = f(x, p, t)
 ```
 """
 function NoAdditionalStructure()::NeuralLyapunovStructure
@@ -65,14 +63,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 
 # Example
 ```jldoctest
-NonnegativeStructure(1; δ = 0.1)
-# output
+julia> NonnegativeStructure(1; δ = 0.1)
 NeuralLyapunovStructure
-
-Network dimension: 1
-V(x) = 0.1log(1.0 + (x - x_0)^2) + φ(x)^2
-V̇(x) = (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2φ(x)*f(x, p, t)*Jφ(x)
-f_call(x) = f(x, p, t)
+    Network dimension: 1
+    V(x) = 0.1log(1.0 + (x - x_0)^2) + φ(x)^2
+    V̇(x) = (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2φ(x)*f(x, p, t)*Jφ(x)
+    f_call(x) = f(x, p, t)
 ```
 
 See also: [`DontCheckNonnegativity`](@ref)
@@ -152,14 +148,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 
 # Example
 ```jldoctest
-PositiveSemiDefiniteStructure(1)
-# output
+julia> PositiveSemiDefiniteStructure(1)
 NeuralLyapunovStructure
-
-Network dimension: 1
-V(x) = log(1.0 + (x - x_0)^2)*(1 + φ(x)^2)
-V̇(x) = (2(x - x_0)*(1 + φ(x)^2)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2log(1.0 + (x - x_0)^2)*φ(x)*f(x, p, t)*Differential(x)(φ(x))
-f_call(x) = f(x, p, t)
+    Network dimension: 1
+    V(x) = log(1.0 + (x - x_0)^2)*(1 + φ(x)^2)
+    V̇(x) = (2(x - x_0)*(1 + φ(x)^2)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2log(1.0 + (x - x_0)^2)*φ(x)*f(x, p, t)*Differential(x)(φ(x))
+    f_call(x) = f(x, p, t)
 ```
 
 See also: [`DontCheckNonnegativity`](@ref)
