@@ -20,6 +20,16 @@ input). When evaluating the dynamics, it uses `u = control_structure(phi_end(x))
 `phi_end` is a function that returns the final `new_dims` outputs of the neural network.
 The other `lyapunov_structure.network_dim` outputs are used for calculating ``V`` and ``V̇``,
 as specified originally by `lyapunov_structure`.
+
+```jldoctest
+add_policy_search(NonnegativeStructure(1), 1)
+# output
+NeuralLyapunovStructure
+    Network dimension: 2
+    V(x) = ((φ(x))[1:1, Colon()])[1, 1]^2
+    V̇(x) = 2((Jφ(x))[1:1, Colon()] * f(x, (φ(x))[2:2], p, t))[1, 1]*((φ(x))[1:1])[1]
+    f_call(x) = f(x, (φ(x))[2:2], p, t)
+```
 """
 function add_policy_search(
         lyapunov_structure::NeuralLyapunovStructure,

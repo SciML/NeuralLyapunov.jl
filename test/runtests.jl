@@ -67,6 +67,14 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
+    if GROUP == "all" || GROUP == "doctests"
+        if DEVICE == "cpu"
+            @time @safetestset "Doctests" begin
+                include("doctests.jl")
+            end
+        end
+    end
+
     if GROUP == "all" || GROUP == "unimplemented"
         if DEVICE == "cpu"
             @time @safetestset "Errors for partially-implemented extensions" begin
