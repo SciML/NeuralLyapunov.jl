@@ -140,6 +140,7 @@ function Base.show(io::IO, spec::NeuralLyapunovSpecification)
     println(io, replace(string(spec.minimization_condition), r"^(?=.)"m => "        "))
     println(io, "    Decrease Condition:")
     print(io, replace(string(spec.decrease_condition), r"^(?=.)"m => "        "))
+    return
 end
 
 """
@@ -200,6 +201,7 @@ function Base.show(io::IO, cond::AbstractLyapunovMinimizationCondition)
     else
         print(io, "    Does not train for V(x_0) = 0")
     end
+    return
 end
 
 """
@@ -240,4 +242,5 @@ function Base.show(io::IO, cond::AbstractLyapunovDecreaseCondition)
     else
         print(io, "    Does not train for decrease of V along trajectories")
     end
+    return
 end

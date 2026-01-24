@@ -64,6 +64,7 @@ end
 
 function Base.show(io::IO, cond::LyapunovDecreaseCondition)
     println(io, "LyapunovDecreaseCondition")
+
     if cond.check_decrease
         @variables x x_0 a V(..) V̇(..)
         str = string(-cond.strength(x, x_0))
@@ -74,6 +75,7 @@ function Base.show(io::IO, cond::LyapunovDecreaseCondition)
     else
         print(io, "    Does not train for decrease of V along trajectories")
     end
+    return
 end
 
 function check_decrease(cond::LyapunovDecreaseCondition)::Bool

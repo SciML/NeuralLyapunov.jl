@@ -54,6 +54,7 @@ end
 
 function Base.show(io::IO, cond::LyapunovMinimizationCondition)
     println(io, "LyapunovMinimizationCondition")
+
     if cond.check_nonnegativity
         @variables x x_0 a
         str = string(cond.strength(x, x_0))
@@ -63,11 +64,13 @@ function Base.show(io::IO, cond::LyapunovMinimizationCondition)
     else
         println(io, "    Does not train for nonnegativity of V(x)")
     end
+
     if cond.check_fixed_point
         print(io, "    Trains for V(x_0) = 0")
     else
         print(io, "    Does not train for V(x_0) = 0")
     end
+    return
 end
 
 function check_nonnegativity(cond::LyapunovMinimizationCondition)::Bool

@@ -92,6 +92,7 @@ function Base.show(io::IO, cond::RoAAwareDecreaseCondition)
     println(io, "        $(penalty)")
     sig = string(cond.sigmoid(V(x) - cond.ρ))
     print(io, "        Weighted by sigmoid: $sig")
+    return
 end
 
 check_decrease(cond::RoAAwareDecreaseCondition)::Bool = check_decrease(cond.cond)
