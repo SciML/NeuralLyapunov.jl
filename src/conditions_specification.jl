@@ -37,6 +37,7 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
         end
         try
             V̇ = string(s.V̇(φ, Jφ, f, x, p, t, x_0))
+            # Regex to simplify broadcasting notation for better readability
             V̇ = replace(V̇, r"broadcast\(\*,\s*(.+?),\s*Ref\(((?:[^()]|\((?:[^()]|\([^)]*\))*\))*)\)\)" => s"\1 * \2")
             println(io, "    V̇(x) = ", V̇)
         catch e
@@ -48,7 +49,7 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             println(io, "    f_call(x) = <could not display: $(e)>")
         end
     else
-        @variables φ(..) Jφ(..) f(..) x x_0 p t
+        @variables φ(..) ∇φ(..) f(..) x x_0 p t
         println(io, "NeuralLyapunovStructure")
         println(io, "    Network dimension: ", n)
         try
@@ -57,7 +58,7 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             println(io, "    V(x) = <could not display: $(e)>")
         end
         try
-            println(io, "    V̇(x) = ", s.V̇(φ, Jφ, f, x, p, t, x_0))
+            println(io, "    V̇(x) = ", s.V̇(φ, ∇φ, f, x, p, t, x_0))
         catch e
             println(io, "    V̇(x) = <could not display: $(e)>")
         end
