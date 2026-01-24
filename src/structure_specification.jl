@@ -9,6 +9,16 @@ Corresponds to ``V(x) = ϕ(x)``, where ``ϕ`` is the neural network.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
+
+# Example
+```jldoctest
+julia> NoAdditionalStructure()
+NeuralLyapunovStructure
+    Network dimension: 1
+    V(x) = φ(x)
+    V̇(x) = f(x, p, t)*∇φ(x)
+    f_call(x) = f(x, p, t)
+```
 """
 function NoAdditionalStructure()::NeuralLyapunovStructure
     return NeuralLyapunovStructure(
@@ -51,6 +61,16 @@ used.
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
+# Example
+```jldoctest
+julia> NonnegativeStructure(1; δ = 0.1)
+NeuralLyapunovStructure
+    Network dimension: 1
+    V(x) = 0.1log(1.0 + (x - x_0)^2) + φ(x)^2
+    V̇(x) = (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2φ(x)*f(x, p, t)*∇φ(x)
+    f_call(x) = f(x, p, t)
+```
+
 See also: [`DontCheckNonnegativity`](@ref)
 """
 function NonnegativeStructure(
@@ -68,8 +88,11 @@ function NonnegativeStructure(
             network_dim
         )
     else
+        _grad(f, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
+        _grad(f, x::T) where {T <: Num} = Symbolics.derivative(f(x), x)
+        _grad(f, x) = grad(f, x)
         grad_pos_def = if isnothing(grad_pos_def)
-            (x, x0) -> grad((_x) -> pos_def(_x, x0), x)
+            (x, x0) -> _grad((_x) -> pos_def(_x, x0), x)
         else
             grad_pos_def
         end
@@ -123,6 +146,16 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
+# Example
+```jldoctest
+julia> PositiveSemiDefiniteStructure(1)
+NeuralLyapunovStructure
+    Network dimension: 1
+    V(x) = log(1.0 + (x - x_0)^2)*(1 + φ(x)^2)
+    V̇(x) = (2(x - x_0)*(1 + φ(x)^2)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2log(1.0 + (x - x_0)^2)*φ(x)*f(x, p, t)*Differential(x)(φ(x))
+    f_call(x) = f(x, p, t)
+```
+
 See also: [`DontCheckNonnegativity`](@ref)
 """
 function PositiveSemiDefiniteStructure(
@@ -134,6 +167,7 @@ function PositiveSemiDefiniteStructure(
         grad = ForwardDiff.gradient
     )::NeuralLyapunovStructure
     _grad(f, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
+    _grad(f, x::T) where {T <: Num} = Symbolics.derivative(f(x), x)
     _grad(f, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)
         (x, x0) -> _grad((_x) -> pos_def(_x, x0), x)

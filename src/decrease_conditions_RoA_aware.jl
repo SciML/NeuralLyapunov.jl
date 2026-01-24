@@ -75,6 +75,26 @@ struct RoAAwareDecreaseCondition{C <: AbstractLyapunovDecreaseCondition, S, R <:
     out_of_RoA_penalty::P
 end
 
+function Base.show(io::IO, cond::RoAAwareDecreaseCondition)
+    println(io, "RoAAwareDecreaseCondition")
+    println(io, "    Region of Attraction sublevel set V(x) ≤ $(cond.ρ)")
+
+    println(io, "    In-RoA decrease condition:")
+    # Add indentation to decrease condition display
+    str_cond = replace(string(cond.cond), r"^(?=.)"m => "        ")
+    println(io, str_cond)
+    @variables x x_0 a V(..) V̇(..)
+    sig = string(cond.sigmoid(cond.ρ - V(x)))
+    println(io, "        Weighted by sigmoid: $sig")
+
+    println(io, "    Out-of-RoA penalty:")
+    penalty = string(cond.out_of_RoA_penalty(V(x), V̇(x), x, x_0, cond.ρ))
+    println(io, "        $(penalty)")
+    sig = string(cond.sigmoid(V(x) - cond.ρ))
+    print(io, "        Weighted by sigmoid: $sig")
+    return
+end
+
 check_decrease(cond::RoAAwareDecreaseCondition)::Bool = check_decrease(cond.cond)
 
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
@@ -128,6 +148,22 @@ Note that a hard transition, which only enforces the in-RoA equation when ``V(x)
 the out-of-RoA equation when ``V(x) > ρ`` can be provided by a `sigmoid` which is exactly
 one when the input is nonnegative and exactly zero when the input is negative.
 As such, the default value is `sigmoid(t) = t ≥ zero(t)`.
+
+# Example
+
+```jldoctest
+julia> make_RoA_aware(StabilityISL())
+RoAAwareDecreaseCondition
+    Region of Attraction sublevel set V(x) ≤ 1.0
+    In-RoA decrease condition:
+        LyapunovDecreaseCondition
+            Trains for V̇(x) ≤ 0
+            with approximation a ≤ 0 => max(0, a) ≈ 0
+        Weighted by sigmoid: (1.0 - V(x)) >= 0
+    Out-of-RoA penalty:
+        0.0
+        Weighted by sigmoid: (-1.0 + V(x)) >= 0
+```
 
 See also: [`RoAAwareDecreaseCondition`](@ref)
 """

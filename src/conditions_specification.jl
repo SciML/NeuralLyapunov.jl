@@ -24,6 +24,53 @@ struct NeuralLyapunovStructure{TV, TDV, F, D <: Integer}
     network_dim::D
 end
 
+function Base.show(io::IO, s::NeuralLyapunovStructure)
+    n = s.network_dim
+    if n > 1
+        @variables φ(..)[1:n] Jφ(..)[1:n] f(..) x x_0 p t
+        println(io, "NeuralLyapunovStructure")
+        println(io, "    Network dimension: ", n)
+        try
+            println(io, "    V(x) = ", s.V(φ, x, x_0))
+        catch e
+            println(io, "    V(x) = <could not display: $(e)>")
+        end
+        try
+            V̇ = string(s.V̇(φ, Jφ, f, x, p, t, x_0))
+            # Regex to simplify broadcasting notation for better readability
+            V̇ = replace(V̇, r"broadcast\(\*,\s*(.+?),\s*Ref\(((?:[^()]|\((?:[^()]|\([^)]*\))*\))*)\)\)" => s"\1 * \2")
+            println(io, "    V̇(x) = ", V̇)
+        catch e
+            println(io, "    V̇(x) = <could not display: $(e)>")
+        end
+        try
+            print(io, "    f_call(x) = ", s.f_call(f, φ, x, p, t))
+        catch e
+            println(io, "    f_call(x) = <could not display: $(e)>")
+        end
+    else
+        @variables φ(..) ∇φ(..) f(..) x x_0 p t
+        println(io, "NeuralLyapunovStructure")
+        println(io, "    Network dimension: ", n)
+        try
+            println(io, "    V(x) = ", s.V(φ, x, x_0))
+        catch e
+            println(io, "    V(x) = <could not display: $(e)>")
+        end
+        try
+            println(io, "    V̇(x) = ", s.V̇(φ, ∇φ, f, x, p, t, x_0))
+        catch e
+            println(io, "    V̇(x) = <could not display: $(e)>")
+        end
+        try
+            print(io, "    f_call(x) = ", s.f_call(f, φ, x, p, t))
+        catch e
+            println(io, "    f_call(x) = <could not display: $(e)>")
+        end
+    end
+    return
+end
+
 """
     AbstractLyapunovMinimizationCondition
 
@@ -56,11 +103,44 @@ Specifies a neural Lyapunov problem.
     how the minimization condition will be enforced.
   - `decrease_condition`: an [`AbstractLyapunovDecreaseCondition`](@ref) specifying how the
     decrease condition will be enforced.
+
+# Example
+```jldoctest
+julia> NeuralLyapunovSpecification(NonnegativeStructure(1), PositiveSemiDefinite(), StabilityISL())
+NeuralLyapunovSpecification
+    Structure:
+        NeuralLyapunovStructure
+            Network dimension: 1
+            V(x) = φ(x)^2
+            V̇(x) = 2φ(x)*f(x, p, t)*∇φ(x)
+            f_call(x) = f(x, p, t)
+    Minimization Condition:
+        LyapunovMinimizationCondition
+            Trains for V(x) ≥ 0.0
+            with approximation a ≤ 0 => max(0, a) ≈ 0
+            Trains for V(x_0) = 0
+    Decrease Condition:
+        LyapunovDecreaseCondition
+            Trains for V̇(x) ≤ 0
+            with approximation a ≤ 0 => max(0, a) ≈ 0
+```
 """
 struct NeuralLyapunovSpecification
     structure::NeuralLyapunovStructure
     minimization_condition::AbstractLyapunovMinimizationCondition
     decrease_condition::AbstractLyapunovDecreaseCondition
+end
+
+function Base.show(io::IO, spec::NeuralLyapunovSpecification)
+    # Regex indents all nonempty lines by 8 spaces
+    println(io, "NeuralLyapunovSpecification")
+    println(io, "    Structure:")
+    println(io, replace(string(spec.structure), r"^(?=.)"m => "        "))
+    println(io, "    Minimization Condition:")
+    println(io, replace(string(spec.minimization_condition), r"^(?=.)"m => "        "))
+    println(io, "    Decrease Condition:")
+    print(io, replace(string(spec.decrease_condition), r"^(?=.)"m => "        "))
+    return
 end
 
 """
@@ -106,6 +186,24 @@ function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
     )
 end
 
+function Base.show(io::IO, cond::AbstractLyapunovMinimizationCondition)
+    println(io, "AbstractLyapunovMinimizationCondition")
+    if check_nonnegativity(cond)
+        @variables x x_0 V(..)
+        approx_zero = string(get_minimization_condition(cond)(V, x, x_0))
+        println(io, "    Trains for $approx_zero ≈ 0")
+    else
+        println(io, "    Does not train for nonnegativity of V(x)")
+    end
+
+    if check_minimal_fixed_point(cond)
+        print(io, "    Trains for V(x_0) = 0")
+    else
+        print(io, "    Does not train for V(x_0) = 0")
+    end
+    return
+end
+
 """
     check_decrease(cond::AbstractLyapunovDecreaseCondition)
 
@@ -133,4 +231,16 @@ function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
         "get_decrease_condition not implemented for AbstractLyapunovDecreaseCondition " *
             "of type $(typeof(cond))"
     )
+end
+
+function Base.show(io::IO, cond::AbstractLyapunovDecreaseCondition)
+    println(io, "AbstractLyapunovDecreaseCondition")
+    if check_decrease(cond)
+        @variables x x_0 V(..) V̇(..)
+        approx_zero = string(get_decrease_condition(cond)(V, V̇, x, x_0))
+        println(io, "    Trains for $approx_zero ≈ 0")
+    else
+        print(io, "    Does not train for decrease of V along trajectories")
+    end
+    return
 end
