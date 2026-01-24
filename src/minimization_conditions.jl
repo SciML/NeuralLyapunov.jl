@@ -52,6 +52,24 @@ struct LyapunovMinimizationCondition{S, R} <: AbstractLyapunovMinimizationCondit
     check_fixed_point::Bool
 end
 
+function Base.show(io::IO, cond::LyapunovMinimizationCondition)
+    println(io, "LyapunovMinimizationCondition")
+    if cond.check_nonnegativity
+        @variables x x_0 a
+        str = string(cond.strength(x, x_0))
+        println(io, "    Trains for V(x) ≥ $str")
+        rec = string(cond.rectifier(a))
+        println(io, "    with approximation a ≤ 0 => $rec ≈ 0")
+    else
+        println(io, "    Does not train for nonnegativity of V(x)")
+    end
+    if cond.check_fixed_point
+        print(io, "    Trains for V(x_0) = 0")
+    else
+        print(io, "    Does not train for V(x_0) = 0")
+    end
+end
+
 function check_nonnegativity(cond::LyapunovMinimizationCondition)::Bool
     return cond.check_nonnegativity
 end
@@ -84,6 +102,24 @@ The inequality is approximated by
     ``\\texttt{rectifier}(C \\lVert x - x_0 \\rVert^2 - V(x)) = 0``,
 and the default `rectifier` is the rectified linear unit `(t) -> max(zero(t), t)`, which
 exactly represents ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``. ``C`` defaults to `1e-6`.
+
+# Examples
+
+```jldoctest
+julia> StrictlyPositiveDefinite()
+LyapunovMinimizationCondition
+    Trains for V(x) ≥ 1.0e-6((x - x_0)^2)
+    with approximation a ≤ 0 => max(0, a) ≈ 0
+    Trains for V(x_0) = 0
+
+julia> softplus = (t) -> log(one(t) + exp(t));
+
+julia> StrictlyPositiveDefinite(C = 0.1, rectifier = softplus, check_fixed_point = false)
+LyapunovMinimizationCondition
+    Trains for V(x) ≥ 0.1((x - x_0)^2)
+    with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
+    Does not train for V(x_0) = 0
+```
 """
 function StrictlyPositiveDefinite(;
         check_fixed_point = true,
@@ -108,6 +144,24 @@ enforce ``V(x_0) = 0``.
 The inequality is approximated by ``\\texttt{rectifier}( -V(x) ) = 0`` and the default
 `rectifier` is the rectified linear unit `(t) -> max(zero(t), t)`, which exactly represents
 ``V(x) ≥ 0``.
+
+# Examples
+
+```jldoctest
+julia> PositiveSemiDefinite()
+LyapunovMinimizationCondition
+    Trains for V(x) ≥ 0.0
+    with approximation a ≤ 0 => max(0, a) ≈ 0
+    Trains for V(x_0) = 0
+
+julia> softplus = (t) -> log(one(t) + exp(t));
+
+julia> PositiveSemiDefinite(rectifier = softplus, check_fixed_point = false)
+LyapunovMinimizationCondition
+    Trains for V(x) ≥ 0.0
+    with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
+    Does not train for V(x_0) = 0
+```
 """
 function PositiveSemiDefinite(;
         check_fixed_point = true,
@@ -133,6 +187,20 @@ structured to be positive for ``x ≠ x_0`` but does not guarantee ``V(x_0) = 0`
 [`NonnegativeStructure`](@ref)). `check_fixed_point` defaults to `true`, since in cases
 where ``V(x_0) = 0`` is enforced structurally, the equation will reduce to `0.0 ~ 0.0`,
 which gets automatically removed in most cases.
+
+# Examples
+
+```jldoctest
+julia> DontCheckNonnegativity()
+LyapunovMinimizationCondition
+    Does not train for nonnegativity of V(x)
+    Trains for V(x_0) = 0
+
+julia> DontCheckNonnegativity(check_fixed_point = false)
+LyapunovMinimizationCondition
+    Does not train for nonnegativity of V(x)
+    Does not train for V(x_0) = 0
+```
 """
 function DontCheckNonnegativity(; check_fixed_point = true)::LyapunovMinimizationCondition
     return LyapunovMinimizationCondition(
