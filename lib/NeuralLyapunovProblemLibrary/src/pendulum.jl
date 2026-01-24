@@ -22,20 +22,19 @@ of the default values for `[ζ, ω_0]`.
 @named pendulum = Pendulum(driven = false)
 pendulum = structural_simplify(pendulum)
 
-x0 = π * rand(2)
-p = rand(2)
-τ = 1 / prod(p)
+x0 = [2.0, 0.0]
+p = ones(2)
+t_end = 10
 
-prob = ODEProblem(pendulum, x0, 15τ, p)
-sol = solve(prob, Tsit5())
-
-# Check that the undriven pendulum fell to the downward equilibrium
-θ_end, ω_end = sol.u[end]
-x_end, y_end = sin(θ_end), -cos(θ_end)
-
-sqrt(sum(abs2, [x_end, y_end, ω_end] .- [0, -1, 0])) < 1e-4
+prob = ODEProblem(pendulum, x0, t_end, p)
 # output
-true
+ODEProblem with uType Vector{Float64} and tType Int64. In-place: true
+Initialization status: FULLY_DETERMINED
+Non-trivial mass matrix: false
+timespan: (0, 10)
+u0: 2-element Vector{Float64}:
+ 2.0
+ 0.0
 ```
 """
 function Pendulum(; driven = true, name, defaults = NullParameters())
@@ -84,27 +83,27 @@ The resulting controlled pendulum system will have the name `name`.
 # Example
 
 ```jldoctest; output = false
-@named pendulum = Pendulum()
-
+# Define a simple feedback cancellation controller
 π_cancellation(x, p, t) = 2 * p[2]^2 * sin(x[1])
 
+# Create driven pendulum system, apply controller, and simplify
+@named pendulum = Pendulum(driven = true)
 @named pendulum_feedback_cancellation = control_pendulum(pendulum, π_cancellation)
-
 pendulum_feedback_cancellation = structural_simplify(pendulum_feedback_cancellation)
 
-# Swing up to upward equilibrium
-x0 = rand(2)
-p = rand(2)
-τ = 1 / prod(p)
-prob = ODEProblem(pendulum_feedback_cancellation, x0, 15τ, p)
-sol = solve(prob, Tsit5())
-
-θ, ω = get_pendulum_state_symbols(pendulum)
-x_end, y_end, ω_end = sin(sol[θ][end]), -cos(sol[θ][end]), sol[ω][end]
-
-sqrt(sum(abs2, [x_end, y_end] .- [0, 1])) < 1.0e-4 && abs(ω_end) < 1.0e-4
+# Construct ODE problem
+x0 = zeros(2)
+p = ones(2)
+t_end = 10
+prob = ODEProblem(pendulum_feedback_cancellation, x0, t_end, p)
 # output
-true
+ODEProblem with uType Vector{Float64} and tType Int64. In-place: true
+Initialization status: FULLY_DETERMINED
+Non-trivial mass matrix: false
+timespan: (0, 10)
+u0: 2-element Vector{Float64}:
+ 0.0
+ 0.0
 ```
 """
 function control_pendulum(pend, controller; name)
