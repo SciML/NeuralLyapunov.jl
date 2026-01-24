@@ -152,6 +152,23 @@ function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
     )
 end
 
+function Base.show(io::IO, cond::AbstractLyapunovMinimizationCondition)
+    println(io, "AbstractLyapunovMinimizationCondition")
+    if check_nonnegativity(cond)
+        @variables x x_0 V(..)
+        approx_zero = string(get_minimization_condition(cond)(V, x, x_0))
+        println(io, "    Trains for $approx_zero ≈ 0")
+    else
+        println(io, "    Does not train for nonnegativity of V(x)")
+    end
+
+    if check_minimal_fixed_point(cond)
+        print(io, "    Trains for V(x_0) = 0")
+    else
+        print(io, "    Does not train for V(x_0) = 0")
+    end
+end
+
 """
     check_decrease(cond::AbstractLyapunovDecreaseCondition)
 
@@ -179,4 +196,15 @@ function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
         "get_decrease_condition not implemented for AbstractLyapunovDecreaseCondition " *
             "of type $(typeof(cond))"
     )
+end
+
+function Base.show(io::IO, cond::AbstractLyapunovDecreaseCondition)
+    println(io, "AbstractLyapunovDecreaseCondition")
+    if check_decrease(cond)
+        @variables x x_0 V(..) V̇(..)
+        approx_zero = string(get_decrease_condition(cond)(V, V̇, x, x_0))
+        println(io, "    Trains for $approx_zero ≈ 0")
+    else
+        print(io, "    Does not train for decrease of V along trajectories")
+    end
 end
