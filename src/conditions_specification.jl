@@ -102,11 +102,43 @@ Specifies a neural Lyapunov problem.
     how the minimization condition will be enforced.
   - `decrease_condition`: an [`AbstractLyapunovDecreaseCondition`](@ref) specifying how the
     decrease condition will be enforced.
+
+# Example
+```jldoctest
+julia> NeuralLyapunovSpecification(NonnegativeStructure(1), PositiveSemiDefinite(), StabilityISL())
+NeuralLyapunovSpecification
+    Structure:
+        NeuralLyapunovStructure
+            Network dimension: 1
+            V(x) = φ(x)^2
+            V̇(x) = 2φ(x)*f(x, p, t)*Jφ(x)
+            f_call(x) = f(x, p, t)
+    Minimization Condition:
+        LyapunovMinimizationCondition
+            Trains for V(x) ≥ 0.0
+            with approximation a ≤ 0 => max(0, a) ≈ 0
+            Trains for V(x_0) = 0
+    Decrease Condition:
+        LyapunovDecreaseCondition
+            Trains for V̇(x) ≤ 0
+            with approximation a ≤ 0 => max(0, a) ≈ 0
+```
 """
 struct NeuralLyapunovSpecification
     structure::NeuralLyapunovStructure
     minimization_condition::AbstractLyapunovMinimizationCondition
     decrease_condition::AbstractLyapunovDecreaseCondition
+end
+
+function Base.show(io::IO, spec::NeuralLyapunovSpecification)
+    # Regex indents all nonempty lines by 8 spaces
+    println(io, "NeuralLyapunovSpecification")
+    println(io, "    Structure:")
+    println(io, replace(string(spec.structure), r"^(?=.)"m => "        "))
+    println(io, "    Minimization Condition:")
+    println(io, replace(string(spec.minimization_condition), r"^(?=.)"m => "        "))
+    println(io, "    Decrease Condition:")
+    print(io, replace(string(spec.decrease_condition), r"^(?=.)"m => "        "))
 end
 
 """
