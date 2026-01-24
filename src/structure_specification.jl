@@ -16,7 +16,7 @@ julia> NoAdditionalStructure()
 NeuralLyapunovStructure
     Network dimension: 1
     V(x) = φ(x)
-    V̇(x) = f(x, p, t)*Jφ(x)
+    V̇(x) = f(x, p, t)*∇φ(x)
     f_call(x) = f(x, p, t)
 ```
 """
@@ -67,7 +67,7 @@ julia> NonnegativeStructure(1; δ = 0.1)
 NeuralLyapunovStructure
     Network dimension: 1
     V(x) = 0.1log(1.0 + (x - x_0)^2) + φ(x)^2
-    V̇(x) = (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2φ(x)*f(x, p, t)*Jφ(x)
+    V̇(x) = (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2φ(x)*f(x, p, t)*∇φ(x)
     f_call(x) = f(x, p, t)
 ```
 

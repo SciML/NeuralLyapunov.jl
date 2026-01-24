@@ -112,7 +112,7 @@ NeuralLyapunovSpecification
         NeuralLyapunovStructure
             Network dimension: 1
             V(x) = φ(x)^2
-            V̇(x) = 2φ(x)*f(x, p, t)*Jφ(x)
+            V̇(x) = 2φ(x)*f(x, p, t)*∇φ(x)
             f_call(x) = f(x, p, t)
     Minimization Condition:
         LyapunovMinimizationCondition
