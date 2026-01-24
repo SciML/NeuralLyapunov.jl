@@ -1,4 +1,4 @@
-using SafeTestsets
+using SafeTestsets: @safetestset
 
 const GROUP = lowercase(get(ENV, "GROUP", "all"))
 
