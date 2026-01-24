@@ -62,6 +62,20 @@ struct LyapunovDecreaseCondition{RM, S, R} <: AbstractLyapunovDecreaseCondition
     rectifier::R
 end
 
+function Base.show(io::IO, cond::LyapunovDecreaseCondition)
+    println(io, "LyapunovDecreaseCondition")
+    if cond.check_decrease
+        @variables x x_0 a V(..) V̇(..)
+        str = string(-cond.strength(x, x_0))
+        rec = string(cond.rectifier(a))
+        rm = string(cond.rate_metric(V(x), V̇(x)))
+        println(io, "    Trains for $rm ≤ $str")
+        print(io, "    with approximation a ≤ 0 => $rec ≈ 0")
+    else
+        print(io, "    Does not train for decrease of V along trajectories")
+    end
+end
+
 function check_decrease(cond::LyapunovDecreaseCondition)::Bool
     return cond.check_decrease
 end
@@ -92,12 +106,28 @@ Stability i.s.L. is proven by ``V̇(x) ≤ 0``. The inequality is represented by
 ``\\texttt{rectifier}(V̇(x)) = 0``. The default value `rectifier = (t) -> max(zero(t), t)`
 exactly represents the inequality, but differentiable approximations of this function may be
 employed.
+
+# Examples
+
+```jldoctest
+julia> StabilityISL()
+LyapunovDecreaseCondition
+    Trains for V̇(x) ≤ 0
+    with approximation a ≤ 0 => max(0, a) ≈ 0
+
+julia> softplus = (t) -> log(one(t) + exp(t));
+
+julia> StabilityISL(rectifier = softplus)
+LyapunovDecreaseCondition
+    Trains for V̇(x) ≤ 0
+    with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
+```
 """
 function StabilityISL(; rectifier = (t) -> max(zero(t), t))
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt,
-        (x, x0) -> 0.0,
+        (x, x0) -> zero(eltype(x)),
         rectifier
     )
 end
@@ -116,6 +146,22 @@ The inequality is represented by
 ``\\texttt{rectifier}(V̇(x) + \\texttt{strength}(x, x_0)) = 0``.
 The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
 but differentiable approximations of this function may be employed.
+
+# Examples
+
+```jldoctest
+julia> AsymptoticStability()
+LyapunovDecreaseCondition
+    Trains for V̇(x) ≤ -1.0e-6((x - x_0)^2)
+    with approximation a ≤ 0 => max(0, a) ≈ 0
+
+julia> softplus = (t) -> log(one(t) + exp(t));
+
+julia> AsymptoticStability(C = 0.1, rectifier = softplus)
+LyapunovDecreaseCondition
+    Trains for V̇(x) ≤ -0.1((x - x_0)^2)
+    with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
+```
 """
 function AsymptoticStability(;
         C::Real = 1.0e-6,
@@ -141,6 +187,22 @@ The Lyapunov condition for exponential stability is ``V̇(x) ≤ -k V(x)`` for s
 The inequality is represented by ``\\texttt{rectifier}(V̇(x) + k V(x)) = 0``.
 The default value `rectifier = (t) -> max(zero(t), t)` exactly represents the inequality,
 but differentiable approximations of this function may be employed.
+
+# Examples
+
+```jldoctest
+julia> ExponentialStability(0.5)
+LyapunovDecreaseCondition
+    Trains for V̇(x) + 0.5V(x) ≤ 0
+    with approximation a ≤ 0 => max(0, a) ≈ 0
+
+julia> softplus = (t) -> log(one(t) + exp(t));
+
+julia> ExponentialStability(5.0; rectifier = softplus)
+LyapunovDecreaseCondition
+    Trains for V̇(x) + 5.0V(x) ≤ 0
+    with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
+```
 """
 function ExponentialStability(
         k::Real;
@@ -149,7 +211,7 @@ function ExponentialStability(
     return LyapunovDecreaseCondition(
         true,
         (V, dVdt) -> dVdt + k * V,
-        (x, x0) -> 0.0,
+        (x, x0) -> zero(eltype(x)),
         rectifier
     )
 end
