@@ -34,8 +34,6 @@ using JET: report_package, get_reports, @test_opt
     @testset "Structure functions" begin
         @test_opt NoAdditionalStructure()
         @test_opt NonnegativeStructure(2)
-        # PositiveSemiDefiniteStructure uses captured variables intentionally
-        # for gradient computation - this is a known JET optimization warning
-        # that doesn't affect correctness
+        @test_opt PositiveSemiDefiniteStructure(2)
     end
 end
