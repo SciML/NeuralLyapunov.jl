@@ -6,18 +6,42 @@ on:
       - master
     tags: '*'
   pull_request:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch || github.ref != 'refs/tags/v*' }}
+  workflow_dispatch:
 
 jobs:
+  doctests:
+    name: doctests
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-doctests
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            version: '1.11'
+            allow_failure: false
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      project: "${{ matrix.project }}"
+      group: "doctests"
+    secrets: "inherit"
   build:
-    name: "Documentation"
+    name: Build
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-build
+      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch || github.ref != 'refs/tags/v*' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@latest
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1.11'
       - name: Install dependencies

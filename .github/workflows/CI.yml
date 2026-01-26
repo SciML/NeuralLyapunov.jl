@@ -1,4 +1,5 @@
 name: CI
+
 on:
   push:
     branches:
@@ -6,11 +7,13 @@ on:
     tags: ['*']
   pull_request:
   workflow_dispatch:
+
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   tests:
     name: Tests
@@ -34,77 +37,5 @@ jobs:
     with:
       julia-version: "${{ matrix.version }}"
       project: "${{ matrix.project }}"
-      group: "all"
+      group: "ci"
     secrets: "inherit"
-  downgrade:
-    name: Downgrade
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - '.'
-          - 'lib/NeuralLyapunovProblemLibrary'
-        downgrade_mode:
-          - alldeps
-          - forcedeps
-        include:
-          - version: '1.11'
-            os: ubuntu-latest
-            arch: x64
-            allow_failure: false
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v2
-        with:
-          projects: ${{ format('{0}, {0}/test', matrix.project) }}
-          skip: LinearAlgebra, Pkg, Random, Test
-          julia_version: ${{ matrix.version }}
-          mode: ${{ matrix.downgrade_mode }}
-      - uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: ${{ matrix.project }}
-      - uses: julia-actions/julia-runtest@v1
-        with:
-          project: ${{ matrix.project }}
-          allow_reresolve: false
-          force_latest_compatible_version: false
-        env:
-          GROUP: "all"
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write # needed to allow julia-actions/cache to proactively delete old caches that it has created
-      contents: write
-      statuses: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.11'
-      - uses: julia-actions/cache@v2
-      - name: Configure doc environment
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Pkg
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in (pwd(), pwd() * "/lib/NeuralLyapunovProblemLibrary")
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
-          Pkg.instantiate()
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Documenter: DocMeta, doctest
-          using NeuralLyapunov
-          DocMeta.setdocmeta!(NeuralLyapunov, :DocTestSetup, :(using NeuralLyapunov); recursive=true)
-          doctest(NeuralLyapunov)

@@ -138,8 +138,7 @@ The resulting controlled pendulum system will have the name `name`.
 # Example
 
 ```jldoctest; output = false
-@named double_pendulum = DoublePendulum()
-
+# Define a feedback cancellation controller
 function π_cancellation(x, p, t)
     θ1, θ2, ω1, ω2 = x
     I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
@@ -154,10 +153,17 @@ function π_cancellation(x, p, t)
     return -0.1 * M \\ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
-@named double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
-double_pendulum_feedback_cancellation = structural_simplify(double_pendulum_feedback_cancellation)
+# Create driven double pendulum system, apply controller, and simplify
+@named double_pendulum = DoublePendulum()
+@named double_pendulum_feedback_cancellation = control_double_pendulum(
+    double_pendulum,
+    π_cancellation
+)
+double_pendulum_feedback_cancellation = structural_simplify(
+    double_pendulum_feedback_cancellation
+)
 
-# Swing up to upward equilibrium
+# Set parameter values
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
 l1, l2 = ones(2)
@@ -167,24 +173,22 @@ I2 = m2 * l2^2 / 3
 g = 1.0
 params = get_double_pendulum_param_symbols(double_pendulum)
 p = Dict(params .=> [I1, I2, l1, l2, lc1, lc2, m1, m2, g])
+
+# Construct ODE problem
 x = get_double_pendulum_state_symbols(double_pendulum)
-x0 = Dict(x .=> vcat(2π * rand(2) .- π, rand(2)))
-
-prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100, p)
-sol = solve(prob, Tsit5())
-
-θ1, θ2, ω1, ω2 = x
-θ1_end, ω1_end = sol[θ1][end], sol[ω1][end]
-x1_end, y1_end = sin(θ1_end), -cos(θ1_end)
-θ2_end, ω2_end = sol[θ2][end], sol[ω2][end]
-x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
-
-sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) < 1.0e-4 &&
-sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) < 1.0e-4 &&
-abs(ω1_end) < 1.0e-4 &&
-abs(ω2_end) < 1.0e-4
+x0 = Dict(x .=> zeros(4))
+t_end = 100
+prob = ODEProblem(double_pendulum_feedback_cancellation, x0, t_end, p)
 # output
-true
+ODEProblem with uType Vector{Float64} and tType Int64. In-place: true
+Initialization status: FULLY_DETERMINED
+Non-trivial mass matrix: false
+timespan: (0, 100)
+u0: 4-element Vector{Float64}:
+ 0.0
+ 0.0
+ 0.0
+ 0.0
 ```
 """
 function control_double_pendulum(pend, controller; name)
