@@ -1,12 +1,12 @@
 """
     Quadrotor3D(; name, defaults)
 
-Create an `ODESystem` representing a quadrotor in 3D space.
+Create an `System` representing a quadrotor in 3D space.
 
 The quadrotor is a rigid body in an X-shape (90°-angles between the rotors).
 The equations governing the quadrotor can be found in [quadrotor](@cite).
 
-# ODESystem State Variables
+# System State Variables
   - `x`: ``x``-position (world frame).
   - `y`: ``y``-position (world frame).
   - `z`: ``z``-position (world frame).
@@ -20,7 +20,7 @@ The equations governing the quadrotor can be found in [quadrotor](@cite).
   - `ωθ`: pitch angular velocity (world frame).
   - `ωψ`: yaw angular velocity (world frame).
 
-# ODESystem Input Variables
+# System Input Variables
   - `T`: thrust (should be nonnegative).
   - `τφ`: roll torque.
   - `τθ`: pitch torque.
@@ -30,7 +30,7 @@ Not only should the aggregate thrust be nonnegative, but the torques should have
 generated from nonnegative individual rotor thrusts.
 The model calculates individual rotor thrusts and replaces any negative values with 0.
 
-# ODESystem Parameters
+# System Parameters
   - `m`: mass of the quadrotor.
   - `g`: gravitational acceleration in the direction of the negative ``z``-axis (defaults to
     9.81).
@@ -102,7 +102,7 @@ function Quadrotor3D(; name, defaults = NullParameters())
         (; name, defaults = Dict(params .=> defaults))
     end
 
-    return ODESystem(
+    return System(
         eqs,
         t,
         vcat(position_world, attitude, velocity_world, ω_world, T, τφ, τθ, τψ),
@@ -148,7 +148,7 @@ function control_quadrotor_3d(quadrotor, controller; name)
 
     eqs = u .~ controller(x, p, t)
 
-    controller_sys = ODESystem(eqs, t, x, []; name = Symbol(name, :_controller))
+    controller_sys = System(eqs, t, x, []; name = Symbol(name, :_controller))
     return compose(controller_sys, quadrotor; name)
 end
 

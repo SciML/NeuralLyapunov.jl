@@ -11,11 +11,19 @@ rng = StableRNG(0)
 println("Undriven pendulum test")
 
 @named pendulum_undriven = Pendulum(; driven = false)
+pendulum_undriven = mtkcompile(pendulum_undriven)
 
 x0 = π * rand(rng, 2)
 p = rand(rng, 2)
 τ = 1 / prod(p)
-prob = ODEProblem(structural_simplify(pendulum_undriven), x0, 15τ, p)
+
+op = Dict(
+    vcat(
+        get_pendulum_state_symbols(pendulum_undriven),
+        get_pendulum_param_symbols(pendulum_undriven)
+    ) .=> vcat(x0, p)
+)
+prob = ODEProblem(pendulum_undriven, op, 15τ)
 sol = solve(prob, Tsit5())
 
 θ = pendulum_undriven.θ
@@ -36,13 +44,20 @@ println("Simple pendulum feedback cancellation test")
 
 @named pendulum_feedback_cancellation = control_pendulum(pendulum_driven, π_cancellation)
 
-pendulum_feedback_cancellation = structural_simplify(pendulum_feedback_cancellation)
+pendulum_feedback_cancellation = mtkcompile(pendulum_feedback_cancellation)
 
 # Swing up to upward equilibrium
 x0 = rand(rng, 2)
 p = rand(rng, 2)
 τ = 1 / prod(p)
-prob = ODEProblem(pendulum_feedback_cancellation, x0, 15τ, p)
+
+op = Dict(
+    vcat(
+        get_pendulum_state_symbols(pendulum_driven),
+        get_pendulum_param_symbols(pendulum_driven)
+    ) .=> vcat(x0, p)
+)
+prob = ODEProblem(pendulum_feedback_cancellation, op, 15τ)
 sol = solve(prob, Tsit5())
 
 θ = pendulum_driven.θ

@@ -1,7 +1,7 @@
 """
     Pendulum(; driven = true, name, defaults)
 
-Create an `ODESystem` representing a damped, driven or undriven pendulum, depending on the
+Create an `System` representing a damped, driven or undriven pendulum, depending on the
 value of driven (defaults to `true`, i.e., driven pendulum).
 
 The equation used in this model is
@@ -11,7 +11,7 @@ damping parameter, ``ω_0`` is the resonant angular frequency, and ``τ`` is the
 divided by the moment of inertia of the pendulum around the pivot (`driven = false` sets
 ``τ ≡ 0``).
 
-The name of the `ODESystem` is `name`.
+The name of the `System` is `name`.
 
 Users may optionally provide default values of the parameters through `defaults`: a vector
 of the default values for `[ζ, ω_0]`.
@@ -20,13 +20,16 @@ of the default values for `[ζ, ω_0]`.
 
 ```jldoctest; output = false
 @named pendulum = Pendulum(driven = false)
-pendulum = structural_simplify(pendulum)
+pendulum = mtkcompile(pendulum)
 
 x0 = [2.0, 0.0]
 p = ones(2)
 t_end = 10
+x = get_pendulum_state_symbols(pendulum)
+params = get_pendulum_param_symbols(pendulum)
 
-prob = ODEProblem(pendulum, x0, t_end, p)
+op = Dict(vcat(x, params) .=> vcat(x0, p))
+prob = ODEProblem(pendulum, op, t_end)
 # output
 ODEProblem with uType Vector{Float64} and tType Int64. In-place: true
 Initialization status: FULLY_DETERMINED
@@ -61,7 +64,7 @@ function Pendulum(; driven = true, name, defaults = NullParameters())
 
     eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ torque]
 
-    return ODESystem(
+    return System(
         eqs,
         t,
         variables,
@@ -89,13 +92,17 @@ The resulting controlled pendulum system will have the name `name`.
 # Create driven pendulum system, apply controller, and simplify
 @named pendulum = Pendulum(driven = true)
 @named pendulum_feedback_cancellation = control_pendulum(pendulum, π_cancellation)
-pendulum_feedback_cancellation = structural_simplify(pendulum_feedback_cancellation)
+pendulum_feedback_cancellation = mtkcompile(pendulum_feedback_cancellation)
 
 # Construct ODE problem
 x0 = zeros(2)
 p = ones(2)
 t_end = 10
-prob = ODEProblem(pendulum_feedback_cancellation, x0, t_end, p)
+x = get_pendulum_state_symbols(pendulum)
+params = get_pendulum_param_symbols(pendulum)
+
+op = Dict(vcat(x, params) .=> vcat(x0, p))
+prob = ODEProblem(pendulum_feedback_cancellation, op, t_end)
 # output
 ODEProblem with uType Vector{Float64} and tType Int64. In-place: true
 Initialization status: FULLY_DETERMINED
@@ -111,7 +118,7 @@ function control_pendulum(pend, controller; name)
     p = get_pendulum_param_symbols(pend)
     eqs = [pend.τ ~ controller(x, p, t)]
 
-    controller_sys = ODESystem(eqs, t, [pend.θ], []; name = Symbol(name, :_controller))
+    controller_sys = System(eqs, t, [pend.θ], []; name = Symbol(name, :_controller))
     return compose(controller_sys, pend; name)
 end
 

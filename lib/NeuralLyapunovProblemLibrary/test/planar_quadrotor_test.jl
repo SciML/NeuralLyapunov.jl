@@ -26,7 +26,7 @@ end
     quadrotor_planar,
     π_vertical_only
 )
-quadrotor_planar_vertical_only = structural_simplify(quadrotor_planar_vertical_only)
+quadrotor_planar_vertical_only = mtkcompile(quadrotor_planar_vertical_only)
 
 # Hovering
 # Assume rotors are negligible mass when calculating the moment of inertia
@@ -40,7 +40,8 @@ x = get_quadrotor_planar_state_symbols(quadrotor_planar)
 x0 = Dict(x .=> [0, rand(rng), 0, 0, rand(rng), 0])
 p_dict = Dict(get_quadrotor_planar_param_symbols(quadrotor_planar) .=> p)
 
-prob = ODEProblem(quadrotor_planar_vertical_only, x0, 15τ, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(quadrotor_planar_vertical_only, op, 15τ)
 sol = solve(prob, Tsit5())
 
 q = x[1:3]
@@ -102,7 +103,7 @@ I_quad = m * r^2 / 12
 p = [m, I_quad, g, r]
 
 @named quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
-quadrotor_planar_lqr = structural_simplify(quadrotor_planar_lqr)
+quadrotor_planar_lqr = mtkcompile(quadrotor_planar_lqr)
 
 # Fly to origin
 x = get_quadrotor_planar_state_symbols(quadrotor_planar)
@@ -110,7 +111,8 @@ x0 = Dict(x .=> 2 * rand(rng, 6) .- 1)
 p_dict = Dict(get_quadrotor_planar_param_symbols(quadrotor_planar) .=> p)
 τ = sqrt(r / g)
 
-prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(quadrotor_planar_lqr, op, 15τ)
 sol = solve(prob, Tsit5())
 
 q = x[1:3]

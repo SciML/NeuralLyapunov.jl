@@ -31,7 +31,7 @@ end
 
 @named quadrotor_3d = Quadrotor3D()
 @named quadrotor_3d_vertical_only = control_quadrotor_3d(quadrotor_3d, π_vertical_only)
-quadrotor_3d_vertical_only = structural_simplify(quadrotor_3d_vertical_only)
+quadrotor_3d_vertical_only = mtkcompile(quadrotor_3d_vertical_only)
 
 # Hovering
 # Assume rotors are negligible mass when calculating the moment of inertia
@@ -49,7 +49,8 @@ x = get_quadrotor_3d_state_symbols(quadrotor_3d)
 x0 = Dict(x .=> vcat(q0, q̇0))
 
 p_dict = Dict(get_quadrotor_3d_param_symbols(quadrotor_3d) .=> p)
-prob = ODEProblem(quadrotor_3d_vertical_only, x0, 15τ, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(quadrotor_3d_vertical_only, op, 15τ)
 sol = solve(prob, Tsit5())
 
 q = x[1:6]
@@ -135,7 +136,7 @@ Ixy = Ixz = Iyz = 0.0
 p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
 
 @named quadrotor_3d_lqr = control_quadrotor_3d(quadrotor_3d, π_lqr(p))
-quadrotor_3d_lqr = structural_simplify(quadrotor_3d_lqr)
+quadrotor_3d_lqr = mtkcompile(quadrotor_3d_lqr)
 
 # Fly to origin
 δ = 0.5
@@ -144,7 +145,8 @@ x0 = Dict(x .=> δ .* (2 .* rand(rng, 12) .- 1))
 p_dict = Dict(get_quadrotor_3d_param_symbols(quadrotor_3d) .=> p)
 τ = sqrt(L / g)
 
-prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(quadrotor_3d_lqr, op, 15τ)
 sol = solve(prob, Tsit5())
 
 q = x[1:6]
