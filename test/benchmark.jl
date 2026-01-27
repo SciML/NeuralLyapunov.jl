@@ -221,7 +221,7 @@ end
     θ, = unknowns(damped_pendulum)
     Dt = Differential(t)
 
-    damped_pendulum = structural_simplify(damped_pendulum)
+    damped_pendulum = mtkcompile(damped_pendulum)
     bounds = [
         θ ∈ Float32.((-π, π)),
         Dt(θ) ∈ (-10.0f0, 10.0f0),

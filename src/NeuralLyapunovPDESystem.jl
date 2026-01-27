@@ -1,39 +1,39 @@
 """
-    NeuralLyapunovPDESystem(dynamics::ODESystem, bounds, spec; <keyword_arguments>)
+    NeuralLyapunovPDESystem(dynamics::System, bounds, spec; <keyword_arguments>)
     NeuralLyapunovPDESystem(dynamics, lb, ub, spec; <keyword_arguments>)
 
 Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapunov problem.
 
 # Positional Arguments
-  - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
+  - `dynamics`: the dynamical system being analyzed, represented as a `System` or the
     function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
     time and only `t = 0.0` will be used. (For an example of when `f` would have a `u`
     argument, see [`add_policy_search`](@ref).)
   - `bounds`: an array of domains, defining the training domain by bounding the states (and
     derivatives, when applicable) of `dynamics`; only used when `dynamics isa
-    ODESystem`, otherwise use `lb` and `ub`.
+    System`, otherwise use `lb` and `ub`.
   - `lb` and `ub`: the training domain will be ``[lb_1, ub_1]×[lb_2, ub_2]×...``; not used
-    when `dynamics isa ODESystem`, then use `bounds`.
+    when `dynamics isa System`, then use `bounds`.
   - `spec`: a [`NeuralLyapunovSpecification`](@ref) defining the Lyapunov function
     structure, as well as the minimization and decrease conditions.
 
 # Keyword Arguments
   - `fixed_point`: the equilibrium being analyzed; defaults to the origin.
   - `p`: the values of the parameters of the dynamical system being analyzed; defaults to
-    `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
+    `SciMLBase.NullParameters()`; not used when `dynamics isa System`, then use the
     default parameter values of `dynamics`.
   - `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
-    isa ODESystem` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
+    isa System` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
     `ODEFunction` or an `ODEInputFunction`, the symbols stored there are used, unless
     overridden here; if not provided here and cannot be inferred, `[:state1, :state2, ...]`
     will be used.
   - `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
-    `dynamics isa ODESystem` (in that case, the symbols from `dynamics` are used); if
+    `dynamics isa System` (in that case, the symbols from `dynamics` are used); if
     `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
     used, unless overridden here; if not provided here and cannot be inferred,
     `[:param1, :param2, ...]` will be used.
   - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-    actually be a fixed point; defaults to `false`; when `dynamics isa ODESystem`, the value
+    actually be a fixed point; defaults to `false`; when `dynamics isa System`, the value
     is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
     an `ODEInputFunction`, the value is inferred by the type of `dynamics`.
   - `name`: the name of the constructed `PDESystem`.
@@ -136,7 +136,7 @@ function NeuralLyapunovPDESystem(
     end
 
     # Extract state and parameter symbols from ODEFunction/ODEInputFunction
-    s_syms, p_syms = if dynamics.sys isa ODESystem
+    s_syms, p_syms = if dynamics.sys isa System
         s_syms = Symbol.(operation.(unknowns(dynamics.sys)))
         p_syms = Symbol.(parameters(dynamics.sys))
         (s_syms, p_syms)
@@ -179,7 +179,7 @@ function NeuralLyapunovPDESystem(
 end
 
 function NeuralLyapunovPDESystem(
-        dynamics::ODESystem,
+        dynamics::System,
         bounds,
         spec::NeuralLyapunovSpecification;
         fixed_point = zeros(length(bounds)),
@@ -188,11 +188,11 @@ function NeuralLyapunovPDESystem(
     ######################### Check for policy search #########################
     policy_search = !isempty(unbound_inputs(dynamics))
 
-    f,
-        x = if policy_search
-        dynamics_io_sys,
-            _ = structural_simplify(
-            dynamics, (unbound_inputs(dynamics), []); split = false
+    (f, x) = if policy_search
+        dynamics_io_sys = mtkcompile(
+            dynamics;
+            inputs = unbound_inputs(dynamics),
+            split = false
         )
         (ODEInputFunction(dynamics_io_sys), unknowns(dynamics_io_sys))
     else

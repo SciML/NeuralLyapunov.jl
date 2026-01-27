@@ -23,9 +23,8 @@ DDt = Dt^2
 
 eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 
-@named dynamics = ODESystem(eqs, t, [θ], [ζ, ω_0]; defaults)
+@mtkcompile dynamics = System(eqs, t, [θ], [ζ, ω_0]; defaults)
 
-dynamics = structural_simplify(dynamics)
 bounds = [
     θ ∈ (-π, π),
     Dt(θ) ∈ (-10.0, 10.0),
