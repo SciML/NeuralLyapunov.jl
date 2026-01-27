@@ -22,17 +22,14 @@ jobs:
       matrix:
         version:
           - '1.11'
-          - 'nightly'
+#          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
         project:
           - '.'
           - 'lib/NeuralLyapunovProblemLibrary'
         include:
           - os: ubuntu-latest
             arch: x64
-          - version: '1.11'
             allow_failure: false
-          - version: 'nightly'
-            allow_failure: true
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
