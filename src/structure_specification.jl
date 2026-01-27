@@ -92,7 +92,9 @@ function NonnegativeStructure(
         _grad(f, x::T) where {T <: Num} = Symbolics.derivative(f(x), x)
         _grad(f, x) = grad(f, x)
         grad_pos_def = if isnothing(grad_pos_def)
-            (x, x0) -> _grad((_x) -> pos_def(_x, x0), x)
+            let __grad = _grad
+                (x, x0) -> __grad(Base.Fix2(pos_def, x0), x)
+            end
         else
             grad_pos_def
         end
@@ -170,12 +172,16 @@ function PositiveSemiDefiniteStructure(
     _grad(f, x::T) where {T <: Num} = Symbolics.derivative(f(x), x)
     _grad(f, x) = grad(f, x)
     grad_pos_def = if isnothing(grad_pos_def)
-        (x, x0) -> _grad((_x) -> pos_def(_x, x0), x)
+        let __grad = _grad
+            (x, x0) -> __grad(Base.Fix2(pos_def, x0), x)
+        end
     else
         grad_pos_def
     end
     grad_non_neg = if isnothing(grad_non_neg)
-        (net, J_net, x, x0) -> _grad((_x) -> non_neg(net, _x, x0), x)
+        let __grad = _grad
+            (net, J_net, x, x0) -> __grad((_x) -> non_neg(net, _x, x0), x)
+        end
     else
         grad_non_neg
     end
