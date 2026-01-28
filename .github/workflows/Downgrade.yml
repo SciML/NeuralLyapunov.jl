@@ -39,13 +39,13 @@ jobs:
           version: ${{ matrix.version }}
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
-          projects: ${{ format('{0}, {0}/test', matrix.project) }}
+          projects: ${{ matrix.project }}
           skip: LinearAlgebra, Pkg, Random, Test
           julia_version: ${{ matrix.version }}
           mode: ${{ matrix.downgrade_mode }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
-          project: ${{ format('{0}/test', matrix.project) }}
+          project: ${{ matrix.project }}
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
