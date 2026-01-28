@@ -22,11 +22,10 @@ function π_vertical_only(x, p, t; y_goal = 0.0, k_p = 1.0, k_d = 1.0)
     return [T, T]
 end
 
-@named quadrotor_planar_vertical_only = control_quadrotor_planar(
+@mtkcompile quadrotor_planar_vertical_only = control_quadrotor_planar(
     quadrotor_planar,
     π_vertical_only
 )
-quadrotor_planar_vertical_only = mtkcompile(quadrotor_planar_vertical_only)
 
 # Hovering
 # Assume rotors are negligible mass when calculating the moment of inertia
@@ -102,8 +101,7 @@ g = 1.0
 I_quad = m * r^2 / 12
 p = [m, I_quad, g, r]
 
-@named quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
-quadrotor_planar_lqr = mtkcompile(quadrotor_planar_lqr)
+@mtkcompile quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
 
 # Fly to origin
 x = get_quadrotor_planar_state_symbols(quadrotor_planar)

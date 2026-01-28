@@ -10,8 +10,7 @@ rng = StableRNG(0)
 ################## Undriven pendulum should drop to downward equilibrium ###################
 println("Undriven pendulum test")
 
-@named pendulum_undriven = Pendulum(; driven = false)
-pendulum_undriven = mtkcompile(pendulum_undriven)
+@mtkcompile pendulum_undriven = Pendulum(; driven = false)
 
 x0 = π * rand(rng, 2)
 p = rand(rng, 2)

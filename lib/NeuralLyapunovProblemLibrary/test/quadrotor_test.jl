@@ -30,8 +30,7 @@ function π_vertical_only(x, p, t; z_goal = 0.0, k_p = 1.0, k_d = 1.0)
 end
 
 @named quadrotor_3d = Quadrotor3D()
-@named quadrotor_3d_vertical_only = control_quadrotor_3d(quadrotor_3d, π_vertical_only)
-quadrotor_3d_vertical_only = mtkcompile(quadrotor_3d_vertical_only)
+@mtkcompile quadrotor_3d_vertical_only = control_quadrotor_3d(quadrotor_3d, π_vertical_only)
 
 # Hovering
 # Assume rotors are negligible mass when calculating the moment of inertia
@@ -135,8 +134,7 @@ Izz = m * L^2 / 3
 Ixy = Ixz = Iyz = 0.0
 p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
 
-@named quadrotor_3d_lqr = control_quadrotor_3d(quadrotor_3d, π_lqr(p))
-quadrotor_3d_lqr = mtkcompile(quadrotor_3d_lqr)
+@mtkcompile quadrotor_3d_lqr = control_quadrotor_3d(quadrotor_3d, π_lqr(p))
 
 # Fly to origin
 δ = 0.5

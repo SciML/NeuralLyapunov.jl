@@ -21,8 +21,7 @@ using ModelingToolkit, NeuralLyapunovProblemLibrary, Plots, OrdinaryDiffEq
 x0 = [π * rand(), -π * rand()]
 p = [0.5, 1]
 
-@named pendulum = Pendulum(driven = false)
-pendulum = structural_simplify(pendulum)
+@mtkcompile pendulum = Pendulum(driven = false)
 prob = ODEProblem(pendulum, x0, 15, p)
 sol = solve(prob, Tsit5())
 

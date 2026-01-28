@@ -29,8 +29,7 @@ E(x, p) = T(x, p) + U(x, p)
 ######################### Undriven double pendulum conserve energy #########################
 println("Undriven double pendulum energy conservation test")
 
-@named double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
-double_pendulum_undriven = mtkcompile(double_pendulum_undriven)
+@mtkcompile double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
@@ -95,8 +94,7 @@ function π_cancellation(x, p, t)
     return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
-@named double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
-double_pendulum_feedback_cancellation = mtkcompile(double_pendulum_feedback_cancellation)
+@mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
 
 # Swing up to upward equilibrium
 # Assume uniform rods of random mass and length
@@ -174,8 +172,7 @@ I2 = m2 * l2^2 / 3
 g = 1.0
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
-@named acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, π, 0, 0]))
-acrobot_lqr = mtkcompile(acrobot_lqr)
+@mtkcompile acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, π, 0, 0]))
 
 # Remain close to upward equilibrium
 x = get_double_pendulum_state_symbols(acrobot)

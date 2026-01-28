@@ -60,19 +60,17 @@ g = 1.0
 I_quad = m * r^2 / 12
 p = [m, I_quad, g, r]
 
-@named quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
-quadrotor_planar_lqr = structural_simplify(quadrotor_planar_lqr)
+@mtkcompile quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
 
 # Random initialization
-# structural_simplify sometimes rearranges variables, so we use a Dict to provide the
-# initialization and parameters when constructing the ODEProblem
 x = get_quadrotor_planar_state_symbols(quadrotor_planar)
 x0 = Dict(x .=> 2 * rand(6) .- 1)
 params = get_quadrotor_planar_param_symbols(quadrotor_planar)
 p_dict = Dict(params .=> p)
+op = merge(x0, p_dict)
 τ = sqrt(r / g)
 
-prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ, p_dict)
+prob = ODEProblem(quadrotor_planar_lqr, op, 15τ)
 sol = solve(prob, Tsit5())
 
 u = get_quadrotor_planar_input_symbols(quadrotor_planar)
@@ -161,20 +159,18 @@ Ixy = Ixz = Iyz = 0.0
 p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
 
 # Create controller system and combine with quadrotor_3d, then simplify
-@named quadrotor_3d_lqr = control_quadrotor_3d(quadrotor_3d, π_lqr(p))
-quadrotor_3d_lqr = structural_simplify(quadrotor_3d_lqr)
+@mtkcompile quadrotor_3d_lqr = control_quadrotor_3d(quadrotor_3d, π_lqr(p))
 
 # Random initialization
-# structural_simplify sometimes rearranges variables, so we use a Dict to provide the
-# initialization and parameters when constructing the ODEProblem
 δ = 0.5
 x = get_quadrotor_3d_state_symbols(quadrotor_3d)
 x0 = Dict(x .=> δ .* (2 .* rand(12) .- 1))
-τ = sqrt(L / g)
 params = get_quadrotor_3d_param_symbols(quadrotor_3d)
 p_dict = Dict(params .=> p)
+op = merge(x0, p_dict)
+τ = sqrt(L / g)
 
-prob = ODEProblem(quadrotor_3d_lqr, x0, 15τ, p_dict)
+prob = ODEProblem(quadrotor_3d_lqr, op, 15τ)
 sol = solve(prob, Tsit5())
 
 u = get_quadrotor_3d_input_symbols(quadrotor_3d)
