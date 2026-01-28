@@ -45,7 +45,7 @@ jobs:
           mode: ${{ matrix.downgrade_mode }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
-          project: ${{ matrix.project }}
+          project: ${{ format('{0}/test', matrix.project) }}
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
