@@ -40,11 +40,11 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ matrix.project }}
-          skip: LinearAlgebra, Pkg, Random, Test
+          skip: LinearAlgebra, Pkg, Random, Test, NeuralLyapunovProblemLibrary
           julia_version: ${{ matrix.version }}
           mode: ${{ matrix.downgrade_mode }}
       - name: Install downgraded dependencies
-        run: julia --project=${{ matrix.project }} -e 'using Pkg; retry(Pkg.instantiate)(verbose=true); retry(Pkg.precompile)(verbose=true);'
+        run: julia --project=${{ matrix.project }} -e 'using Pkg; retry(Pkg.instantiate)(); retry(Pkg.precompile)();'
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
