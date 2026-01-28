@@ -40,7 +40,7 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ format('{0}, {0}/test', matrix.project) }}
-          skip: LinearAlgebra, Pkg, Random, Test, SciMLOperators 
+          skip: LinearAlgebra, Pkg, Random, Test
           julia_version: ${{ matrix.version }}
           mode: ${{ matrix.downgrade_mode }}
       - uses: julia-actions/julia-buildpkg@v1
