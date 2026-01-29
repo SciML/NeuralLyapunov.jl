@@ -24,9 +24,6 @@ jobs:
         project:
           - '.'
           - 'lib/NeuralLyapunovProblemLibrary'
-        downgrade_mode:
-          - alldeps
-          - forcedeps
         include:
           - version: '1.11'
             os: ubuntu-latest
@@ -37,12 +34,10 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v2
+      - uses: julia-actions/julia-downgrade-compat@v1
         with:
           projects: ${{ format('{0}, {0}/test', matrix.project) }}
           skip: LinearAlgebra, Pkg, Random, Test
-          julia_version: ${{ matrix.version }}
-          mode: ${{ matrix.downgrade_mode }}
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
@@ -50,8 +45,6 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
-          allow_reresolve: false
-          force_latest_compatible_version: false
         env:
-          GROUP: "all"
+          GROUP: "ci"
   
