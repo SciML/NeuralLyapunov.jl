@@ -48,7 +48,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
-      - run: julia --project -e 'import Pkg; Pkg.status(mode=Pkg.PKGMODE_MANIFEST);'
+      - run: julia --project=${{ matrix.project }} -e 'import Pkg; Pkg.status(mode=Pkg.PKGMODE_MANIFEST);'
       - uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
