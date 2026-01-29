@@ -1,6 +1,6 @@
 module NeuralLyapunovProblemLibrary
 
-using ModelingToolkit: @parameters, ODESystem, compose, unbound_inputs, t_nounits as t,
+using ModelingToolkit: @parameters, System, compose, unbound_inputs, t_nounits as t,
     D_nounits as Dt
 using Symbolics: @variables
 using SciMLBase: NullParameters

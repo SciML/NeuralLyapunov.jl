@@ -21,8 +21,7 @@ Pendubot
 using Random; Random.seed!(200) # hide
 using ModelingToolkit, NeuralLyapunovProblemLibrary, Plots, OrdinaryDiffEq
 
-@named double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
-double_pendulum_undriven = structural_simplify(double_pendulum_undriven)
+@mtkcompile double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)

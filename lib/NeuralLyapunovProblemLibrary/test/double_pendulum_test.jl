@@ -29,8 +29,7 @@ E(x, p) = T(x, p) + U(x, p)
 ######################### Undriven double pendulum conserve energy #########################
 println("Undriven double pendulum energy conservation test")
 
-@named double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
-double_pendulum_undriven = structural_simplify(double_pendulum_undriven)
+@mtkcompile double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
@@ -47,7 +46,8 @@ x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- π, zeros(2)))
 params = get_double_pendulum_param_symbols(double_pendulum_undriven)
 p_dict = Dict(params .=> p)
 
-prob = ODEProblem(double_pendulum_undriven, x0, 100, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(double_pendulum_undriven, op, 100)
 sol = solve(prob, Tsit5(), abstol = 1.0e-10, reltol = 1.0e-10)
 
 # Test energy conservation
@@ -94,8 +94,7 @@ function π_cancellation(x, p, t)
     return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
-@named double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
-double_pendulum_feedback_cancellation = structural_simplify(double_pendulum_feedback_cancellation)
+@mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
 
 # Swing up to upward equilibrium
 # Assume uniform rods of random mass and length
@@ -112,7 +111,8 @@ p_dict = Dict(params .=> p)
 x = get_double_pendulum_state_symbols(double_pendulum)
 x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- π, rand(rng, 2)))
 
-prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(double_pendulum_feedback_cancellation, op, 100)
 sol = solve(prob, Tsit5())
 
 θ1 = double_pendulum.θ1
@@ -172,8 +172,7 @@ I2 = m2 * l2^2 / 3
 g = 1.0
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
-@named acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, π, 0, 0]))
-acrobot_lqr = structural_simplify(acrobot_lqr)
+@mtkcompile acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, π, 0, 0]))
 
 # Remain close to upward equilibrium
 x = get_double_pendulum_state_symbols(acrobot)
@@ -181,7 +180,8 @@ x0 = Dict(x .=> [π, π, 0, 0] + 0.005 * vcat(2π * rand(rng, 2) .- π, 2 * rand
 p_dict = Dict(get_double_pendulum_param_symbols(acrobot) .=> p)
 tspan = 1000
 
-prob = ODEProblem(acrobot_lqr, x0, tspan, p_dict)
+op = merge(x0, p_dict)
+prob = ODEProblem(acrobot_lqr, op, tspan)
 sol = solve(prob, Tsit5())
 
 θ1, θ2, ω1, ω2 = x

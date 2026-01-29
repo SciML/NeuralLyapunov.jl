@@ -37,15 +37,15 @@ the ODE solver is converted to the same type as the network parameters (whether 
 the user or generated automatically).
 
 # Positional Arguments
-  - `dynamics`: the dynamical system being analyzed, represented as an `ODESystem` or the
+  - `dynamics`: the dynamical system being analyzed, represented as a `System` or the
     function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
     time and only `t = 0.0` will be used. (For an example of when `f` would have a `u`
     argument, see [`add_policy_search`](@ref).)
   - `bounds`: an array of domains, defining the training domain by bounding the states (and
     derivatives, when applicable) of `dynamics`; only used when `dynamics isa
-    ODESystem`, otherwise use `lb` and `ub`.
+    System`, otherwise use `lb` and `ub`.
   - `lb` and `ub`: the training domain will be ``[lb_1, ub_1]×[lb_2, ub_2]×...``; not used
-    when `dynamics isa ODESystem`, then use `bounds`.
+    when `dynamics isa System`, then use `bounds`.
   - `spec`: a [`NeuralLyapunovSpecification`](@ref) defining the Lyapunov function
     structure, as well as the minimization and decrease conditions.
   - `chain`: a vector of Lux/Flux chains with a d-dimensional input and a 1-dimensional
@@ -69,20 +69,20 @@ the user or generated automatically).
     `true`; defaults to `(V, V̇, x) -> V̇ < 0`.
   - `fixed_point`: the equilibrium being analyzed; defaults to the origin.
   - `p`: the values of the parameters of the dynamical system being analyzed; defaults to
-    `SciMLBase.NullParameters()`; not used when `dynamics isa ODESystem`, then use the
+    `SciMLBase.NullParameters()`; not used when `dynamics isa System`, then use the
     default parameter values of `dynamics`.
   - `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
-    isa ODESystem` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
+    isa System` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
     `ODEFunction` or an `ODEInputFunction`, the symbols stored there are used, unless
     overridden here; if not provided here and cannot be inferred, `[:state1, :state2, ...]`
     will be used.
   - `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
-    `dynamics isa ODESystem` (in that case, the symbols from `dynamics` are used); if
+    `dynamics isa System` (in that case, the symbols from `dynamics` are used); if
     `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
     used, unless overridden here; if not provided here and cannot be inferred,
     `[:param1, :param2, ...]` will be used.
   - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-    actually be a fixed point; defaults to `false`; when `dynamics isa ODESystem`, the value
+    actually be a fixed point; defaults to `false`; when `dynamics isa System`, the value
     is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
     an `ODEInputFunction`, the value is inferred by the type of `dynamics`.
   - `optimization_args`: arguments to be passed into the optimization solver, as a vector of
@@ -140,7 +140,7 @@ the user or generated automatically).
     - "Loss": the full weighted training loss at that iteration.
 """
 function benchmark(
-        dynamics::ODESystem,
+        dynamics::System,
         bounds,
         spec,
         chain,
@@ -166,9 +166,10 @@ function benchmark(
     f = if isempty(unbound_inputs(dynamics))
         ODEFunction(dynamics)
     else
-        dynamics_io_sys,
-            _ = structural_simplify(
-            dynamics, (unbound_inputs(dynamics), []); split = false
+        dynamics_io_sys = mtkcompile(
+            dynamics;
+            inputs = unbound_inputs(dynamics),
+            split = false
         )
         ODEInputFunction(dynamics_io_sys; simplify = true, split = false)
     end

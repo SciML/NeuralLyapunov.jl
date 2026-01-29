@@ -5,8 +5,8 @@ import JuMP
 using LinearAlgebra: I, dot, ⋅
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term, value
-using ModelingToolkit: @named, @parameters, ODESystem, PDESystem, parameters, unknowns,
-    defaults, operation, unbound_inputs, defaults, structural_simplify
+using ModelingToolkit: @named, @parameters, System, PDESystem, parameters, unknowns,
+    defaults, operation, unbound_inputs, defaults, mtkcompile
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake

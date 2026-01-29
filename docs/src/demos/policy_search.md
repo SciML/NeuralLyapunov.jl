@@ -106,7 +106,7 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
+pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
 p = [defaults(pendulum)[param] for param in parameters(pendulum)]
@@ -267,7 +267,7 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-pendulum_io, _ = structural_simplify(pendulum, (inputs(pendulum), []); simplify = true, split = false)
+pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
 p = [defaults(pendulum)[param] for param in parameters(pendulum)]

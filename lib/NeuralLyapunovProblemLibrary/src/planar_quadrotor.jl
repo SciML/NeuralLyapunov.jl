@@ -1,7 +1,7 @@
 """
     QuadrotorPlanar(; name, defaults)
 
-Create an `ODESystem` representing a planar approximation of the quadrotor (technically a
+Create an `System` representing a planar approximation of the quadrotor (technically a
 birotor).
 
 This birotor is a rigid body with two rotors in line with the center of mass.
@@ -22,9 +22,9 @@ The equations governing the planar quadrotor are:
 \\end{align}
 ```
 
-The name of the `ODESystem` is `name`.
+The name of the `System` is `name`.
 
-# ODESystem Parameters
+# System Parameters
   - `m`: mass of the quadrotor.
   - `I_quad`: moment of inertia of the quadrotor around its center of mass.
   - `g`: gravitational acceleration in the direction of the negative ``y``-axis (defaults to
@@ -56,7 +56,7 @@ function QuadrotorPlanar(; name, defaults = NullParameters())
         (; name, defaults = Dict(params .=> defaults))
     end
 
-    return ODESystem(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
+    return System(eqs, t, [x, y, θ, u1, u2], params; kwargs...)
 end
 
 """
@@ -80,7 +80,7 @@ function control_quadrotor_planar(quadrotor, controller; name)
 
     eqs = u .~ controller(x, p, t)
 
-    controller_sys = ODESystem(eqs, t, q, []; name = Symbol(name, :_controller))
+    controller_sys = System(eqs, t, q, []; name = Symbol(name, :_controller))
     return compose(controller_sys, quadrotor; name)
 end
 
