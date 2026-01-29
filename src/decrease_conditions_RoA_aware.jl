@@ -19,10 +19,14 @@ Inside the region of attraction (i.e., when ``V(x) ≤ ρ``), the loss function 
 `cond` will be applied. Outside the region of attraction (i.e., when ``V(x) > ρ``), the loss
 function specified by `out_of_RoA_penalty` will be applied.
 
-The `sigmoid` function allows for a smooth transition between the ``V(x) ≤ ρ`` case and the
-``V(x) > ρ`` case, by combining the different losses into one:
+The `sigmoid` function smoothly turns off the in-RoA loss and turns on the out-of-RoA loss
+as the value of ``V(x)`` crosses the threshold ``ρ``, resulting in the dual loss equations:
 
-``\\texttt{sigmoid}(ρ - V(x)) (\\text{in-RoA expression}) + \\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``.
+``\\texttt{sigmoid}(ρ - V(x)) (\\text{in-RoA expression}) = 0``
+
+and
+
+``\\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``.
 
 Note that a hard transition, which only enforces the in-RoA equation when ``V(x) ≤ ρ`` and
 the out-of-RoA equation when ``V(x) > ρ`` can be provided by a `sigmoid` which is exactly
@@ -105,9 +109,11 @@ function get_decrease_condition(cond::RoAAwareDecreaseCondition)
             _V = _V isa AbstractVector ? _V[] : _V
             _V̇ = dVdt(x)
             _V̇ = _V̇ isa AbstractVector ? _V̇[] : _V̇
-            return cond.sigmoid(cond.ρ - _V) * in_RoA_penalty(V, dVdt, x, fixed_point) +
+            return [
+                cond.sigmoid(cond.ρ - _V) * in_RoA_penalty(V, dVdt, x, fixed_point),
                 cond.sigmoid(_V - cond.ρ) *
                 cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point, cond.ρ)
+            ]
         end
     else
         return nothing
@@ -139,10 +145,14 @@ by `cond` only in that sublevel set.
 The loss applied to samples ``x`` such that ``V(x) > ρ`` is
 ``\\lvert \\texttt{out\\_of\\_RoA\\_penalty}(V(x), V̇(x), x, x_0, ρ) \\rvert^2``.
 
-The `sigmoid` function allows for a smooth transition between the ``V(x) ≤ ρ`` case and the
-``V(x) > ρ`` case, by combining the above equations into one:
+The `sigmoid` function smoothly turns off the in-RoA loss and turns on the out-of-RoA loss
+as the value of ``V(x)`` crosses the threshold ``ρ``, resulting in the dual loss equations:
 
-``\\texttt{sigmoid}(ρ - V(x)) (\\text{in-RoA expression}) + \\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``.
+``\\texttt{sigmoid}(ρ - V(x)) (\\text{in-RoA expression}) = 0``
+
+and
+
+``\\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``.
 
 Note that a hard transition, which only enforces the in-RoA equation when ``V(x) ≤ ρ`` and
 the out-of-RoA equation when ``V(x) > ρ`` can be provided by a `sigmoid` which is exactly
