@@ -37,20 +37,18 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
+      - run: cd ${{ matrix.project }}
       - uses: julia-actions/julia-downgrade-compat@v2
         with:
-          projects: ${{ matrix.project }}
           skip: LinearAlgebra, Pkg, Random, Test, NeuralLyapunovProblemLibrary
           julia_version: ${{ matrix.version }}
           mode: ${{ matrix.downgrade_mode }}
       - name: Install downgraded dependencies
-        run: julia --project=${{ matrix.project }} -e 'using Pkg; retry(Pkg.instantiate)(); retry(Pkg.precompile)();'
+        run: julia --project -e 'import Pkg; retry(Pkg.instantiate)(); retry(Pkg.precompile)(); Pkg.status(mode=Pkg.PKGMODE_MANIFEST);'
       - uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: ${{ matrix.project }}
+      - run: julia --project -e 'import Pkg; Pkg.status(mode=Pkg.PKGMODE_MANIFEST);'
       - uses: julia-actions/julia-runtest@v1
         with:
-          project: ${{ matrix.project }}
           allow_reresolve: false
           force_latest_compatible_version: false
         env:
