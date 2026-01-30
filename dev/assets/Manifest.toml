@@ -2,7 +2,7 @@
 
 julia_version = "1.11.8"
 manifest_format = "2.0"
-project_hash = "269d64a612fd839acaf3c6e7663bf9dbcc7224f3"
+project_hash = "a6be48958ffa2f2bbf425f40c1f27ded83e108b4"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -2176,7 +2176,7 @@ version = "1.2.0"
 deps = ["Boltz", "DataFrames", "ForwardDiff", "JuMP", "LinearAlgebra", "Lux", "LuxCore", "MLDataDevices", "ModelingToolkit", "NeuralPDE", "OrdinaryDiffEq", "QuasiMonteCarlo", "SciMLBase", "StableRNGs", "SymbolicIndexingInterface", "Symbolics"]
 path = ".."
 uuid = "61252e1c-87f0-426a-93a7-3cdb1ed5a867"
-version = "0.2.7"
+version = "0.3.0"
 
 [[deps.NeuralLyapunovProblemLibrary]]
 deps = ["LinearAlgebra", "ModelingToolkit", "Rotations", "SciMLBase", "Symbolics"]
