@@ -286,8 +286,10 @@ function _NeuralLyapunovPDESystem(
         elseif cond_eq isa AbstractVector{Equation}
             append!(eqs, cond_eq)
         else
-            error("Minimization condition function must return an Equation or vector of ",
-                "Equations. Instead got $(typeof(cond_eq)).")
+            error(
+                "Minimization condition function must return an Equation or vector of ",
+                "Equations. Instead got $(typeof(cond_eq))."
+            )
         end
     end
 
@@ -299,8 +301,10 @@ function _NeuralLyapunovPDESystem(
         elseif cond_eq isa AbstractVector{Equation}
             append!(eqs, cond_eq)
         else
-            error("Decrease condition function must return an Equation or vector of ",
-                "Equations. Instead got $(typeof(cond_eq)).")
+            error(
+                "Decrease condition function must return an Equation or vector of ",
+                "Equations. Instead got $(typeof(cond_eq))."
+            )
         end
     end
 

@@ -112,7 +112,7 @@ function get_decrease_condition(cond::RoAAwareDecreaseCondition)
             return [
                 cond.sigmoid(cond.ρ - _V) * in_RoA_penalty(V, dVdt, x, fixed_point),
                 cond.sigmoid(_V - cond.ρ) *
-                cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point, cond.ρ)
+                    cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point, cond.ρ),
             ]
         end
     else
