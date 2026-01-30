@@ -110,8 +110,8 @@ function quadrotor_3d_lqr_matrix(
     x_new = unknowns(sys)
     u_new = inputs(sys)
 
-    Px = (x_new .- x') .=== 0
-    Pu = (u_new .- u') .=== 0
+    Px = Symbolics.value.(x_new .- x') .=== 0
+    Pu = Symbolics.value.(u_new .- u') .=== 0
 
     A = Px' * mats[:A] * Px
     B = Px' * mats[:B] * Pu
