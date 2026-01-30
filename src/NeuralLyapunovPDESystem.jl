@@ -280,12 +280,32 @@ function _NeuralLyapunovPDESystem(
 
     if check_nonnegativity(minimization_condition)
         cond = get_minimization_condition(minimization_condition)::Function
-        push!(eqs, cond(V, state, fixed_point) ~ 0.0)
+        cond_eq = cond(V, state, fixed_point) .~ 0.0
+        if cond_eq isa Equation
+            push!(eqs, cond_eq)
+        elseif cond_eq isa AbstractVector{Equation}
+            append!(eqs, cond_eq)
+        else
+            error(
+                "Minimization condition function must return an Equation or vector of ",
+                "Equations. Instead got $(typeof(cond_eq))."
+            )
+        end
     end
 
     if check_decrease(decrease_condition)
         cond = get_decrease_condition(decrease_condition)::Function
-        push!(eqs, cond(V, V̇, state, fixed_point) ~ 0.0)
+        cond_eq = cond(V, V̇, state, fixed_point) .~ 0.0
+        if cond_eq isa Equation
+            push!(eqs, cond_eq)
+        elseif cond_eq isa AbstractVector{Equation}
+            append!(eqs, cond_eq)
+        else
+            error(
+                "Decrease condition function must return an Equation or vector of ",
+                "Equations. Instead got $(typeof(cond_eq))."
+            )
+        end
     end
 
     bcs = Equation[]

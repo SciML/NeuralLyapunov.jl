@@ -178,6 +178,10 @@ and is greater than zero if it's violated.
 
 Note that the first input, ``V``, is a function, so the minimization condition can depend on
 the value of the candidate Lyapunov function at multiple points.
+
+If the returned function returns a vector, all elements of the vector must be zero for the
+condition to be considered met.
+[`NeuralLyapunovPDESystem`](@ref) will create one equation per element of the vector.
 """
 function get_minimization_condition(cond::AbstractLyapunovMinimizationCondition)
     error(
@@ -225,6 +229,10 @@ decrease condition is met and a value greater than zero when it is violated.
 
 Note that the first two inputs, ``V`` and ``V̇``, are functions, so the decrease condition
 can depend on the value of these functions at multiple points.
+
+If the returned function returns a vector, all elements of the vector must be zero for the
+condition to be considered met.
+[`NeuralLyapunovPDESystem`](@ref) will create one equation per element of the vector.
 """
 function get_decrease_condition(cond::AbstractLyapunovDecreaseCondition)
     error(
