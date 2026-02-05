@@ -43,15 +43,17 @@ jobs:
         with:
           project: ${{ matrix.project }}
           precompile: yes
+      # On a successful build, check that the usual CI tests pass.
       - if: ${{ steps.buildpkg.outcome == 'success' }}
-        # On a successful build, check that the usual CI tests pass.
         uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
         env:
           GROUP: "ci"
+      # On a failed build, use julia-downgrade-compat to resolve a list of compatibility issues.
       - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
-        # On a failed build, use julia-downgrade-compat to resolve a list of compatibility issues.
+        uses: actions/checkout@v6
+      - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
         uses: julia-actions/julia-downgrade-compat@v2
         with:
           mode: forcedeps
