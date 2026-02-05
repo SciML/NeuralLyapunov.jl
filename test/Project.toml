@@ -33,7 +33,7 @@ NeuralLyapunovProblemLibrary = {path = "../lib/NeuralLyapunovProblemLibrary"}
 Aqua = "0.8.11"
 Boltz = "1.2"
 CSDP = "1"
-ComponentArrays = "0.15.16"
+ComponentArrays = "0.15.22"
 Documenter = "1"
 DiffEqGPU = "3.5"
 ExplicitImports = "1.11.2"
