@@ -25,7 +25,7 @@ Random.seed!(200)
 
 ######################### Define dynamics and domain ##########################
 
-@named pendulum = Pendulum(; defaults = [0.5, 1.0])
+@named pendulum = Pendulum(; param_defaults = [0.5, 1.0])
 
 t, = independent_variables(pendulum)
 Dt = Differential(t)
@@ -109,7 +109,7 @@ _θ = res.u.depvar
 pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
-p = [defaults(pendulum)[param] for param in parameters(pendulum)]
+p = [Symbolics.value(initial_conditions(pendulum)[param]) for param in parameters(pendulum)]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
@@ -139,7 +139,7 @@ Since the angle ``\theta`` is periodic with period ``2\pi``, our box domain will
 using ModelingToolkit, NeuralLyapunovProblemLibrary
 using ModelingToolkit: inputs
 
-@named pendulum = Pendulum(; defaults = [0.5, 1.0])
+@named pendulum = Pendulum(; param_defaults = [0.5, 1.0])
 
 t, = independent_variables(pendulum)
 Dt = Differential(t)
@@ -270,7 +270,7 @@ We can use the result of the optimization problem to build the Lyapunov candidat
 pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
-p = [defaults(pendulum)[param] for param in parameters(pendulum)]
+p = [Symbolics.value(initial_conditions(pendulum)[param]) for param in parameters(pendulum)]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
