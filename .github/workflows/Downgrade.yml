@@ -34,7 +34,7 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v1
+      - uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ${{ format('{0}, {0}/test', matrix.project) }}
           skip: LinearAlgebra, Pkg, Random, Test
