@@ -38,13 +38,26 @@ jobs:
         with:
           projects: ${{ format('{0}, {0}/test', matrix.project) }}
           skip: LinearAlgebra, Pkg, Random, Test
-      - uses: julia-actions/julia-buildpkg@v1
+      - id: buildpkg
+        uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ matrix.project }}
           precompile: yes
-      - uses: julia-actions/julia-runtest@v1
+      # On a successful build, check that the usual CI tests pass.
+      - if: ${{ steps.buildpkg.outcome == 'success' }}
+        uses: julia-actions/julia-runtest@v1
         with:
           project: ${{ matrix.project }}
         env:
           GROUP: "ci"
+      # On a failed build, use julia-downgrade-compat to resolve a list of compatibility issues.
+      - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
+        uses: actions/checkout@v6
+      - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
+        uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          mode: forcedeps
+          projects: ${{ format('{0}, {0}/test', matrix.project) }}
+          skip: LinearAlgebra, Pkg, Random, Test
+          julia_version: ${{ matrix.version }}
   
