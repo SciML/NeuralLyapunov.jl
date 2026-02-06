@@ -2176,7 +2176,7 @@ version = "0.3.0"
 deps = ["LinearAlgebra", "ModelingToolkit", "Rotations", "SciMLBase", "Symbolics"]
 path = "../lib/NeuralLyapunovProblemLibrary"
 uuid = "83723521-ca9c-4edc-8e64-505178d150fe"
-version = "0.1.1"
+version = "0.1.2"
 weakdeps = ["Plots"]
 
     [deps.NeuralLyapunovProblemLibrary.extensions]
