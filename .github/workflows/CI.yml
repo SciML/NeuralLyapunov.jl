@@ -23,12 +23,13 @@ jobs:
         version:
           - '1.11'
 #          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
+        project:
+          - '.'
+          - 'lib/NeuralLyapunovProblemLibrary'
         include:
           - os: ubuntu-latest
             arch: x64
             allow_failure: false
-          - project: '.'
-            group: 'core'
           - project: '.'
             group: 'core'
           - project: '.'
