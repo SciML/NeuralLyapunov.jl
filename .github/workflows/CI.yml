@@ -8,44 +8,59 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-
 jobs:
   tests:
-    name: Tests
+    name: NeuralLyapunov Tests
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
     strategy:
       fail-fast: false
       matrix:
         version:
           - '1.11'
 #          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
-        project:
-          - '.'
-          - 'lib/NeuralLyapunovProblemLibrary'
+        group:
+          - 'core'
+          - 'policy_search'
+          - 'roa'
+          - 'local_lyapunov'
+          - 'benchmarking'
+          - 'unimplemented'
         include:
-          - os: ubuntu-latest
+          - project: '.'
+            os: ubuntu-latest
             arch: x64
             allow_failure: false
-          - project: '.'
-            group: 'core'
-          - project: '.'
-            group: 'policy_search'
-          - project: '.'
-            group: 'roa'
-          - project: '.'
-            group: 'local_lyapunov'
-          - project: '.'
-            group: 'benchmarking'
-          - project: '.'
-            group: 'unimplemented'
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      project: "${{ matrix.project }}"
+      group: ${{ matrix.group }}
+    secrets: "inherit"
+  library-tests:
+    name: NeuralLyapunovProblemLibrary Tests
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.11'
+#          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
+        group:
+          - 'pendula'
+          - 'quadrotors'
+        include:
           - project: 'lib/NeuralLyapunovProblemLibrary'
-            group: 'pendula'
-          - project: 'lib/NeuralLyapunovProblemLibrary'
-            group: 'quadrotors'
+            os: ubuntu-latest
+            arch: x64
+            allow_failure: false
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
