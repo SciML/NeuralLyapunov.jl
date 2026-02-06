@@ -37,7 +37,11 @@ anim = plot_pendulum(sol)
 ############################# Feedback cancellation controller #############################
 println("Simple pendulum feedback cancellation test")
 
-@named pendulum_driven = Pendulum()
+x0 = rand(rng, 2)
+p = rand(rng, 2)
+τ = 1 / prod(p)
+
+@named pendulum_driven = Pendulum(defaults = p)
 
 π_cancellation(x, p, t) = 2 * p[2]^2 * sin(x[1])
 
@@ -46,16 +50,8 @@ println("Simple pendulum feedback cancellation test")
 pendulum_feedback_cancellation = mtkcompile(pendulum_feedback_cancellation)
 
 # Swing up to upward equilibrium
-x0 = rand(rng, 2)
-p = rand(rng, 2)
-τ = 1 / prod(p)
+op = Dict(get_pendulum_state_symbols(pendulum_driven) .=> x0)
 
-op = Dict(
-    vcat(
-        get_pendulum_state_symbols(pendulum_driven),
-        get_pendulum_param_symbols(pendulum_driven)
-    ) .=> vcat(x0, p)
-)
 prob = ODEProblem(pendulum_feedback_cancellation, op, 15τ)
 sol = solve(prob, Tsit5())
 
