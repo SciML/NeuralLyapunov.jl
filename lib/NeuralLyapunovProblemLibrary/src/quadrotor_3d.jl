@@ -1,5 +1,5 @@
 """
-    Quadrotor3D(; name, param_defaults)
+    Quadrotor3D(; name, defaults)
 
 Create an `System` representing a quadrotor in 3D space.
 
@@ -44,10 +44,10 @@ The model calculates individual rotor thrusts and replaces any negative values w
         \\end{pmatrix}.
     ```
 
-Users may optionally provide default values of the parameters through `param_defaults`: a
+Users may optionally provide default values of the parameters through `defaults`: a
 vector of the default values for `[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
 """
-function Quadrotor3D(; name, param_defaults = NullParameters())
+function Quadrotor3D(; name, defaults = NullParameters())
     # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"
     # https://doi.org/10.1109/ICRA.2011.5980409
 
@@ -96,10 +96,10 @@ function Quadrotor3D(; name, param_defaults = NullParameters())
         Dt.(ω_world) .~ inertia_matrix \ (τ - ω_world × (inertia_matrix * ω_world))
     )
 
-    kwargs = if param_defaults == NullParameters()
+    kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, initial_conditions = Dict(params .=> param_defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     return System(

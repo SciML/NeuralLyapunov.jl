@@ -25,7 +25,7 @@ Random.seed!(200)
 
 ######################### Define dynamics and domain ##########################
 
-@named pendulum = Pendulum(; param_defaults = [0.5, 1.0])
+@named pendulum = Pendulum(; defaults = [0.5, 1.0])
 
 t, = independent_variables(pendulum)
 Dt = Differential(t)
@@ -139,7 +139,7 @@ Since the angle ``\theta`` is periodic with period ``2\pi``, our box domain will
 using ModelingToolkit, NeuralLyapunovProblemLibrary
 using ModelingToolkit: inputs
 
-@named pendulum = Pendulum(; param_defaults = [0.5, 1.0])
+@named pendulum = Pendulum(; defaults = [0.5, 1.0])
 
 t, = independent_variables(pendulum)
 Dt = Differential(t)

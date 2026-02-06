@@ -14,7 +14,7 @@ println("Inverted Pendulum - Policy Search (ODESystem)")
 ######################### Define dynamics and domain ##########################
 
 p = Float32[0.5, 1.0]
-@named driven_pendulum = Pendulum(; driven = true, param_defaults = p)
+@named driven_pendulum = Pendulum(; driven = true, defaults = p)
 t, = independent_variables(driven_pendulum)
 θ, τ = unknowns(driven_pendulum)
 

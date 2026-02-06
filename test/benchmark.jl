@@ -216,7 +216,7 @@ end
     println("Benchmark: Damped Pendulum (ODESystem)")
 
     # Define dynamics and domain
-    @named damped_pendulum = Pendulum(; driven = false, param_defaults = Float32[5.0, 1.0])
+    @named damped_pendulum = Pendulum(; driven = false, defaults = Float32[5.0, 1.0])
     t, = independent_variables(damped_pendulum)
     θ, = unknowns(damped_pendulum)
     Dt = Differential(t)
@@ -299,7 +299,7 @@ end
 
     # Define dynamics and domain
     p = [0.5, 1.0]
-    @named driven_pendulum = Pendulum(; driven = true, param_defaults = p)
+    @named driven_pendulum = Pendulum(; driven = true, defaults = p)
     t, = independent_variables(driven_pendulum)
     θ, τ = unknowns(driven_pendulum)
 

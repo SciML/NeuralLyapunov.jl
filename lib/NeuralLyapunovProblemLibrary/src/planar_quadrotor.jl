@@ -1,5 +1,5 @@
 """
-    QuadrotorPlanar(; name, param_defaults)
+    QuadrotorPlanar(; name, defaults)
 
 Create an `System` representing a planar approximation of the quadrotor (technically a
 birotor).
@@ -31,10 +31,10 @@ The name of the `System` is `name`.
     9.81).
   - `r`: distance from center of mass to each rotor.
 
-Users may optionally provide default values of the parameters through `param_defaults`: a
+Users may optionally provide default values of the parameters through `defaults`: a
 vector of the default values for `[m, I_quad, g, r]`.
 """
-function QuadrotorPlanar(; name, param_defaults = NullParameters())
+function QuadrotorPlanar(; name, defaults = NullParameters())
     @variables x(t) y(t) θ(t)
     @variables u1(t) [input = true] u2(t) [input = true]
     @parameters m I_quad g r
@@ -50,10 +50,10 @@ function QuadrotorPlanar(; name, param_defaults = NullParameters())
     ]
 
     params = [m, I_quad, g, r]
-    kwargs = if param_defaults == NullParameters()
+    kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, initial_conditions = Dict(params .=> param_defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     return System(eqs, t, [x, y, θ, u1, u2], params; kwargs...)

@@ -1,5 +1,5 @@
 """
-    Pendulum(; driven = true, name, param_defaults)
+    Pendulum(; driven = true, name, defaults)
 
 Create an `System` representing a damped, driven or undriven pendulum, depending on the
 value of `driven` (defaults to `true`, i.e., driven pendulum).
@@ -13,7 +13,7 @@ divided by the moment of inertia of the pendulum around the pivot (`driven = fal
 
 The name of the `System` is `name`.
 
-Users may optionally provide default values of the parameters through `param_defaults`: a
+Users may optionally provide default values of the parameters through `defaults`: a
 vector of the default values for `[ζ, ω_0]`.
 
 # Example
@@ -40,15 +40,15 @@ u0: 2-element Vector{Float64}:
  0.0
 ```
 """
-function Pendulum(; driven = true, name, param_defaults = NullParameters())
+function Pendulum(; driven = true, name, defaults = NullParameters())
     @variables θ(t) τ(t) [input = true]
     @parameters ζ ω_0
 
     params = [ζ, ω_0]
-    kwargs = if param_defaults == NullParameters()
+    kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, initial_conditions = Dict(params .=> param_defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     torque = if driven

@@ -1,5 +1,5 @@
 """
-    DoublePendulum(; actuation=:fully_actuated, name, param_defaults)
+    DoublePendulum(; actuation=:fully_actuated, name, defaults)
 
 Create an `System` representing an undamped double pendulum.
 
@@ -40,10 +40,10 @@ The four actuation modes are described in the table below and selected via `actu
   - `m2`: mass of the second pendulum.
   - `g`: gravitational acceleration (defaults to 9.81).
 
-Users may optionally provide default values of the parameters through `param_defaults`: a
+Users may optionally provide default values of the parameters through `defaults`: a
 vector of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
 """
-function DoublePendulum(; actuation = :fully_actuated, name, param_defaults = NullParameters())
+function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullParameters())
     @variables θ1(t) θ2(t)
     @parameters I1 I2 l1 l2 lc1 lc2 m1 m2 g = 9.81
 
@@ -62,10 +62,10 @@ function DoublePendulum(; actuation = :fully_actuated, name, param_defaults = Nu
     q = [θ1, θ2]
     params = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
-    kwargs = if param_defaults == NullParameters()
+    kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, initial_conditions = Dict(params .=> param_defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     if actuation == :fully_actuated
@@ -105,21 +105,21 @@ function DoublePendulum(; actuation = :fully_actuated, name, param_defaults = Nu
 end
 
 """
-    Acrobot(; name, param_defaults)
+    Acrobot(; name, defaults)
 
-Alias for [`DoublePendulum(; actuation = :acrobot, name, param_defaults)`](@ref).
+Alias for [`DoublePendulum(; actuation = :acrobot, name, defaults)`](@ref).
 """
-function Acrobot(; name, param_defaults = NullParameters())
-    return DoublePendulum(; actuation = :acrobot, name, param_defaults)
+function Acrobot(; name, defaults = NullParameters())
+    return DoublePendulum(; actuation = :acrobot, name, defaults)
 end
 
 """
-    Pendubot(; name, param_defaults)
+    Pendubot(; name, defaults)
 
-Alias for [`DoublePendulum(; actuation = :pendubot, name, param_defaults)`](@ref).
+Alias for [`DoublePendulum(; actuation = :pendubot, name, defaults)`](@ref).
 """
-function Pendubot(; name, param_defaults = NullParameters())
-    return DoublePendulum(; actuation = :pendubot, name, param_defaults)
+function Pendubot(; name, defaults = NullParameters())
+    return DoublePendulum(; actuation = :pendubot, name, defaults)
 end
 
 """

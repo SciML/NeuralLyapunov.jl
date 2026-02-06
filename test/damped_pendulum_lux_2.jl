@@ -14,7 +14,7 @@ println("Damped Pendulum - MultiplicativeLyapunovNet structure")
 ######################### Define dynamics and domain ##########################
 p = Float32[0.5, 1.0]
 
-@mtkcompile dynamics = Pendulum(; driven = false, param_defaults = p)
+@mtkcompile dynamics = Pendulum(; driven = false, defaults = p)
 
 lb = Float32[-π, -10];
 ub = Float32[π, 10];
