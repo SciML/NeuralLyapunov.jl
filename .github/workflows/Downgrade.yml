@@ -8,24 +8,28 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-
 jobs:
   downgrade:
-    name: Downgrade
+    name: NeuralLyapunov Downgrade
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        project:
-          - '.'
-          - 'lib/NeuralLyapunovProblemLibrary'
+        group:
+          - 'core'
+          - 'policy_search'
+          - 'roa'
+          - 'local_lyapunov'
+          - 'benchmarking'
+          - 'unimplemented'
         include:
-          - version: '1.11'
+          - project: '.'
+            version: '1.11'
             os: ubuntu-latest
             arch: x64
             allow_failure: false
@@ -49,7 +53,58 @@ jobs:
         with:
           project: ${{ matrix.project }}
         env:
-          GROUP: "ci"
+          GROUP: ${{ matrix.group }}
+      # On a failed build, use julia-downgrade-compat to resolve a list of compatibility issues.
+      - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
+        uses: actions/checkout@v6
+      - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
+        uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          mode: forcedeps
+          projects: ${{ format('{0}, {0}/test', matrix.project) }}
+          skip: LinearAlgebra, Pkg, Random, Test
+          julia_version: ${{ matrix.version }}
+  library-downgrade:
+    name: NeuralLyapunovProblemLibrary Downgrade
+    concurrency:
+      # Skip intermediate builds: always.
+      # Cancel intermediate builds: only if it is a pull request build.
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}
+      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - 'pendula'
+          - 'quadrotors'
+        include:
+          - project: 'lib/NeuralLyapunovProblemLibrary'
+            version: '1.11'
+            os: ubuntu-latest
+            arch: x64
+            allow_failure: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          projects: ${{ format('{0}, {0}/test', matrix.project) }}
+          skip: LinearAlgebra, Pkg, Random, Test
+      - id: buildpkg
+        uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: ${{ matrix.project }}
+          precompile: yes
+      # On a successful build, check that the usual CI tests pass.
+      - if: ${{ steps.buildpkg.outcome == 'success' }}
+        uses: julia-actions/julia-runtest@v1
+        with:
+          project: ${{ matrix.project }}
+        env:
+          GROUP: ${{ matrix.group }}
       # On a failed build, use julia-downgrade-compat to resolve a list of compatibility issues.
       - if: ${{ always() && steps.buildpkg.outcome == 'failure' }}
         uses: actions/checkout@v6
