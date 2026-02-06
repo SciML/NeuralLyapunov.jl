@@ -10,7 +10,7 @@ steps:
       cuda: "*"
     env:
       DEVICE: 'GPU'
-      GROUP: 'CI'
+      GROUP: 'ALL'
       JULIA_PKG_SERVER: "" # it often struggles with our large artifacts
       # SECRET_CODECOV_TOKEN: "..."
     timeout_in_minutes: 1440
