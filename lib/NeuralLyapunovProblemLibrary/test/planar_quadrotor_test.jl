@@ -93,24 +93,22 @@ function π_lqr(p; x_eq = zeros(6), Q = I(6), R = I(2))
     return (x, _p, _t) -> -L * (x - x_eq) + [T0, T0]
 end
 
-@named quadrotor_planar = QuadrotorPlanar()
-
 # Assume rotors are negligible mass when calculating the moment of inertia
 m, r = ones(2)
 g = 1.0
 I_quad = m * r^2 / 12
 p = [m, I_quad, g, r]
 
+@named quadrotor_planar = QuadrotorPlanar(param_defaults = p)
+
 @mtkcompile quadrotor_planar_lqr = control_quadrotor_planar(quadrotor_planar, π_lqr(p))
 
 # Fly to origin
 x = get_quadrotor_planar_state_symbols(quadrotor_planar)
 x0 = Dict(x .=> 2 * rand(rng, 6) .- 1)
-p_dict = Dict(get_quadrotor_planar_param_symbols(quadrotor_planar) .=> p)
 τ = sqrt(r / g)
 
-op = merge(x0, p_dict)
-prob = ODEProblem(quadrotor_planar_lqr, op, 15τ)
+prob = ODEProblem(quadrotor_planar_lqr, x0, 15τ)
 sol = solve(prob, Tsit5())
 
 q = x[1:3]

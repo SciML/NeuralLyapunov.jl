@@ -1,6 +1,12 @@
 name: Code Quality Check
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - master
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   typos-check:

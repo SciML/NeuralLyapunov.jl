@@ -78,7 +78,16 @@ anim = plot_double_pendulum(sol, p)
 ########################### Feedback cancellation, PD controller ###########################
 println("Double pendulum feedback cancellation test")
 
-@named double_pendulum = DoublePendulum()
+# Assume uniform rods of random mass and length
+m1, m2 = ones(2)
+l1, l2 = ones(2)
+lc1, lc2 = l1 / 2, l2 / 2
+I1 = m1 * l1^2 / 3
+I2 = m2 * l2^2 / 3
+g = 1.0
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+
+@named double_pendulum = DoublePendulum(param_defaults = p)
 
 function π_cancellation(x, p, t)
     θ1, θ2, ω1, ω2 = x
@@ -97,22 +106,10 @@ end
 @mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
 
 # Swing up to upward equilibrium
-# Assume uniform rods of random mass and length
-m1, m2 = ones(2)
-l1, l2 = ones(2)
-lc1, lc2 = l1 / 2, l2 / 2
-I1 = m1 * l1^2 / 3
-I2 = m2 * l2^2 / 3
-g = 1.0
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
-
-params = get_double_pendulum_param_symbols(double_pendulum)
-p_dict = Dict(params .=> p)
 x = get_double_pendulum_state_symbols(double_pendulum)
 x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- π, rand(rng, 2)))
 
-op = merge(x0, p_dict)
-prob = ODEProblem(double_pendulum_feedback_cancellation, op, 100)
+prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100)
 sol = solve(prob, Tsit5())
 
 θ1 = double_pendulum.θ1

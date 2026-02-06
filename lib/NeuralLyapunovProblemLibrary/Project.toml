@@ -1,6 +1,6 @@
 name = "NeuralLyapunovProblemLibrary"
 uuid = "83723521-ca9c-4edc-8e64-505178d150fe"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com> and contributors"]
 
 [deps]
@@ -18,9 +18,9 @@ NeuralLyapunovProblemLibraryPlotsExt = "Plots"
 
 [compat]
 LinearAlgebra = "1"
-ModelingToolkit = "10, 11"
+ModelingToolkit = "11"
 Plots = "1.40.9"
 Rotations = "1.7.1"
 SciMLBase = "2.91.1"
-Symbolics = "6.40, 7"
+Symbolics = "7"
 julia = "1.11"
