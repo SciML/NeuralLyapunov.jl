@@ -18,9 +18,9 @@ NeuralLyapunovProblemLibraryPlotsExt = "Plots"
 
 [compat]
 LinearAlgebra = "1"
-ModelingToolkit = "10, 11"
+ModelingToolkit = "10"
 Plots = "1.40.9"
 Rotations = "1.7.1"
 SciMLBase = "2.91.1"
-Symbolics = "6.40, 7"
+Symbolics = "6.40"
 julia = "1.11"
