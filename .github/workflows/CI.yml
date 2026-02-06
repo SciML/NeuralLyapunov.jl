@@ -10,7 +10,7 @@ on:
 
 jobs:
   tests:
-    name: NeuralLyapunov Tests
+    name: NeuralLyapunov
     concurrency:
       # Skip intermediate builds: always.
       # Cancel intermediate builds: only if it is a pull request build.
@@ -41,7 +41,7 @@ jobs:
       group: ${{ matrix.group }}
     secrets: "inherit"
   library-tests:
-    name: NeuralLyapunovProblemLibrary Tests
+    name: NeuralLyapunovProblemLibrary
     concurrency:
       # Skip intermediate builds: always.
       # Cancel intermediate builds: only if it is a pull request build.

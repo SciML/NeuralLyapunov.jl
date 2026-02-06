@@ -10,7 +10,7 @@ on:
 
 jobs:
   downgrade:
-    name: NeuralLyapunov Downgrade
+    name: NeuralLyapunov
     concurrency:
       # Skip intermediate builds: always.
       # Cancel intermediate builds: only if it is a pull request build.
@@ -65,7 +65,7 @@ jobs:
           skip: LinearAlgebra, Pkg, Random, Test
           julia_version: ${{ matrix.version }}
   library-downgrade:
-    name: NeuralLyapunovProblemLibrary Downgrade
+    name: NeuralLyapunovProblemLibrary
     concurrency:
       # Skip intermediate builds: always.
       # Cancel intermediate builds: only if it is a pull request build.
