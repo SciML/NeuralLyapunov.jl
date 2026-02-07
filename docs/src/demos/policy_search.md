@@ -109,7 +109,7 @@ _θ = res.u.depvar
 pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
-p = [defaults(pendulum)[param] for param in parameters(pendulum)]
+p = [Symbolics.value(initial_conditions(pendulum)[param]) for param in parameters(pendulum)]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
@@ -270,7 +270,7 @@ We can use the result of the optimization problem to build the Lyapunov candidat
 pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
 state_order = unknowns(pendulum_io)
-p = [defaults(pendulum)[param] for param in parameters(pendulum)]
+p = [Symbolics.value(initial_conditions(pendulum)[param]) for param in parameters(pendulum)]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,

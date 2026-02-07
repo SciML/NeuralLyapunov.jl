@@ -76,7 +76,7 @@ function NeuralLyapunovPDESystem(
     params = [first(@parameters $s) for s in param_syms]
 
     ##################### Define default parameter values #####################
-    defaults = if p == SciMLBase.NullParameters()
+    initial_conditions = if p == SciMLBase.NullParameters()
         Dict()
     else
         Dict([param => param_val for (param, param_val) in zip(params, p)])
@@ -93,7 +93,7 @@ function NeuralLyapunovPDESystem(
         fixed_point,
         state,
         params,
-        defaults,
+        initial_conditions,
         policy_search,
         name
     )
@@ -207,10 +207,7 @@ function NeuralLyapunovPDESystem(
     state = [first(@parameters $s) for s in state_syms]
 
     ###################### Remove derivatives in domains ######################
-    domains = map(
-        d -> Num(operation(diff2term(value(d.variables)))) ∈ d.domain,
-        bounds
-    )
+    domains = map(d -> operation(diff2term(d.variables)) ∈ d.domain, bounds)
     domain_vars = map(d -> d.variables, domains)
     if Set(_state) != Set(domain_vars)
         error(
@@ -227,7 +224,7 @@ function NeuralLyapunovPDESystem(
         fixed_point,
         state,
         parameters(dynamics),
-        defaults(dynamics),
+        initial_conditions(dynamics),
         policy_search,
         name
     )
@@ -240,7 +237,7 @@ function _NeuralLyapunovPDESystem(
         fixed_point,
         state,
         params,
-        defaults,
+        initial_conditions,
         policy_search::Bool,
         name
     )::PDESystem
@@ -345,7 +342,7 @@ function _NeuralLyapunovPDESystem(
         state,
         φ(state),
         params;
-        defaults,
+        initial_conditions,
         name
     )
 end

@@ -138,8 +138,8 @@ function π_lqr(p; x_eq = zeros(12), u_eq = [p[1]*p[2], 0, 0, 0], Q = I(12), R =
     x_new = unknowns(sys)
     u_new = inputs(sys)
 
-    Px = (x_new .- x') .=== 0
-    Pu = (u_new .- u') .=== 0
+    Px = Symbolics.value.(x_new .- x') .=== 0
+    Pu = Symbolics.value.(u_new .- u') .=== 0
 
     A_lin = Px' * mats[:A] * Px
     B_lin = Px' * mats[:B] * Pu

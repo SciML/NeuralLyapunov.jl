@@ -14,7 +14,7 @@ println("Damped Pendulum")
 ######################### Define dynamics and domain ##########################
 
 @parameters ζ ω_0
-defaults = Dict([ζ => 0.5, ω_0 => 1.0])
+initial_conditions = Dict([ζ => 0.5, ω_0 => 1.0])
 
 @independent_variables t
 @variables θ(t)
@@ -23,7 +23,7 @@ DDt = Dt^2
 
 eqs = [DDt(θ) + 2ζ * ω_0 * Dt(θ) + ω_0^2 * sin(θ) ~ 0.0]
 
-@mtkcompile dynamics = System(eqs, t, [θ], [ζ, ω_0]; defaults)
+@mtkcompile dynamics = System(eqs, t, [θ], [ζ, ω_0]; initial_conditions)
 
 bounds = [
     θ ∈ (-π, π),
@@ -31,7 +31,7 @@ bounds = [
 ]
 lb = [-π, -10.0];
 ub = [π, 10.0];
-p = [defaults[param] for param in parameters(dynamics)]
+p = [initial_conditions[param] for param in parameters(dynamics)]
 fixed_point = [0.0, 0.0]
 
 ####################### Specify neural Lyapunov problem #######################
@@ -89,7 +89,7 @@ prob = discretize(pde_system, discretization)
 
 res = Optimization.solve(prob, Adam(0.1); maxiters = 500)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 500)
+res = Optimization.solve(prob, Adam(0.001); maxiters = 500)
 
 ###################### Get numerical numerical functions ######################
 
