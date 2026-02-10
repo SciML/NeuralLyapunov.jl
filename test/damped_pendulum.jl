@@ -2,7 +2,6 @@ using NeuralPDE, Lux, ComponentArrays, ModelingToolkit, NeuralLyapunov
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 

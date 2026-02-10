@@ -40,8 +40,8 @@ The four actuation modes are described in the table below and selected via `actu
   - `m2`: mass of the second pendulum.
   - `g`: gravitational acceleration (defaults to 9.81).
 
-Users may optionally provide default values of the parameters through `defaults`: a
-vector of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
 """
 function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullParameters())
     @variables θ1(t) θ2(t)

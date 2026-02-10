@@ -44,8 +44,8 @@ The model calculates individual rotor thrusts and replaces any negative values w
         \\end{pmatrix}.
     ```
 
-Users may optionally provide default values of the parameters through `defaults`: a
-vector of the default values for `[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]`.
 """
 function Quadrotor3D(; name, defaults = NullParameters())
     # Model from "Minimum Snap Trajectory Generation and Control for Quadrotors"

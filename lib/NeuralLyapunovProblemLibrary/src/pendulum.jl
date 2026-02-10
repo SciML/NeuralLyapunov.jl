@@ -13,8 +13,8 @@ divided by the moment of inertia of the pendulum around the pivot (`driven = fal
 
 The name of the `System` is `name`.
 
-Users may optionally provide default values of the parameters through `defaults`: a
-vector of the default values for `[ζ, ω_0]`.
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[ζ, ω_0]`.
 
 # Example
 

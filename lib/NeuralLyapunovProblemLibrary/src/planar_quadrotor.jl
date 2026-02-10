@@ -31,8 +31,8 @@ The name of the `System` is `name`.
     9.81).
   - `r`: distance from center of mass to each rotor.
 
-Users may optionally provide default values of the parameters through `defaults`: a
-vector of the default values for `[m, I_quad, g, r]`.
+Users may optionally provide default values of the parameters through `defaults`: a vector
+of the default values for `[m, I_quad, g, r]`.
 """
 function QuadrotorPlanar(; name, defaults = NullParameters())
     @variables x(t) y(t) θ(t)
