@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs, D_nounits as Dt
+using ModelingToolkit: D_nounits as Dt
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -103,7 +103,10 @@ function π_cancellation(x, p, t)
     return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
 end
 
-@mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(double_pendulum, π_cancellation)
+@mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(
+    double_pendulum,
+    π_cancellation
+)
 
 # Swing up to upward equilibrium
 x = get_double_pendulum_state_symbols(double_pendulum)
