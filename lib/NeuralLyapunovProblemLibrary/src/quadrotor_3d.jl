@@ -99,7 +99,7 @@ function Quadrotor3D(; name, defaults = NullParameters())
     kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, defaults = Dict(params .=> defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     return System(

@@ -374,7 +374,6 @@ end
         fixed_point = upright_equilibrium,
         optimization_args,
         endpoint_check,
-        classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
         init_params = ps,
         init_states = st
     )

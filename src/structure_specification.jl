@@ -16,7 +16,7 @@ julia> NoAdditionalStructure()
 NeuralLyapunovStructure
     Network dimension: 1
     V(x) = φ(x)
-    V̇(x) = f(x, p, t)*∇φ(x)
+    V̇(x) = ∇φ(x)*f(x, p, t)
     f_call(x) = f(x, p, t)
 ```
 """
@@ -63,11 +63,11 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 
 # Example
 ```jldoctest
-julia> NonnegativeStructure(1; δ = 0.1)
+julia> NonnegativeStructure(3; δ = 0.1)
 NeuralLyapunovStructure
-    Network dimension: 1
-    V(x) = 0.1log(1.0 + (x - x_0)^2) + φ(x)^2
-    V̇(x) = (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2φ(x)*f(x, p, t)*∇φ(x)
+    Network dimension: 3
+    V(x) = 0.1log(1.0 + (x - x_0)^2) + (φ(x))[1]^2 + (φ(x))[2]^2 + (φ(x))[3]^2
+    V̇(x) = 2(φ(x))⋅(f(x, p, t)*Jφ(x)) + (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2)
     f_call(x) = f(x, p, t)
 ```
 
@@ -154,7 +154,7 @@ julia> PositiveSemiDefiniteStructure(1)
 NeuralLyapunovStructure
     Network dimension: 1
     V(x) = log(1.0 + (x - x_0)^2)*(1 + φ(x)^2)
-    V̇(x) = (2(x - x_0)*(1 + φ(x)^2)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2log(1.0 + (x - x_0)^2)*φ(x)*f(x, p, t)*Differential(x)(φ(x))
+    V̇(x) = (2(x - x_0)*(1 + φ(x)^2)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2log(1.0 + (x - x_0)^2)*φ(x)*Differential(x, 1)(φ(x))*f(x, p, t)
     f_call(x) = f(x, p, t)
 ```
 

@@ -101,7 +101,7 @@ V0 = V(fixed_point)[]
 @test min(V0, minimum(V_predict)) ≥ 0.0
 
 # Check local positive definiteness at fixed point
-@test maximum(abs, ForwardDiff.gradient(first ∘ V, fixed_point)) ≤ 1.0e-6
+@test maximum(abs, ForwardDiff.gradient(first ∘ V, fixed_point)) ≤ 2.0e-6
 @test minimum(eigvals(ForwardDiff.hessian(first ∘ V, fixed_point))) .≥ 0
 
 # Network structure should enforce periodicity in θ

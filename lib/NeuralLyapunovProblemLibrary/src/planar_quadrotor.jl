@@ -53,7 +53,7 @@ function QuadrotorPlanar(; name, defaults = NullParameters())
     kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, defaults = Dict(params .=> defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     return System(eqs, t, [x, y, θ, u1, u2], params; kwargs...)

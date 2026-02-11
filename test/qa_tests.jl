@@ -19,16 +19,16 @@ end
     @test check_all_explicit_imports_via_owners(NeuralLyapunov) === nothing
     @test check_all_qualified_accesses_via_owners(NeuralLyapunov) === nothing
 
-    # We need a couple Symbolics internals (diff2term and value) and a ModelingToolkit
-    # internal (unbound_inputs), and for some reason QuasiMonteCarlo doesn't export sample
+    # We need a couple Symbolics internals (diff2term), a ModelingToolkit internal
+    # (unbound_inputs), and for some reason QuasiMonteCarlo doesn't export sample
     @test check_all_explicit_imports_are_public(
-        NeuralLyapunov; ignore = (:diff2term, :value, :sample, :unbound_inputs)
+        NeuralLyapunov; ignore = (:diff2term, :sample, :unbound_inputs)
     ) === nothing
 
     # ForwardDiff doesn't export derivative, gradient, or jacobian, nor does SciMLBase with
-    # NullParameters
+    # NullParameters or Symbolics with value
     @test check_all_qualified_accesses_are_public(
         NeuralLyapunov;
-        ignore = (:NullParameters, :derivative, :gradient, :jacobian, :logscalar)
+        ignore = (:NullParameters, :derivative, :gradient, :jacobian, :logscalar, :value)
     ) === nothing
 end

@@ -1,5 +1,4 @@
 using ModelingToolkit
-import ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots

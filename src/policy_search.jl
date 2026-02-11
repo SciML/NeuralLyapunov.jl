@@ -22,13 +22,13 @@ The other `lyapunov_structure.network_dim` outputs are used for calculating ``V`
 as specified originally by `lyapunov_structure`.
 
 ```jldoctest
-add_policy_search(NonnegativeStructure(1), 1)
+add_policy_search(NonnegativeStructure(3), 1)
 # output
 NeuralLyapunovStructure
-    Network dimension: 2
-    V(x) = ((φ(x))[1:1, Colon()])[1, 1]^2
-    V̇(x) = 2((Jφ(x))[1:1, Colon()] * f(x, (φ(x))[2:2], p, t))[1, 1]*((φ(x))[1:1])[1]
-    f_call(x) = f(x, (φ(x))[2:2], p, t)
+    Network dimension: 4
+    V(x) = (φ(x))[1]^2 + (φ(x))[2]^2 + (φ(x))[3]^2
+    V̇(x) = 2((φ(x))[1:3])⋅(f(x, (φ(x))[4], p, t)*(Jφ(x))[1:3])
+    f_call(x) = f(x, (φ(x))[4], p, t)
 ```
 """
 function add_policy_search(
@@ -41,7 +41,7 @@ function add_policy_search(
 
         NeuralLyapunovStructure(
             function (net, state, fixed_point)
-                return if length(size(state)) == 1
+                return if length(size(state)) < 2
                     if V_dim == 1
                         V(st -> net(st)[1], state, fixed_point)
                     else

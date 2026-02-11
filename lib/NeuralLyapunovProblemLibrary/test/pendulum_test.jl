@@ -1,5 +1,5 @@
 using ModelingToolkit
-import ModelingToolkit: inputs, D_nounits as Dt
+using ModelingToolkit: D_nounits as Dt
 using NeuralLyapunovProblemLibrary
 using OrdinaryDiffEq
 using Plots
@@ -45,9 +45,10 @@ p = rand(rng, 2)
 
 π_cancellation(x, p, t) = 2 * p[2]^2 * sin(x[1])
 
-@named pendulum_feedback_cancellation = control_pendulum(pendulum_driven, π_cancellation)
-
-pendulum_feedback_cancellation = mtkcompile(pendulum_feedback_cancellation)
+@mtkcompile pendulum_feedback_cancellation = control_pendulum(
+    pendulum_driven,
+    π_cancellation
+)
 
 # Swing up to upward equilibrium
 op = Dict(get_pendulum_state_symbols(pendulum_driven) .=> x0)

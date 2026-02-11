@@ -2,7 +2,7 @@
     Pendulum(; driven = true, name, defaults)
 
 Create an `System` representing a damped, driven or undriven pendulum, depending on the
-value of driven (defaults to `true`, i.e., driven pendulum).
+value of `driven` (defaults to `true`, i.e., driven pendulum).
 
 The equation used in this model is
 ``\\ddot{θ} + 2 ζ ω_0 \\dot{θ} + ω_0^2 \\sin(θ) = τ,``
@@ -48,7 +48,7 @@ function Pendulum(; driven = true, name, defaults = NullParameters())
     kwargs = if defaults == NullParameters()
         (; name)
     else
-        (; name, defaults = Dict(params .=> defaults))
+        (; name, initial_conditions = Dict(params .=> defaults))
     end
 
     torque = if driven

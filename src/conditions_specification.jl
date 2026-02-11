@@ -27,24 +27,38 @@ end
 function Base.show(io::IO, s::NeuralLyapunovStructure)
     n = s.network_dim
     if n > 1
-        @variables φ(..)[1:n] Jφ(..)[1:n] f(..) x x_0 p t
+        @variables φ(..)[1:n] Jφ(..)[1:n, 1:1] f(..) x x_0 p t
         println(io, "NeuralLyapunovStructure")
         println(io, "    Network dimension: ", n)
         try
-            println(io, "    V(x) = ", s.V(φ, x, x_0))
+            V = string(s.V(φ, x, x_0))
+            # Regex to simplify broadcasting notation for better readability
+            # Replace, e.g., [1:1] with [1]
+            V = replace(V, r"\b(\d+):\1\b" => s"\1")
+            println(io, "    V(x) = ", V)
         catch e
             println(io, "    V(x) = <could not display: $(e)>")
         end
         try
             V̇ = string(s.V̇(φ, Jφ, f, x, p, t, x_0))
             # Regex to simplify broadcasting notation for better readability
-            V̇ = replace(V̇, r"broadcast\(\*,\s*(.+?),\s*Ref\(((?:[^()]|\((?:[^()]|\([^)]*\))*\))*)\)\)" => s"\1 * \2")
+            # Replace, e.g., [1:2, Colon()] with [1:2]
+            V̇ = replace(V̇, r",\s*Colon\(\)" => "")
+            # Replace, e.g., [1:1] with [1]
+            V̇ = replace(V̇, r"\b(\d+):\1\b" => s"\1")
+            # Replace LinearAlgebra.dot with ⋅ for better readability
+            dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
+            V̇ = replace(V̇, dot_re => s"(\1)⋅(\2)")
             println(io, "    V̇(x) = ", V̇)
         catch e
             println(io, "    V̇(x) = <could not display: $(e)>")
         end
         try
-            print(io, "    f_call(x) = ", s.f_call(f, φ, x, p, t))
+            ẋ = string(s.f_call(f, φ, x, p, t))
+            # Regex to simplify broadcasting notation for better readability
+            # Replace, e.g., [1:1] with [1]
+            ẋ = replace(ẋ, r"\b(\d+):\1\b" => s"\1")
+            print(io, "    f_call(x) = ", ẋ)
         catch e
             println(io, "    f_call(x) = <could not display: $(e)>")
         end
@@ -112,7 +126,7 @@ NeuralLyapunovSpecification
         NeuralLyapunovStructure
             Network dimension: 1
             V(x) = φ(x)^2
-            V̇(x) = 2φ(x)*f(x, p, t)*∇φ(x)
+            V̇(x) = 2φ(x)*∇φ(x)*f(x, p, t)
             f_call(x) = f(x, p, t)
     Minimization Condition:
         LyapunovMinimizationCondition

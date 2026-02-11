@@ -195,14 +195,14 @@ but differentiable approximations of this function may be employed.
 ```jldoctest
 julia> ExponentialStability(0.5)
 LyapunovDecreaseCondition
-    Trains for V̇(x) + 0.5V(x) ≤ 0
+    Trains for 0.5V(x) + V̇(x) ≤ 0
     with approximation a ≤ 0 => max(0, a) ≈ 0
 
 julia> softplus = (t) -> log(one(t) + exp(t));
 
 julia> ExponentialStability(5.0; rectifier = softplus)
 LyapunovDecreaseCondition
-    Trains for V̇(x) + 5.0V(x) ≤ 0
+    Trains for 5.0V(x) + V̇(x) ≤ 0
     with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
 ```
 """
