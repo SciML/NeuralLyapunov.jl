@@ -31,6 +31,7 @@ MANUAL_PAGES = [
     "man/structure.md",
     "man/roa.md",
     "man/policy_search.md",
+    "man/benchmarking.md",
     "man/local_lyapunov.md",
 ]
 DEMONSTRATION_PAGES = [
