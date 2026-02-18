@@ -35,6 +35,14 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             # Regex to simplify broadcasting notation for better readability
             # Replace, e.g., [1:1] with [1]
             V = replace(V, r"\b(\d+):\1\b" => s"\1")
+            # Replace LinearAlgebra.dot(A, A) with ||A||^2 for better readability
+            dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?1)\))*)\s*\)"
+            V = replace(V, dot_re => s"||\1||²")
+            # Replace LinearAlgebra.dot with ⋅ for better readability
+            dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
+            V = replace(V, dot_re => s"(\1)⋅(\2)")
+            # Replace ^2 with ²
+            V = replace(V, r"\^2" => "²")
             println(io, "    V(x) = ", V)
         catch e
             println(io, "    V(x) = <could not display: $(e)>")
@@ -49,6 +57,8 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             # Replace LinearAlgebra.dot with ⋅ for better readability
             dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
             V̇ = replace(V̇, dot_re => s"(\1)⋅(\2)")
+            # Replace ^2 with ²
+            V̇ = replace(V̇, r"\^2" => "²")
             println(io, "    V̇(x) = ", V̇)
         catch e
             println(io, "    V̇(x) = <could not display: $(e)>")
