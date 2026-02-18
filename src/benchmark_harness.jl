@@ -40,7 +40,9 @@ the user or generated automatically).
   - `dynamics`: the dynamical system being analyzed, represented as a `System` or the
     function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
     time and only `t = 0.0` will be used. (For an example of when `f` would have a `u`
-    argument, see [`add_policy_search`](@ref).)
+    argument, see [`add_policy_search`](@ref).) If `dynamics isa System`, call
+    `mtkcompile(dynamics)` before `benchmark`, or
+    `mtkcompile(dynamics; inputs = ..., split = false)` if the system has unbound inputs.
   - `bounds`: an array of domains, defining the training domain by bounding the states (and
     derivatives, when applicable) of `dynamics`; only used when `dynamics isa
     System`, otherwise use `lb` and `ub`.
@@ -162,16 +164,11 @@ function benchmark(
         ensemble_alg = EnsembleDistributed(),
         log_frequency = 50
     )
-    params = parameters(dynamics)
+    params = setdiff(parameters(dynamics), unbound_inputs(dynamics))
     f = if isempty(unbound_inputs(dynamics))
         ODEFunction(dynamics)
     else
-        dynamics_io_sys = mtkcompile(
-            dynamics;
-            inputs = unbound_inputs(dynamics),
-            split = false
-        )
-        ODEInputFunction(dynamics_io_sys; simplify = true, split = false)
+        ODEInputFunction(dynamics)
     end
 
     ics = initial_conditions(dynamics)

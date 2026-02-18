@@ -8,7 +8,9 @@ Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapun
   - `dynamics`: the dynamical system being analyzed, represented as a `System` or the
     function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
     time and only `t = 0.0` will be used. (For an example of when `f` would have a `u`
-    argument, see [`add_policy_search`](@ref).)
+    argument, see [`add_policy_search`](@ref).) If `dynamics isa System`, call
+    `mtkcompile(dynamics)` before `NeuralLyapunovPDESystem`, or
+    `mtkcompile(dynamics; inputs = ..., split = false)` if the system has unbound inputs.
   - `bounds`: an array of domains, defining the training domain by bounding the states (and
     derivatives, when applicable) of `dynamics`; only used when `dynamics isa
     System`, otherwise use `lb` and `ub`.
@@ -188,21 +190,16 @@ function NeuralLyapunovPDESystem(
     ######################### Check for policy search #########################
     policy_search = !isempty(unbound_inputs(dynamics))
 
-    (f, x) = if policy_search
-        dynamics_io_sys = mtkcompile(
-            dynamics;
-            inputs = unbound_inputs(dynamics),
-            split = false
-        )
-        (ODEInputFunction(dynamics_io_sys), unknowns(dynamics_io_sys))
+    f = if policy_search
+        ODEInputFunction(dynamics)
     else
-        (ODEFunction(dynamics), unknowns(dynamics))
+        ODEFunction(dynamics)
     end
 
     ########################## Define state symbols ###########################
     # States should all be functions of time, but we just want the symbol
     # e.g., if the state is ω(t), we just want ω
-    _state = operation.(x)
+    _state = operation.(unknowns(dynamics))
     state_syms = Symbol.(_state)
     state = [first(@parameters $s) for s in state_syms]
 
@@ -223,7 +220,7 @@ function NeuralLyapunovPDESystem(
         spec,
         fixed_point,
         state,
-        parameters(dynamics),
+        setdiff(parameters(dynamics), unbound_inputs(dynamics)),
         initial_conditions(dynamics),
         policy_search,
         name

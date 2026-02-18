@@ -26,14 +26,13 @@ Random.seed!(200)
 ######################### Define dynamics and domain ##########################
 
 @named pendulum = Pendulum(; defaults = [0.5, 1.0])
-
-t, = independent_variables(pendulum)
-Dt = Differential(t)
-θ, = setdiff(unknowns(pendulum), inputs(pendulum))
+τ, = unbound_inputs(pendulum)
+pendulum = mtkcompile(pendulum; inputs = [τ], split = false)
+θ, ω = unknowns(pendulum)
 
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-2.0, 2.0)
+    ω ∈ (-2.0, 2.0)
 ]
 
 upright_equilibrium = [π, 0.0]
@@ -106,10 +105,10 @@ res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
-open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
-state_order = unknowns(pendulum_io)
-p = [Symbolics.value(initial_conditions(pendulum)[param]) for param in parameters(pendulum)]
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum)
+params = setdiff(parameters(pendulum), unbound_inputs(pendulum))
+ics = initial_conditions(pendulum)
+p = [Symbolics.value(ics[param]) for param in params]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
@@ -137,17 +136,16 @@ Since the angle ``\theta`` is periodic with period ``2\pi``, our box domain will
 
 ```@example policy_search
 using ModelingToolkit, NeuralLyapunovProblemLibrary
-using ModelingToolkit: inputs
+using ModelingToolkit: unbound_inputs
 
 @named pendulum = Pendulum(; defaults = [0.5, 1.0])
-
-t, = independent_variables(pendulum)
-Dt = Differential(t)
-θ, = setdiff(unknowns(pendulum), inputs(pendulum))
+τ, = unbound_inputs(pendulum)
+pendulum = mtkcompile(pendulum; inputs = [τ], split = false)
+θ, ω = unknowns(pendulum)
 
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-2.0, 2.0)
+    ω ∈ (-2.0, 2.0)
 ]
 
 upright_equilibrium = [π, 0.0]
@@ -162,7 +160,7 @@ For more on that aspect, see the [NeuralPDE documentation](https://docs.sciml.ai
 
 ```@example policy_search
 using Lux, ComponentArrays
-import Boltz.Layers: PeriodicEmbedding
+using Boltz.Layers: PeriodicEmbedding
 using StableRNGs
 
 # Stable random number generator for doc stability
@@ -267,10 +265,10 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
-pendulum_io = mtkcompile(pendulum; inputs=inputs(pendulum), simplify = true, split = false)
-open_loop_pendulum_dynamics = ODEInputFunction(pendulum_io)
-state_order = unknowns(pendulum_io)
-p = [Symbolics.value(initial_conditions(pendulum)[param]) for param in parameters(pendulum)]
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum)
+params = setdiff(parameters(pendulum), unbound_inputs(pendulum))
+ics = initial_conditions(pendulum)
+p = [Symbolics.value(ics[param]) for param in params]
 
 V, V̇ = get_numerical_lyapunov_function(
     net,
@@ -374,20 +372,17 @@ Now, let's simulate the closed-loop dynamics to verify that the controller can g
 First, we'll start at the downward equilibrium:
 
 ```@example policy_search
-state_order = map(st -> SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
-state_syms = Symbol.(state_order)
-
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
-    sys = SciMLBase.SymbolCache(state_syms, Symbol.(parameters(pendulum)))
+    sys = pendulum
 )
 
-using OrdinaryDiffEq: Tsit5
+using OrdinaryDiffEq: AutoTsit5, Rosenbrock23
 
 # Starting still at bottom ...
 downward_equilibrium = zeros(2)
 ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 120.0], p)
-sol = solve(ode_prob, Tsit5())
+sol = solve(ode_prob, AutoTsit5(Rosenbrock23()))
 plot(sol)
 ```
 
@@ -404,7 +399,7 @@ Then, we'll start at a random state:
 # Starting at a random point ...
 x0 = lb .+ rand(2) .* (ub .- lb)
 ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 150.0], p)
-sol = solve(ode_prob, Tsit5())
+sol = solve(ode_prob, AutoTsit5(Rosenbrock23()))
 plot(sol)
 ```
 

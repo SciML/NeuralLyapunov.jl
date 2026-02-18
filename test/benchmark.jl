@@ -1,4 +1,5 @@
 using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary
+using ModelingToolkit: unbound_inputs
 import Boltz.Layers: PeriodicEmbedding, MLP
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
@@ -216,15 +217,12 @@ end
     println("Benchmark: Damped Pendulum (ODESystem)")
 
     # Define dynamics and domain
-    @named damped_pendulum = Pendulum(; driven = false, defaults = Float32[5.0, 1.0])
-    t, = independent_variables(damped_pendulum)
-    θ, = unknowns(damped_pendulum)
-    Dt = Differential(t)
+    @mtkcompile damped_pendulum = Pendulum(; driven = false, defaults = Float32[5.0, 1.0])
+    θ, ω = unknowns(damped_pendulum)
 
-    damped_pendulum = mtkcompile(damped_pendulum)
     bounds = [
         θ ∈ Float32.((-π, π)),
-        Dt(θ) ∈ (-10.0f0, 10.0f0),
+        ω ∈ (-10.0f0, 10.0f0),
     ]
 
     # Define neural network discretization
@@ -300,13 +298,13 @@ end
     # Define dynamics and domain
     p = [0.5, 1.0]
     @named driven_pendulum = Pendulum(; driven = true, defaults = p)
-    t, = independent_variables(driven_pendulum)
-    θ, τ = unknowns(driven_pendulum)
+    τ, = unbound_inputs(driven_pendulum)
+    driven_pendulum = mtkcompile(driven_pendulum; inputs = [τ], split = false)
+    θ, ω = unknowns(driven_pendulum)
 
-    Dt = Differential(t)
     bounds = [
         θ ∈ (0, 2π),
-        Dt(θ) ∈ (-2.0, 2.0),
+        ω ∈ (-2.0, 2.0),
     ]
 
     upright_equilibrium = [π, 0.0]
