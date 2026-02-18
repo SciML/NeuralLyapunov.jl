@@ -1,5 +1,5 @@
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary,
-        OrdinaryDiffEq
+    OrdinaryDiffEq
 using ModelingToolkit: unbound_inputs
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
