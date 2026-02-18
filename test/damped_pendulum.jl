@@ -33,6 +33,8 @@ ub = [π, 10.0];
 p = [initial_conditions[param] for param in parameters(dynamics)]
 fixed_point = [0.0, 0.0]
 
+f = ODEFunction(dynamics)
+
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
@@ -77,7 +79,7 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(ODEFunction(dynamics), lb, ub, spec; p)
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec; p)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -96,7 +98,7 @@ res = Optimization.solve(prob, Adam(0.001); maxiters = 500)
     discretization.phi,
     res.u.depvar,
     structure,
-    ODEFunction(dynamics),
+    f,
     zeros(length(bounds));
     p
 )
