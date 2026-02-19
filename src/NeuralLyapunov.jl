@@ -6,7 +6,7 @@ using LinearAlgebra: I, dot, ⋅
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term
 using ModelingToolkit: @named, @parameters, System, PDESystem, parameters, unknowns,
-    initial_conditions, operation, unbound_inputs
+    initial_conditions, operation, unbound_inputs, independent_variables
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake
