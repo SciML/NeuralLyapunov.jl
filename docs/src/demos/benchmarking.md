@@ -244,7 +244,9 @@ benchmarking_results.data[1:3, :]
 The `benchmark` function also outputs the Lyapunov function ``V`` and its time-derivative ``V̇``.
 
 ```@example benchmarking
-states = benchmarking_results.data[!, "Initial State"]
+θis = benchmarking_results.data[!, "Initial θ"]
+ωis = benchmarking_results.data[!, "Initial ω"]
+states = map(collect, zip(θis, ωis))
 V_samples = benchmarking_results.data[!, "V"]
 all(benchmarking_results.V.(states) .== V_samples)
 ```
@@ -254,11 +256,13 @@ V̇_samples = benchmarking_results.data[!, "dVdt"]
 all(benchmarking_results.V̇.(states) .== V̇_samples)
 ```
 
-The "Actually in RoA" column is just the result of applying `endpoint_check` applied to the "End State" column.
-The "End State" column is the final state of the simulation starting at that "Initial State".
+The "Actually in RoA" column is just the result of applying `endpoint_check` applied to the final states.
+The "Final x" column is the final value of state variable "x" of the simulation starting at that "Initial x".
 
 ```@example benchmarking
-endpoints = benchmarking_results.data[!, "Final State"]
+θfs = benchmarking_results.data[!, "Final θ"]
+ωfs = benchmarking_results.data[!, "Final ω"]
+endpoints = map(collect, zip(θfs, ωfs))
 actual = benchmarking_results.data[!, "Actually in RoA"]
 all(endpoint_check.(endpoints) .== actual)
 ```
