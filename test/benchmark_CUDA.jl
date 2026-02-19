@@ -1,4 +1,5 @@
 using NeuralPDE, NeuralLyapunov, NeuralLyapunovProblemLibrary
+using ModelingToolkit: unbound_inputs
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
 using Random
