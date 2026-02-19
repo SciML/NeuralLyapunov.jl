@@ -499,18 +499,18 @@ function _benchmark(
         vcat(
             [
                 "Initial " * var => map(x -> x[i], eachcol(states))
-                for (i, var) in enumerate(state_vars)
+                    for (i, var) in enumerate(state_vars)
             ],
             [
                 "Final " * var => map(x -> x[i], endpoints)
-                for (i, var) in enumerate(state_vars)
+                    for (i, var) in enumerate(state_vars)
             ],
             [
                 "V" => V_samples,
                 "dVdt" => V̇_samples,
                 "Predicted in RoA" => predicted,
                 "Actually in RoA" => actual,
-                "Classification" => classification
+                "Classification" => classification,
             ]
         )
     )
