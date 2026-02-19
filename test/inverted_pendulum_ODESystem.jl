@@ -1,4 +1,6 @@
-using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary
+using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary,
+    OrdinaryDiffEq
+using ModelingToolkit: unbound_inputs
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
@@ -15,13 +17,13 @@ println("Inverted Pendulum - Policy Search (ODESystem)")
 
 p = Float32[0.5, 1.0]
 @named driven_pendulum = Pendulum(; driven = true, defaults = p)
-t, = independent_variables(driven_pendulum)
-θ, τ = unknowns(driven_pendulum)
+τ, = unbound_inputs(driven_pendulum)
+driven_pendulum = mtkcompile(driven_pendulum; inputs = [τ], split = false)
+θ, ω = unknowns(driven_pendulum)
 
-Dt = Differential(t)
 bounds = [
     θ ∈ (0, 2π),
-    Dt(θ) ∈ (-2, 2),
+    ω ∈ (-2, 2),
 ]
 
 upright_equilibrium = Float32[π, 0.0]
@@ -93,9 +95,7 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 net = discretization.phi
 _θ = res.u.depvar
 
-driven_pendulum_io = mtkcompile(driven_pendulum; inputs = [τ], simplify = true, split = false)
-open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum_io)
-state_order = unknowns(driven_pendulum_io)
+open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum)
 
 (V, V̇) = get_numerical_lyapunov_function(
     net,
@@ -108,7 +108,10 @@ state_order = unknowns(driven_pendulum_io)
 
 u = get_policy(net, _θ, dim_output, dim_u)
 
-closed_loop_pendulum_dynamics(x) = open_loop_pendulum_dynamics(x, u(x), p, 0.0)
+closed_loop_dynamics = ODEFunction(
+    (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
+    sys = driven_pendulum
+)
 
 ################################## Simulate ###################################
 
@@ -134,12 +137,12 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 
 # Training should result in a locally stable fixed point at the upright equilibrium
 # Check for approximately zero angular acceleration
-@test abs(closed_loop_pendulum_dynamics(upright_equilibrium)[2]) < 3.0e-3
+@test abs(closed_loop_dynamics(upright_equilibrium, p, 0.0)[2]) < 3.0e-3
 # Check for nonpositive eigenvalues of the Jacobian
 #=
 @test maximum(
     eigvals(
-    ForwardDiff.jacobian(closed_loop_pendulum_dynamics, upright_equilibrium)
+    ForwardDiff.jacobian((x) -> closed_loop_dynamics(x, p, 0.0), upright_equilibrium)
 )
 ) ≤ 0
 =#
@@ -153,16 +156,6 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 @test sum(V̇_samples .> 0) / length(V_samples) < 0.01
 
 ################################## Simulate ###################################
-
-using OrdinaryDiffEq
-
-state_order = map(st -> SymbolicUtils.isterm(st) ? operation(st) : st, state_order)
-state_syms = Symbol.(state_order)
-
-closed_loop_dynamics = ODEFunction(
-    (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
-    sys = SciMLBase.SymbolCache(state_syms, Symbol.(parameters(driven_pendulum)))
-)
 
 # Starting still at bottom ...
 downward_equilibrium = zeros(Float32, 2)

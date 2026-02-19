@@ -26,7 +26,7 @@ add_policy_search(NonnegativeStructure(3), 1)
 # output
 NeuralLyapunovStructure
     Network dimension: 4
-    V(x) = (φ(x))[1]^2 + (φ(x))[2]^2 + (φ(x))[3]^2
+    V(x) = ||(φ(x))[1:3]||²
     V̇(x) = 2((φ(x))[1:3])⋅(f(x, (φ(x))[4], p, t)*(Jφ(x))[1:3])
     f_call(x) = f(x, (φ(x))[4], p, t)
 ```

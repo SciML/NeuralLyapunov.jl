@@ -66,8 +66,8 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 julia> NonnegativeStructure(3; δ = 0.1)
 NeuralLyapunovStructure
     Network dimension: 3
-    V(x) = 0.1log(1.0 + (x - x_0)^2) + (φ(x))[1]^2 + (φ(x))[2]^2 + (φ(x))[3]^2
-    V̇(x) = 2(φ(x))⋅(f(x, p, t)*Jφ(x)) + (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)^2)
+    V(x) = 0.1log(1.0 + (x - x_0)²) + ||φ(x)||²
+    V̇(x) = 2(φ(x))⋅(f(x, p, t)*Jφ(x)) + (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)²)
     f_call(x) = f(x, p, t)
 ```
 

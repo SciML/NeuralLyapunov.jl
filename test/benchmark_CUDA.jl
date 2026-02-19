@@ -1,4 +1,5 @@
 using NeuralPDE, NeuralLyapunov, NeuralLyapunovProblemLibrary
+using ModelingToolkit: unbound_inputs
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
 using Random
@@ -260,13 +261,13 @@ end
     # Define dynamics and domain
     p = Float32[0.5f0, 1.0f0]
     @named driven_pendulum = Pendulum(; driven = true, defaults = p)
-    t, = independent_variables(driven_pendulum)
-    θ, τ = unknowns(driven_pendulum)
+    τ, = unbound_inputs(driven_pendulum)
+    driven_pendulum = mtkcompile(driven_pendulum; inputs = [τ], split = false)
+    θ, ω = unknowns(driven_pendulum)
 
-    Dt = Differential(t)
     bounds = [
         θ ∈ Float32.((0, 2π)),
-        Dt(θ) ∈ (-2.0f0, 2.0f0),
+        ω ∈ (-2.0f0, 2.0f0),
     ]
 
     upright_equilibrium = Float32[π, 0.0f0]
@@ -346,7 +347,6 @@ end
         fixed_point = upright_equilibrium,
         optimization_args,
         endpoint_check,
-        classifier = (V, V̇, x) -> V̇ < zero(V̇) || endpoint_check(x),
         init_params = ps,
         init_states = st
     )

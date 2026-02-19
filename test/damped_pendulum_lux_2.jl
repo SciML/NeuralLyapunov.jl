@@ -20,6 +20,8 @@ lb = Float32[-π, -10];
 ub = Float32[π, 10];
 fixed_point = Float32[0.0, 0.0]
 
+f = ODEFunction(dynamics)
+
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
@@ -60,7 +62,7 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(ODEFunction(dynamics), lb, ub, spec; p)
+@named pde_system = NeuralLyapunovPDESystem(f, lb, ub, spec; p)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -79,7 +81,7 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
     discretization.phi,
     res.u,
     structure,
-    ODEFunction(dynamics),
+    f,
     fixed_point;
     p
 )
