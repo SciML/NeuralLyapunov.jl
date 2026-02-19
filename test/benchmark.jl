@@ -194,7 +194,9 @@ end
     )
 
     # Check V samples
-    states = benchmarking_results.data[!, "Initial State"]
+    θis = benchmarking_results.data[!, "Initial θ"]
+    ωis = benchmarking_results.data[!, "Initial ω"]
+    states = map(collect, zip(θis, ωis))
     V_samples = benchmarking_results.data[!, "V"]
     @test all(V.(states) .== benchmarking_results.V.(states) .== V_samples)
 
@@ -203,7 +205,9 @@ end
     @test all(V̇.(states) .== benchmarking_results.V̇.(states) .== V̇_samples)
 
     # Check actual classification
-    endpoints = benchmarking_results.data[!, "Final State"]
+    θfs = benchmarking_results.data[!, "Final θ"]
+    ωfs = benchmarking_results.data[!, "Final ω"]
+    endpoints = map(collect, zip(θfs, ωfs))
     actual = benchmarking_results.data[!, "Actually in RoA"]
     @test all(endpoint_check.(endpoints) .== actual)
 
