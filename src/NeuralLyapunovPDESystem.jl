@@ -27,13 +27,13 @@ Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapun
   - `state_syms`: an array of the `Symbol` representing each state; not used when `dynamics
     isa System` (in that case, the symbols from `dynamics` are used); if `dynamics` is an
     `ODEFunction` or an `ODEInputFunction`, the symbols stored there are used, unless
-    overridden here; if not provided here and cannot be inferred, `[:state1, :state2, ...]`
-    will be used.
+    overridden here; if not provided here and cannot be inferred, `[:x1, :x2, ...]` will be
+    used.
   - `parameter_syms`: an array of the `Symbol` representing each parameter; not used when
     `dynamics isa System` (in that case, the symbols from `dynamics` are used); if
     `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
     used, unless overridden here; if not provided here and cannot be inferred,
-    `[:param1, :param2, ...]` will be used.
+    `[:p1, :p2, ...]` will be used.
   - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
     actually be a fixed point; defaults to `false`; when `dynamics isa System`, the value
     is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
@@ -56,26 +56,20 @@ function NeuralLyapunovPDESystem(
     state_dim = length(lb)
 
     # Define state symbols, if not already defined
-    state_syms = if isempty(state_syms)
-        [Symbol(:state, i) for i in 1:state_dim]
-    else
-        state_syms
+    if isempty(state_syms)
+        state_syms = [Symbol(:x, i) for i in 1:state_dim]
     end
     state = [first(@parameters $s) for s in state_syms]
 
     ######################## Define parameter symbols #########################
     # Define parameter symbols, if not already defined
-    param_syms = if p == SciMLBase.NullParameters()
-        []
-    else
-        if isempty(parameter_syms)
-            [Symbol(:param, i) for i in 1:length(p)]
-        else
-            parameter_syms
-        end
+    if p == SciMLBase.NullParameters()
+        parameter_syms = []
+    elseif isempty(parameter_syms)
+        parameter_syms = [Symbol(:p, i) for i in 1:length(p)]
     end
 
-    params = [first(@parameters $s) for s in param_syms]
+    params = [first(@parameters $s) for s in parameter_syms]
 
     ##################### Define default parameter values #####################
     initial_conditions = if p == SciMLBase.NullParameters()
@@ -155,15 +149,11 @@ function NeuralLyapunovPDESystem(
     end
 
     # Override ODEFunction/ODEInputFunction state and parameter symbols when supplied
-    s_syms = if state_syms == []
-        s_syms
-    else
-        state_syms
+    if !isempty(state_syms)
+        s_syms = state_syms
     end
-    p_syms = if parameter_syms == []
-        p_syms
-    else
-        parameter_syms
+    if !isempty(parameter_syms)
+        p_syms = parameter_syms
     end
 
     return NeuralLyapunovPDESystem(
