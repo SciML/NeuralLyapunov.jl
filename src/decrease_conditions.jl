@@ -70,6 +70,10 @@ function Base.show(io::IO, cond::LyapunovDecreaseCondition)
         str = string(-cond.strength(x, x_0))
         rec = string(cond.rectifier(a))
         rm = string(cond.rate_metric(V(x), V̇(x)))
+        # Replace ^2 with ²
+        str = replace(str, r"\^2" => "²")
+        rec = replace(rec, r"\^2" => "²")
+        rm = replace(rm, r"\^2" => "²")
         println(io, "    Trains for $rm ≤ $str")
         print(io, "    with approximation a ≤ 0 => $rec ≈ 0")
     else
@@ -154,14 +158,14 @@ but differentiable approximations of this function may be employed.
 ```jldoctest
 julia> AsymptoticStability()
 LyapunovDecreaseCondition
-    Trains for V̇(x) ≤ -1.0e-6((x - x_0)^2)
+    Trains for V̇(x) ≤ -1.0e-6((x - x_0)²)
     with approximation a ≤ 0 => max(0, a) ≈ 0
 
 julia> softplus = (t) -> log(one(t) + exp(t));
 
 julia> AsymptoticStability(C = 0.1, rectifier = softplus)
 LyapunovDecreaseCondition
-    Trains for V̇(x) ≤ -0.1((x - x_0)^2)
+    Trains for V̇(x) ≤ -0.1((x - x_0)²)
     with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
 ```
 """
