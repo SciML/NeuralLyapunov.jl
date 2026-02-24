@@ -45,7 +45,7 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             V = replace(V, r"\^2" => "²")
             println(io, "    V(x) = ", V)
         catch e
-            println(io, "    V(x) = <could not display: $(e)>")
+            println(io, "    V(x) = <could not display: $e>")
         end
         try
             V̇ = string(s.V̇(φ, Jφ, f, x, p, t, x_0))

@@ -56,13 +56,22 @@ function Base.show(io::IO, cond::LyapunovMinimizationCondition)
     println(io, "LyapunovMinimizationCondition")
 
     if cond.check_nonnegativity
-        @variables x x_0 a
-        str = string(cond.strength(x, x_0))
-        str = replace(str, r"\^2" => "²")
-        println(io, "    Trains for V(x) ≥ $str")
-        rec = string(cond.rectifier(a))
-        rec = replace(rec, r"\^2" => "²")
-        println(io, "    with approximation a ≤ 0 => $rec ≈ 0")
+        try
+            @variables x x_0
+            str = string(cond.strength(x, x_0))
+            str = replace(str, r"\^2" => "²")
+            println(io, "    Trains for V(x) ≥ $str")
+        catch e
+            println(io, "    Trains for V(x) ≥ <could not display strength(x, x_0): $e>")
+        end
+        try
+            @variables a
+            rec = string(cond.rectifier(a))
+            rec = replace(rec, r"\^2" => "²")
+            println(io, "    with approximation a ≤ 0 => $rec ≈ 0")
+        catch e
+            println(io, "    with approximation a ≤ 0 => <could not display rectifier(a): $e> ≈ 0")
+        end
     else
         println(io, "    Does not train for nonnegativity of V(x)")
     end
