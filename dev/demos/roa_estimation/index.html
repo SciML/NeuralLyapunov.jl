@@ -89,22 +89,29 @@ chain = [Chain(
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
 ps = ps |&gt; ComponentArray |&gt; f64
-st = st |&gt; f64</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{@NamedTuple{layer_1::@NamedTuple{}, layer_2::@NamedTuple{}, layer_3::@NamedTuple{}}}:
- (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple())
- (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple())</code></pre><pre><code class="language-julia hljs">using NeuralPDE
+st = st |&gt; f64</code></pre><pre><code class="language-julia hljs">using NeuralPDE
 
 # Define training strategy
 strategy = GridTraining(0.1)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>For this example, let&#39;s use the default Lyapunov candidate from <a href="../../man/structure/#NeuralLyapunov.PositiveSemiDefiniteStructure"><code>PositiveSemiDefiniteStructure</code></a>:</p><p class="math-container">\[V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVert^2 \right),\]</p><p>which structurally enforces positive definiteness. We therefore use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity()</code></a>.</p><p>We only require asymptotic stability in this example, but we use <a href="../../man/roa/#NeuralLyapunov.make_RoA_aware"><code>make_RoA_aware</code></a> to only penalize positive values of <span>$\dot{V}(x)$</span> when <span>$V(x) \le 1$</span>.</p><pre><code class="language-julia hljs">using NeuralLyapunov
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>For this example, let&#39;s use the default Lyapunov candidate from <a href="../../man/structure/#NeuralLyapunov.PositiveSemiDefiniteStructure"><code>PositiveSemiDefiniteStructure</code></a>:</p><p class="math-container">\[V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVert^2 \right),\]</p><p>which structurally enforces positive definiteness. We therefore use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity()</code></a>.</p><pre><code class="language-julia hljs">using NeuralLyapunov
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(dim_output)
-minimization_condition = DontCheckNonnegativity()
-
-# Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(AsymptoticStability())
-
-# Construct neural Lyapunov specification
+minimization_condition = DontCheckNonnegativity()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LyapunovMinimizationCondition
+    Does not train for nonnegativity of V(x)
+    Trains for V(x_0) = 0</code></pre><p>We only require asymptotic stability in this example, but we use <a href="../../man/roa/#NeuralLyapunov.make_RoA_aware"><code>make_RoA_aware</code></a> to only penalize positive values of <span>$\dot{V}(x)$</span> when <span>$V(x) \le 1$</span>.</p><pre><code class="language-julia hljs"># Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LyapunovDecreaseCondition
+    Trains for V̇(x) ≤ -1.0e-6((x - x_0)²)
+    with approximation a ≤ 0 =&gt; max(0, a) ≈ 0</code></pre><pre><code class="language-julia hljs">decrease_condition = make_RoA_aware(decrease_condition)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RoAAwareDecreaseCondition
+    Region of Attraction sublevel set V(x) ≤ 1.0
+    In-RoA decrease condition:
+        LyapunovDecreaseCondition
+            Trains for V̇(x) ≤ -1.0e-6((x - x_0)²)
+            with approximation a ≤ 0 =&gt; max(0, a) ≈ 0
+        Weighted by sigmoid: (1.0 - V(x)) &gt;= 0
+    Out-of-RoA penalty:
+        0.0
+        Weighted by sigmoid: (-1.0 + V(x)) &gt;= 0</code></pre><p>We package these in a <code>NeuralLyapunovSpecification</code> and use it to construct a <code>PDESystem</code>.</p><pre><code class="language-julia hljs"># Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Construct PDESystem
@@ -157,4 +164,4 @@ p_V̇ = hline!([0.0], label = &quot;dV/dt = 0&quot;, legend = :top);
 p_V̇ = vspan!(collect(RoA); label = &quot;Estimated Region of Attraction&quot;, color = :gray, fillstyle = :/);
 p_V̇ = vspan!([-1, 1]; label = &quot;True Region of Attraction&quot;, opacity = 0.2, color = :green);
 
-plt = plot(p_V, p_V̇)</code></pre><img src="9033810f.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../damped_SHO/">« Damped Simple Harmonic Oscillator</a><a class="docs-footer-nextpage" href="../policy_search/">Policy Search on the Driven Inverted Pendulum »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 20 February 2026 21:21">Friday 20 February 2026</span>. Using Julia version 1.11.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+plt = plot(p_V, p_V̇)</code></pre><img src="bc9c32ae.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../damped_SHO/">« Damped Simple Harmonic Oscillator</a><a class="docs-footer-nextpage" href="../policy_search/">Policy Search on the Driven Inverted Pendulum »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 25 February 2026 17:04">Wednesday 25 February 2026</span>. Using Julia version 1.11.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
