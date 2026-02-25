@@ -132,8 +132,6 @@ Random.seed!(200)
 
 In this example, we'll use the [`Pendulum`](@ref) model in [NeuralLyaupnovProblemLibrary.jl](../lib.md).
 
-Since the angle ``\theta`` is periodic with period ``2\pi``, our box domain will be one period in ``\theta`` and an interval in ``\frac{d\theta}{dt}``.
-
 ```@example policy_search
 using ModelingToolkit, NeuralLyapunovProblemLibrary
 using ModelingToolkit: unbound_inputs
@@ -141,14 +139,19 @@ using ModelingToolkit: unbound_inputs
 @named pendulum = Pendulum(; defaults = [0.5, 1.0])
 τ, = unbound_inputs(pendulum)
 pendulum = mtkcompile(pendulum; inputs = [τ], split = false)
+```
+
+Since the angle ``\theta`` is periodic with period ``2\pi``, our box domain will be one period in ``\theta`` and an interval in ``\frac{d\theta}{dt}``.
+
+```@example policy_search
+upright_equilibrium = [π, 0.0]
+
 θ, ω = unknowns(pendulum)
 
 bounds = [
     θ ∈ (0, 2π),
     ω ∈ (-2.0, 2.0)
 ]
-
-upright_equilibrium = [π, 0.0]
 ```
 
 We'll use an architecture that's ``2\pi``-periodic in ``\theta`` so that we can train on just one period of ``\theta`` and don't need to add any periodic boundary conditions.
@@ -182,6 +185,7 @@ chain = [Chain(
 ps, st = Lux.setup(rng, chain)
 ps = ps |> ComponentArray |> f64
 st = st |> f64
+nothing #hide
 ```
 
 ```@example policy_search

@@ -127,6 +127,7 @@ chain = [Chain(
 ps, st = Lux.setup(rng, chain)
 ps = ps |> ComponentArray |> f64
 st = st |> f64
+nothing # hide
 ```
 
 ```@example RoA
@@ -147,18 +148,28 @@ V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVer
 which structurally enforces positive definiteness.
 We therefore use [`DontCheckNonnegativity()`](@ref).
 
-We only require asymptotic stability in this example, but we use [`make_RoA_aware`](@ref) to only penalize positive values of ``\dot{V}(x)`` when ``V(x) \le 1``.
-
 ```@example RoA
 using NeuralLyapunov
 
 # Define neural Lyapunov structure
 structure = PositiveSemiDefiniteStructure(dim_output)
 minimization_condition = DontCheckNonnegativity()
+```
 
+We only require asymptotic stability in this example, but we use [`make_RoA_aware`](@ref) to only penalize positive values of ``\dot{V}(x)`` when ``V(x) \le 1``.
+
+```@example RoA
 # Define Lyapunov decrease condition
-decrease_condition = make_RoA_aware(AsymptoticStability())
+decrease_condition = AsymptoticStability()
+```
 
+```@example RoA
+decrease_condition = make_RoA_aware(decrease_condition)
+```
+
+We package these in a `NeuralLyapunovSpecification` and use it to construct a `PDESystem`.
+
+```@example RoA
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 

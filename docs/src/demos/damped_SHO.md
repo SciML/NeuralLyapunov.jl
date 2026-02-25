@@ -132,6 +132,7 @@ chain = [Chain(
              Dense(dim_hidden, 1)
          ) for _ in 1:dim_output]
 ps, st = Lux.setup(rng, chain)
+nothing # hide
 ```
 
 Since `Lux.setup` defaults to `Float32` parameters for `Dense` layers, we set up the bounds and parameters using `Float32` as well.
@@ -142,6 +143,9 @@ using ComponentArrays
 ps = ps |> ComponentArray |> f64
 st = st |> f64
 ```
+
+To train the model, we'll sample 1000 points from the domain using [`NeuralPDE.QuasiRandomTraining`](https://docs.sciml.ai/NeuralPDE/stable/manual/training_strategies/#NeuralPDE.QuasiRandomTraining).
+See the [NeuralPDE.jl docs](https://docs.sciml.ai/NeuralPDE/stable/) for more on how the `PDESystem` will be converted into an `OptimizationProblem`.
 
 ```@example SHO
 using NeuralPDE
@@ -156,28 +160,40 @@ We now define our Lyapunov candidate structure along with the form of the Lyapun
 
 For this example, let's use a Lyapunov candidate
 ```math
-V(x) = \lVert \phi(x) \rVert^2 + \delta \log \left( 1 + \lVert x \rVert^2 \right),
+V(x) = \lVert \phi(x) \rVert^2 + \delta \log \left( 1 + \lVert x \rVert^2 \right).
 ```
-which structurally enforces nonnegativity, but doesn't guarantee ``V([0, 0]) = 0``.
-We therefore don't need a term in the loss function enforcing ``V(x) > 0 \, \forall x \ne 0``, but we do need something enforcing ``V([0, 0]) = 0``.
-So, we use [`DontCheckNonnegativity(check_fixed_point = true)`](@ref).
-
-To train for exponential stability we use [`ExponentialStability`](@ref), but we must specify the rate of exponential decrease, which we know in this case to be ``\zeta \omega_0``.
 
 ```@example SHO
 using NeuralLyapunov
 
 # Define neural Lyapunov structure and corresponding minimization condition
 structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
-minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+```
 
+This structure enforces nonnegativity, but doesn't guarantee ``V([0, 0]) = 0``.
+We therefore don't need a term in the loss function enforcing ``V(x) > 0 \, \forall x \ne 0``, but we do need something enforcing ``V([0, 0]) = 0``.
+So, we use [`DontCheckNonnegativity(check_fixed_point = true)`](@ref).
+
+```@example SHO
+minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+```
+
+To train for exponential stability we use [`ExponentialStability`](@ref), but we must specify the rate of exponential decrease, which we know in this case to be ``\zeta \omega_0``.
+
+```@example SHO
 # Define Lyapunov decrease condition
 # Damped SHO has exponential stability at a rate of k = ζ * ω_0, so we train to certify that
 decrease_condition = ExponentialStability(prod(p))
+```
 
+We package these in a `NeuralLyapunovSpecification` and use it to construct a `PDESystem`.
+
+```@example SHO
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
+```
 
+```@example SHO
 # Construct PDESystem
 @named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
 ```

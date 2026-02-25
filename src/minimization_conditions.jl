@@ -56,11 +56,22 @@ function Base.show(io::IO, cond::LyapunovMinimizationCondition)
     println(io, "LyapunovMinimizationCondition")
 
     if cond.check_nonnegativity
-        @variables x x_0 a
-        str = string(cond.strength(x, x_0))
-        println(io, "    Trains for V(x) ≥ $str")
-        rec = string(cond.rectifier(a))
-        println(io, "    with approximation a ≤ 0 => $rec ≈ 0")
+        try
+            @variables x x_0
+            str = string(cond.strength(x, x_0))
+            str = replace(str, r"\^2" => "²")
+            println(io, "    Trains for V(x) ≥ $str")
+        catch e
+            println(io, "    Trains for V(x) ≥ <could not display strength(x, x_0): $e>")
+        end
+        try
+            @variables a
+            rec = string(cond.rectifier(a))
+            rec = replace(rec, r"\^2" => "²")
+            println(io, "    with approximation a ≤ 0 => $rec ≈ 0")
+        catch e
+            println(io, "    with approximation a ≤ 0 => <could not display rectifier(a): $e> ≈ 0")
+        end
     else
         println(io, "    Does not train for nonnegativity of V(x)")
     end
@@ -111,7 +122,7 @@ exactly represents ``V(x) ≥ C \\lVert x - x_0 \\rVert^2``. ``C`` defaults to `
 ```jldoctest
 julia> StrictlyPositiveDefinite()
 LyapunovMinimizationCondition
-    Trains for V(x) ≥ 1.0e-6((x - x_0)^2)
+    Trains for V(x) ≥ 1.0e-6((x - x_0)²)
     with approximation a ≤ 0 => max(0, a) ≈ 0
     Trains for V(x_0) = 0
 
@@ -119,7 +130,7 @@ julia> softplus = (t) -> log(one(t) + exp(t));
 
 julia> StrictlyPositiveDefinite(C = 0.1, rectifier = softplus, check_fixed_point = false)
 LyapunovMinimizationCondition
-    Trains for V(x) ≥ 0.1((x - x_0)^2)
+    Trains for V(x) ≥ 0.1((x - x_0)²)
     with approximation a ≤ 0 => log(1 + exp(a)) ≈ 0
     Does not train for V(x_0) = 0
 ```
