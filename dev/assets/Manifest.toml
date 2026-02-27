@@ -2,7 +2,7 @@
 
 julia_version = "1.11.9"
 manifest_format = "2.0"
-project_hash = "502397ab940b702113e0bf1a6fa2c1fe147052da"
+project_hash = "b92b2282404b39f5f5894077e79b3111aef3fc10"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -1388,9 +1388,9 @@ version = "1.29.4"
 
 [[deps.JumpProcesses]]
 deps = ["ArrayInterface", "DataStructures", "DiffEqBase", "DiffEqCallbacks", "DocStringExtensions", "FunctionWrappers", "Graphs", "LinearAlgebra", "PoissonRandom", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "SymbolicIndexingInterface"]
-git-tree-sha1 = "3dee0073e2512598de97a98f5f30126cd7bdd9a7"
+git-tree-sha1 = "5f36c8535941dfed422c376c347ce774ad2f6b03"
 uuid = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
-version = "9.22.2"
+version = "9.23.0"
 weakdeps = ["Adapt", "FastBroadcast", "KernelAbstractions"]
 
     [deps.JumpProcesses.extensions]
@@ -1977,10 +1977,10 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 version = "1.11.0"
 
 [[deps.ModelingToolkit]]
-deps = ["ADTypes", "BipartiteGraphs", "BlockArrays", "Combinatorics", "CommonSolve", "DataStructures", "DiffEqBase", "DifferentiationInterface", "DocStringExtensions", "FillArrays", "FindFirstFunctions", "ForwardDiff", "Graphs", "InteractiveUtils", "Libdl", "LinearAlgebra", "ModelingToolkitBase", "ModelingToolkitTearing", "Moshi", "OffsetArrays", "OrderedCollections", "PreallocationTools", "PrecompileTools", "REPL", "Reexport", "RuntimeGeneratedFunctions", "SCCNonlinearSolve", "SciMLBase", "SciMLPublic", "Serialization", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "StateSelection", "StaticArrays", "SymbolicCompilerPasses", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "UnPack"]
-git-tree-sha1 = "6db5096b32606902884cbaba7f91f4990a8a51e0"
+deps = ["ADTypes", "BipartiteGraphs", "BlockArrays", "Combinatorics", "CommonSolve", "ConstructionBase", "DataStructures", "DiffEqBase", "DifferentiationInterface", "DocStringExtensions", "FillArrays", "FindFirstFunctions", "ForwardDiff", "Graphs", "InteractiveUtils", "Libdl", "LinearAlgebra", "ModelingToolkitBase", "ModelingToolkitTearing", "Moshi", "OffsetArrays", "OrderedCollections", "PreallocationTools", "PrecompileTools", "REPL", "Reexport", "RuntimeGeneratedFunctions", "SCCNonlinearSolve", "SciMLBase", "SciMLPublic", "Serialization", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "StateSelection", "StaticArrays", "SymbolicCompilerPasses", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "UnPack"]
+git-tree-sha1 = "29e0e2c354d8a35f032985a9bb8505bf59e64972"
 uuid = "961ee093-0014-501f-94e3-6117800e7a78"
-version = "11.11.1"
+version = "11.12.0"
 
     [deps.ModelingToolkit.extensions]
     MTKFMIExt = "FMIImport"
@@ -1990,9 +1990,9 @@ version = "11.11.1"
 
 [[deps.ModelingToolkitBase]]
 deps = ["ADTypes", "AbstractTrees", "ArrayInterface", "BipartiteGraphs", "BlockArrays", "Combinatorics", "CommonSolve", "Compat", "ConstructionBase", "DataStructures", "DiffEqBase", "DiffEqCallbacks", "DiffRules", "DifferentiationInterface", "DocStringExtensions", "DomainSets", "EnumX", "EnzymeCore", "ExprTools", "FillArrays", "FindFirstFunctions", "ForwardDiff", "FunctionWrappers", "FunctionWrappersWrappers", "Graphs", "ImplicitDiscreteSolve", "InteractiveUtils", "JumpProcesses", "Libdl", "LinearAlgebra", "Moshi", "NaNMath", "OffsetArrays", "OrderedCollections", "PreallocationTools", "PrecompileTools", "REPL", "Random", "ReadOnlyDicts", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLBase", "SciMLPublic", "SciMLStructures", "Serialization", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "SpecialFunctions", "StaticArrays", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "UnPack"]
-git-tree-sha1 = "ed7048533bfc2707e051f04e82b4dcaf4da29038"
+git-tree-sha1 = "e664f398456fd452f9f8f49b7920e6482bf85d3e"
 uuid = "7771a370-6774-4173-bd38-47e70ca0b839"
-version = "1.16.2"
+version = "1.17.0"
 
     [deps.ModelingToolkitBase.extensions]
     MTKBifurcationKitExt = "BifurcationKit"
@@ -2136,7 +2136,7 @@ version = "1.2.0"
 deps = ["Boltz", "DataFrames", "ForwardDiff", "JuMP", "LinearAlgebra", "Lux", "LuxCore", "MLDataDevices", "ModelingToolkit", "NeuralPDE", "OrdinaryDiffEq", "QuasiMonteCarlo", "SciMLBase", "StableRNGs", "SymbolicIndexingInterface", "Symbolics"]
 path = ".."
 uuid = "61252e1c-87f0-426a-93a7-3cdb1ed5a867"
-version = "0.3.1"
+version = "0.4.0"
 
 [[deps.NeuralLyapunovProblemLibrary]]
 deps = ["LinearAlgebra", "ModelingToolkit", "Rotations", "SciMLBase", "Symbolics"]
@@ -2407,9 +2407,9 @@ version = "1.21.0"
 
 [[deps.OrdinaryDiffEqCore]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "ConcreteStructs", "DataStructures", "DiffEqBase", "DocStringExtensions", "EnumX", "EnzymeCore", "FastBroadcast", "FastClosures", "FastPower", "FillArrays", "FunctionWrappersWrappers", "InteractiveUtils", "LinearAlgebra", "Logging", "MacroTools", "MuladdMacro", "Polyester", "PrecompileTools", "Preferences", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "SciMLStructures", "Static", "StaticArrayInterface", "StaticArraysCore", "SymbolicIndexingInterface", "TruncatedStacktraces"]
-git-tree-sha1 = "dc96b003f64b75f87f9cde208c1e5e3234fc241d"
+git-tree-sha1 = "636f422f2204426505557dc08a4d1bba85037363"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-version = "3.9.0"
+version = "3.10.0"
 
     [deps.OrdinaryDiffEqCore.extensions]
     OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
@@ -3003,9 +3003,9 @@ version = "0.6.43"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "Moshi", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "cd1bd26629c1a49de5e4e90df65a53c5954669ad"
+git-tree-sha1 = "add26cd50b9b3b330ef6144baa2eaa498b981f8b"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.144.1"
+version = "2.145.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -3338,9 +3338,9 @@ version = "0.3.7"
 
 [[deps.StringManipulation]]
 deps = ["PrecompileTools"]
-git-tree-sha1 = "a3c1536470bf8c5e02096ad4853606d7c8f62721"
+git-tree-sha1 = "d05693d339e37d6ab134c5ab53c29fce5ee5d7d5"
 uuid = "892a3eda-7b42-436c-8928-eab12a02cf0e"
-version = "0.4.2"
+version = "0.4.4"
 
 [[deps.StructArrays]]
 deps = ["ConstructionBase", "DataAPI", "Tables"]
