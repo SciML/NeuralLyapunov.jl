@@ -12,8 +12,8 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-NeuralLyapunovProblemLibrary = {path = ".."}
+[sources.NeuralLyapunovProblemLibrary]
+path = ".."
 
 [compat]
 Aqua = "0.8.11"
@@ -22,6 +22,7 @@ Documenter = "1"
 ExplicitImports = "1.13.1"
 LinearAlgebra = "1"
 ModelingToolkit = "11.5"
+NeuralLyapunovProblemLibrary = "0.1"
 OrdinaryDiffEq = "6.102"
 Plots = "1.40.9"
 SafeTestsets = "0.1.0"
