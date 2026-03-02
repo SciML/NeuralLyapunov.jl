@@ -234,6 +234,12 @@ benchmarking_results.confusion_matrix
 benchmarking_results.training_time
 ```
 
+Additionally, we can see how long the evaluation simulations took.
+
+```@example benchmarking
+benchmarking_results.evaluation_time
+```
+
 The `benchmark` function also outputs a `DataFrame`, `data`, with the simulation results.
 The first three rows are shown below.
 

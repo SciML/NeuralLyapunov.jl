@@ -132,6 +132,7 @@ the user or generated automatically).
     - "Classification": classification of each point, either "TP" (true positive),
       "TN" (true negative), "FP" (false positive), or "FN" (false negative).
   - `training_time`: time taken to train the neural Lyapunov function (in seconds).
+  - `evaluation_time`: time taken to run the evaluation simulations (in seconds).
   - `θ`: the parameters of the neural Lyapunov function.
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
     output, or a `Vector` of the same with one entry per neural network output (to be used
@@ -407,7 +408,7 @@ function _benchmark(
     )
     log_options = LogOptions(; log_frequency)
 
-    t = @timed begin
+    training = @timed begin
         # Construct OptimizationProblem
         discretization = PhysicsInformedNN(
             chain, strategy; init_params, init_states, logger, log_options
@@ -421,8 +422,8 @@ function _benchmark(
         phi = discretization.phi
         θ = phi isa AbstractArray ? u.depvar : u
     end
-    training_time = t.time
-    θ = t.value |> cpud
+    training_time = training.time
+    θ = training.value |> cpud
     phi = PhysicsInformedNN(
         chain, strategy; init_params = init_params |> cpud,
         init_states = init_states |> cpud
@@ -450,7 +451,7 @@ function _benchmark(
     V_samples = vec(V(states))
     V̇_samples = vec(V̇(states))
 
-    (; endpoints, actual, predicted) = simulate_ensemble(
+    (; endpoints, actual, predicted, evaluation_time) = simulate_ensemble(
         eachcol(states),
         V_samples,
         V̇_samples,
@@ -517,7 +518,8 @@ function _benchmark(
 
     training_losses = DataFrame("Iteration" => logger.iterations, "Loss" => logger.losses)
 
-    return (; confusion_matrix, data, training_time, θ, phi, V, V̇, training_losses)
+    return (; confusion_matrix, data, training_time, evaluation_time, θ, phi, V, V̇,
+        training_losses)
 end
 
 function benchmark_solve(prob, opt, optimization_args)
@@ -573,29 +575,33 @@ function simulate_ensemble(
     )
     predicted = classifier.(V_samples, V̇_samples, states)
 
-    x0 = first(states)
-    ensemble_prob = EnsembleProblem(
-        ODEProblem(dynamics, x0, simulation_time, p);
-        prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
-        output_func = (sol, i) -> (sol.u[end], false),
-        u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
-        reduction = function (u, data, I)
-            u[I] = data
-            return u, false
-        end
-    )
+    evaluation = @timed begin
+        x0 = first(states)
+        ensemble_prob = EnsembleProblem(
+            ODEProblem(dynamics, x0, simulation_time, p);
+            prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
+            output_func = (sol, i) -> (sol.u[end], false),
+            u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
+            reduction = function (u, data, I)
+                u[I] = data
+                return u, false
+            end
+        )
 
-    endpoints = solve(
-        ensemble_prob,
-        ode_solver,
-        ensemble_alg;
-        trajectories = length(states),
-        ode_solver_args...
-    ).u
+        endpoints = solve(
+            ensemble_prob,
+            ode_solver,
+            ensemble_alg;
+            trajectories = length(states),
+            ode_solver_args...
+        ).u
+    end
+    evaluation_time = evaluation.time
+    endpoints = evaluation.value
 
     actual = endpoint_check.(endpoints)
 
-    return (; endpoints, actual, predicted)
+    return (; endpoints, actual, predicted, evaluation_time)
 end
 
 function get_init_params(chain, rng)
