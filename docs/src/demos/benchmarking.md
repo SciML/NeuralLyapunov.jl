@@ -235,6 +235,7 @@ benchmarking_results.training_time
 ```
 
 Additionally, we can see how long the evaluation simulations took.
+Ideally, training the neural Lyapunov classifier (training time) is faster than simulating the trajectory enough times to map out the region of attraction (evaluation time).
 
 ```@example benchmarking
 benchmarking_results.evaluation_time
