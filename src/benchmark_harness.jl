@@ -520,7 +520,7 @@ function _benchmark(
 
     return (;
         confusion_matrix, data, training_time, evaluation_time, θ, phi, V, V̇,
-        training_losses
+        training_losses,
     )
 end
 
