@@ -518,8 +518,10 @@ function _benchmark(
 
     training_losses = DataFrame("Iteration" => logger.iterations, "Loss" => logger.losses)
 
-    return (; confusion_matrix, data, training_time, evaluation_time, θ, phi, V, V̇,
-        training_losses)
+    return (;
+        confusion_matrix, data, training_time, evaluation_time, θ, phi, V, V̇,
+        training_losses
+    )
 end
 
 function benchmark_solve(prob, opt, optimization_args)
