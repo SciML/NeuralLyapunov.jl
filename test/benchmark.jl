@@ -78,6 +78,10 @@ using Test
 
     # Should accurately classify
     @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
+
+    # Training is slower than evaluation in this example, since the dynamics are so simple
+    # and don't depend on the neural network
+    @test out.training_time > out.evaluation_time
 end
 
 ####################### Inverted pendulum policy search #######################
