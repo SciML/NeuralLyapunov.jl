@@ -1,6 +1,6 @@
 # Double Pendulum Model
 
-An undamped double pendulum can be constructed using the [`DoublePendulum`](@ref) function, as shown below.
+A damped double pendulum can be constructed using the [`DoublePendulum`](@ref) function, as shown below.
 Models are provided for the fully-actuated version, the undriven version, and both of the underactuated versions (also accessible via the convenience functions [`Acrobot`](@ref) and [`Pendubot`](@ref)).
 Additionally, when also using the Plots.jl package, the convenience plotting function [`plot_double_pendulum`](@ref) is provided.
 
@@ -30,7 +30,8 @@ lc1, lc2 = l1 /2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+b1, b2 = 0.1, 0.1
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]
 
 x = get_double_pendulum_state_symbols(double_pendulum_undriven)
 x0 = Dict(x .=> vcat(2π * rand(2) .- π, zeros(2)))
