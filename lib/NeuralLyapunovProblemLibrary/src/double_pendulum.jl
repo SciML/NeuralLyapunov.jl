@@ -153,8 +153,12 @@ function π_cancellation(x, p, t)
         -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
         -m2 * g * lc2 * sin(θ1 + θ2)
     ]
+    C = [
+        -2 * m2 * l1 * lc2 * sin(θ2) * ω2 -m2 * l1 * lc2 * sin(θ2) * ω2;
+        m2 * l1 * lc2 * sin(θ2) * ω1 0
+    ]
     b = [b1 * ω1; b2 * ω2]
-    return -0.1 * M \\ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G + b
+    return C * [ω1; ω2] - G + b - 0.1 * M * ([θ1, θ2] .- [π, 0] + [ω1, ω2])
 end
 
 # Create driven double pendulum system, apply controller, and simplify

@@ -145,8 +145,12 @@ function π_cancellation(x, p, t)
         -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
         -m2 * g * lc2 * sin(θ1 + θ2)
     ]
+    C = [
+        -2 * m2 * l1 * lc2 * sin(θ2) * ω2 -m2 * l1 * lc2 * sin(θ2) * ω2;
+        m2 * l1 * lc2 * sin(θ2) * ω1 0
+    ]
     b = [b1 * ω1; b2 * ω2]
-    return -0.1 * M \ ([θ1, θ2] .- [π, 0] + [ω1, ω2]) - G + b
+    return C * [ω1; ω2] - G + b - 0.1 * M * ([θ1, θ2] .- [π, 0] + [ω1, ω2])
 end
 
 @mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(
@@ -158,7 +162,7 @@ end
 x = get_double_pendulum_state_symbols(double_pendulum)
 x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- [π, 0], rand(rng, 2)))
 
-prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100)
+prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 250)
 sol = solve(prob, Tsit5())
 
 θ1 = double_pendulum.θ1
