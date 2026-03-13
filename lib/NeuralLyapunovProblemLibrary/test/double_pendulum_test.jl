@@ -100,7 +100,7 @@ function π_cancellation(x, p, t)
         -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
         -m2 * g * lc2 * sin(θ1 + θ2)
     ]
-    return -0.1 * M \ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
+    return -0.1 * M \ ([θ1, θ2] .- [π, 0] + [ω1, ω2]) - G
 end
 
 @mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(
@@ -110,7 +110,7 @@ end
 
 # Swing up to upward equilibrium
 x = get_double_pendulum_state_symbols(double_pendulum)
-x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- π, rand(rng, 2)))
+x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- [π, 0], rand(rng, 2)))
 
 prob = ODEProblem(double_pendulum_feedback_cancellation, x0, 100)
 sol = solve(prob, Tsit5())
@@ -123,7 +123,7 @@ x1_end, y1_end = sin(θ1_end), -cos(θ1_end)
 θ2_end, ω2_end = sol[θ2][end], sol[Dt(θ2)][end]
 x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
 @test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) ≈ 0 atol = 1.0e-4
-@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) ≈ 0 atol = 1.0e-4
+@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, -1])) ≈ 0 atol = 1.0e-4
 @test ω1_end ≈ 0 atol = 1.0e-4
 @test ω2_end ≈ 0 atol = 1.0e-4
 
@@ -158,7 +158,7 @@ end
 
 function π_lqr(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
     L = acrobot_lqr_matrix(p; x_eq, Q, R)
-    return (x, _p, _t) -> -L * (x .- x_eq)
+    return (x, _, _) -> -L * (x .- x_eq)
 end
 
 @named acrobot = Acrobot()
@@ -172,11 +172,11 @@ I2 = m2 * l2^2 / 3
 g = 1.0
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
-@mtkcompile acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, π, 0, 0]))
+@mtkcompile acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, 0, 0, 0]))
 
 # Remain close to upward equilibrium
 x = get_double_pendulum_state_symbols(acrobot)
-x0 = Dict(x .=> [π, π, 0, 0] + 0.005 * vcat(2π * rand(rng, 2) .- π, 2 * rand(rng, 2) .- 1))
+x0 = Dict(x .=> [π, 0, 0, 0] + 0.005 * vcat(2π * rand(rng, 2) .- π, 2 * rand(rng, 2) .- 1))
 p_dict = Dict(get_double_pendulum_param_symbols(acrobot) .=> p)
 tspan = 1000
 
@@ -195,6 +195,6 @@ x1_end, y1_end = sin(θ1_end), -cos(θ1_end)
 θ2_end, ω2_end = sol[θ2][end], sol[ω2][end]
 x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
 @test sqrt(sum(abs2, [x1_end, y1_end] .- [0, 1])) ≈ 0 atol = 1.0e-4
-@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, 1])) ≈ 0 atol = 1.0e-4
+@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, -1])) ≈ 0 atol = 1.0e-4
 @test ω1_end ≈ 0 atol = 1.0e-4
 @test ω2_end ≈ 0 atol = 1.0e-4

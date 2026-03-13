@@ -41,8 +41,8 @@ function NeuralLyapunovProblemLibrary.plot_double_pendulum(θ1, θ2, p, t; title
     x1 = +l1 * sin.(θ1)
     y1 = -l1 * cos.(θ1)
 
-    x2 = x1 + l2 * sin.(θ2)
-    y2 = y1 - l2 * cos.(θ2)
+    x2 = x1 + l2 * sin.(θ1 + θ2)
+    y2 = y1 - l2 * cos.(θ1 + θ2)
 
     return @animate for i in eachindex(t)
         # Pendulum bars
