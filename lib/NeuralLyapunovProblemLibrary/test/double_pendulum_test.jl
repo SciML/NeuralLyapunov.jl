@@ -156,7 +156,7 @@ function acrobot_lqr_matrix(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
     return lqr(Continuous, A_lin, B_lin, Q, R)
 end
 
-function π_lqr(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
+function π_lqr(p; x_eq = [π, 0, 0, 0], Q = diagm([10, 10, 1, 1]), R = I(1))
     L = acrobot_lqr_matrix(p; x_eq, Q, R)
     return (x, _, _) -> -L * (x .- x_eq)
 end
@@ -165,18 +165,18 @@ end
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
-l1, l2 = ones(2)
+l1, l2 = 1.0, 2.0
 lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
-g = 1.0
+g = 9.81
 p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
 
 @mtkcompile acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, 0, 0, 0]))
 
 # Remain close to upward equilibrium
 x = get_double_pendulum_state_symbols(acrobot)
-x0 = Dict(x .=> [π, 0, 0, 0] + 0.005 * vcat(2π * rand(rng, 2) .- π, 2 * rand(rng, 2) .- 1))
+x0 = Dict(x .=> [π, 0, 0, 0] + 0.05 * randn(rng, 4))
 p_dict = Dict(get_double_pendulum_param_symbols(acrobot) .=> p)
 tspan = 1000
 
