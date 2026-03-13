@@ -1,7 +1,7 @@
 """
     DoublePendulum(; actuation=:fully_actuated, name, defaults)
 
-Create an `System` representing an undamped double pendulum.
+Create an `System` representing a linearly-damped double pendulum.
 
 The posture of the double pendulum is determined by `θ1` and `θ2`, the angle of the
 first and second pendula, respectively.
@@ -11,7 +11,7 @@ pendulum appears as a single pendulum).
 
 The System uses the explicit manipulator form of the equations:
 ```math
-q̈ = M^{-1}(q) (-C(q,q̇)q̇ + τ_g(q) + Bu).
+q̈ = M^{-1}(q) (-C(q,q̇)q̇ + τ_g(q) - b⊙q̇ + Bu).
 ```
 
 The name of the `System` is `name`.
@@ -39,13 +39,15 @@ The four actuation modes are described in the table below and selected via `actu
   - `m1`: mass of the first pendulum.
   - `m2`: mass of the second pendulum.
   - `g`: gravitational acceleration (defaults to 9.81).
+  - `b1`: damping coefficient of the first pendulum (defaults to 0, i.e., undamped).
+  - `b2`: damping coefficient of the second pendulum (defaults to 0, i.e., undamped).
 
 Users may optionally provide default values of the parameters through `defaults`: a vector
-of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
+of the default values for `[I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]`.
 """
 function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullParameters())
     @variables θ1(t) θ2(t)
-    @parameters I1 I2 l1 l2 lc1 lc2 m1 m2 g = 9.81
+    @parameters I1 I2 l1 l2 lc1 lc2 m1 m2 g = 9.81 b1 = 0 b2 = 0
 
     M = [
         I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2) I2 + m2 * l1 * lc2 * cos(θ2);
@@ -59,8 +61,9 @@ function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullPara
         -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
         -m2 * g * lc2 * sin(θ1 + θ2)
     ]
+    b = [b1 * Dt(θ1); b2 * Dt(θ2)]
     q = [θ1, θ2]
-    params = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+    params = [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]
 
     kwargs = if defaults == NullParameters()
         (; name)
@@ -73,11 +76,11 @@ function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullPara
         @variables τ1(t) [input = true] τ2(t) [input = true]
         u = [τ1, τ2]
 
-        eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + u)
+        eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G - b + u)
         return System(eqs, t, vcat(q, u), params; kwargs...)
     elseif actuation == :undriven
         ############################# Undriven double pendulum #############################
-        eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G)
+        eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G - b)
         return System(eqs, t, q, params; kwargs...)
     else
         ########################## Underactuated double pendulum ###########################
@@ -86,13 +89,13 @@ function DoublePendulum(; actuation = :fully_actuated, name, defaults = NullPara
         if actuation == :acrobot
             #################################### Acrobot ###################################
             B = [0, 1]
-            eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
+            eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G - b + B * τ)
 
             return System(eqs, t, vcat(q, τ), params; kwargs...)
         elseif actuation == :pendubot
             ################################### Pendubot ###################################
             B = [1, 0]
-            eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G + B * τ)
+            eqs = DDt.(q) .~ M \ (-C * Dt.(q) + G - b + B * τ)
 
             return System(eqs, t, vcat(q, τ), params; kwargs...)
         else
@@ -129,7 +132,7 @@ Control the given driven double pendulum `pend` using the provided `controller` 
 
 The `controller` function should have the signature `controller(x, p, t)`, where `x` is the
 state vector `[θ1, θ2, ω1, ω2]`, `p` is the parameter vector
-`[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`, and `t` is time.
+`[I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]`, and `t` is time.
 If the double pendulum has a single actuator, the controller should return a single torque.
 If the double pendulum has two actuators, the controller should return a vector of two
 torques `[τ1, τ2]`.
@@ -141,7 +144,7 @@ The resulting controlled pendulum system will have the name `name`.
 # Define a feedback cancellation controller
 function π_cancellation(x, p, t)
     θ1, θ2, ω1, ω2 = x
-    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2 = p
     M = [
         I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2) I2 + m2 * l1 * lc2 * cos(θ2);
         I2 + m2 * l1 * lc2 * cos(θ2) I2
@@ -150,7 +153,8 @@ function π_cancellation(x, p, t)
         -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
         -m2 * g * lc2 * sin(θ1 + θ2)
     ]
-    return -0.1 * M \\ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G
+    b = [b1 * ω1; b2 * ω2]
+    return -0.1 * M \\ ([θ1, θ2] .- [π, π] + [ω1, ω2]) - G + b
 end
 
 # Create driven double pendulum system, apply controller, and simplify
@@ -169,8 +173,9 @@ lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
+b1, b2 = ones(2)
 params = get_double_pendulum_param_symbols(double_pendulum)
-p = Dict(params .=> [I1, I2, l1, l2, lc1, lc2, m1, m2, g])
+p = Dict(params .=> [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2])
 
 # Construct ODE problem
 x = get_double_pendulum_state_symbols(double_pendulum)
@@ -204,7 +209,7 @@ function control_double_pendulum(pend, controller; name)
 
     q = [pend.θ1, pend.θ2]
     x = vcat(q, Dt.(q))
-    p = [pend.I1, pend.I2, pend.l1, pend.l2, pend.lc1, pend.lc2, pend.m1, pend.m2, pend.g]
+    p = [pend.I1, pend.I2, pend.l1, pend.l2, pend.lc1, pend.lc2, pend.m1, pend.m2, pend.g, pend.b1, pend.b2]
 
     eqs = τ .~ controller(x, p, t)
 
@@ -227,10 +232,13 @@ end
     get_double_pendulum_param_symbols(pend)
 
 Get the parameter symbols of the given double pendulum `pend` as a vector:
-`[I1, I2, l1, l2, lc1, lc2, m1, m2, g]`.
+`[I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]`.
 """
 function get_double_pendulum_param_symbols(pend)
-    return [pend.I1, pend.I2, pend.l1, pend.l2, pend.lc1, pend.lc2, pend.m1, pend.m2, pend.g]
+    return [
+        pend.I1, pend.I2, pend.l1, pend.l2, pend.lc1, pend.lc2, pend.m1, pend.m2, pend.g,
+        pend.b1, pend.b2
+    ]
 end
 
 """

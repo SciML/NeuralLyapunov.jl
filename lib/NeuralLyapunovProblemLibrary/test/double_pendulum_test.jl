@@ -12,12 +12,12 @@ rng = StableRNG(0)
 ################################## Double pendulum energy ##################################
 function U(x, p)
     θ1, θ2, _, _ = x
-    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2 = p
     return -m1 * g * lc1 * cos(θ1) - m2 * g * (l1 * cos(θ1) + lc2 * cos(θ1 + θ2))
 end
 function T(x, p)
     θ1, θ2, ω1, ω2 = x
-    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2 = p
     M = [
         I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2) I2 + m2 * l1 * lc2 * cos(θ2);
         I2 + m2 * l1 * lc2 * cos(θ2) I2
@@ -26,10 +26,10 @@ function T(x, p)
 end
 E(x, p) = T(x, p) + U(x, p)
 
-######################### Undriven double pendulum conserve energy #########################
-println("Undriven double pendulum energy conservation test")
+#################### Undriven, undamped double pendulum conserve energy ####################
+println("Undriven, undamped double pendulum energy conservation test")
 
-@mtkcompile double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
+@mtkcompile double_pendulum_undamped = DoublePendulum(; actuation = :undriven)
 
 # Assume uniform rods of random mass and length
 m1, m2 = ones(2)
@@ -38,16 +38,17 @@ lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+b1, b2 = zeros(2)
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]
 
-x = get_double_pendulum_state_symbols(double_pendulum_undriven)
+x = get_double_pendulum_state_symbols(double_pendulum_undamped)
 x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- π, zeros(2)))
 
-params = get_double_pendulum_param_symbols(double_pendulum_undriven)
+params = get_double_pendulum_param_symbols(double_pendulum_undamped)
 p_dict = Dict(params .=> p)
 
 op = merge(x0, p_dict)
-prob = ODEProblem(double_pendulum_undriven, op, 100)
+prob = ODEProblem(double_pendulum_undamped, op, 100)
 sol = solve(prob, Tsit5(), abstol = 1.0e-10, reltol = 1.0e-10)
 
 # Test energy conservation
@@ -75,6 +76,49 @@ anim = plot_double_pendulum(sol, p)
 @test anim isa Plots.Animation
 # gif(anim, fps=50)
 
+#################### Undriven, undamped double pendulum conserve energy ####################
+println("Undriven, damped double pendulum test")
+
+@mtkcompile double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
+
+# Assume uniform rods of random mass and length
+m1, m2 = ones(2)
+l1, l2 = ones(2)
+lc1, lc2 = l1 / 2, l2 / 2
+I1 = m1 * l1^2 / 3
+I2 = m2 * l2^2 / 3
+g = 1.0
+b1, b2 = 0.1, 0.1
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]
+
+x = get_double_pendulum_state_symbols(double_pendulum_undriven)
+x0 = Dict(x .=> vcat(2π * rand(rng, 2) .- π, zeros(2)))
+
+params = get_double_pendulum_param_symbols(double_pendulum_undriven)
+p_dict = Dict(params .=> p)
+
+op = merge(x0, p_dict)
+prob = ODEProblem(double_pendulum_undriven, op, 1000)
+sol = solve(prob, Tsit5(), abstol = 1.0e-10, reltol = 1.0e-10)
+
+# Test plotting extension
+anim = plot_double_pendulum(sol, p)
+@test anim isa Plots.Animation
+# gif(anim, fps=50)
+
+# Test arrival at downward equilibrium
+θ1 = double_pendulum_undriven.θ1
+θ2 = double_pendulum_undriven.θ2
+
+θ1_end, ω1_end = sol[θ1][end], sol[Dt(θ1)][end]
+x1_end, y1_end = sin(θ1_end), -cos(θ1_end)
+θ2_end, ω2_end = sol[θ2][end], sol[Dt(θ2)][end]
+x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
+@test sqrt(sum(abs2, [x1_end, y1_end] .- [0, -1])) ≈ 0 atol = 1.0e-4
+@test sqrt(sum(abs2, [x2_end, y2_end] .- [0, -1])) ≈ 0 atol = 1.0e-4
+@test ω1_end ≈ 0 atol = 1.0e-4
+@test ω2_end ≈ 0 atol = 1.0e-4
+
 ########################### Feedback cancellation, PD controller ###########################
 println("Double pendulum feedback cancellation test")
 
@@ -85,13 +129,14 @@ lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 1.0
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+b1, b2 = ones(2)
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]
 
 @named double_pendulum = DoublePendulum(defaults = p)
 
 function π_cancellation(x, p, t)
     θ1, θ2, ω1, ω2 = x
-    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2 = p
     M = [
         I1 + I2 + m2 * l1^2 + 2 * m2 * l1 * lc2 * cos(θ2) I2 + m2 * l1 * lc2 * cos(θ2);
         I2 + m2 * l1 * lc2 * cos(θ2) I2
@@ -100,7 +145,8 @@ function π_cancellation(x, p, t)
         -m1 * g * lc1 * sin(θ1) - m2 * g * (l1 * sin(θ1) + lc2 * sin(θ1 + θ2));
         -m2 * g * lc2 * sin(θ1 + θ2)
     ]
-    return -0.1 * M \ ([θ1, θ2] .- [π, 0] + [ω1, ω2]) - G
+    b = [b1 * ω1; b2 * ω2]
+    return -0.1 * M \ ([θ1, θ2] .- [π, 0] + [ω1, ω2]) - G + b
 end
 
 @mtkcompile double_pendulum_feedback_cancellation = control_double_pendulum(
@@ -133,7 +179,7 @@ x2_end, y2_end = sin(θ2_end), -cos(θ2_end)
 println("Acrobot LQR test")
 
 function acrobot_lqr_matrix(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
-    I1, I2, l1, l2, lc1, lc2, m1, m2, g = p
+    I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2 = p
     θ1, θ2 = x_eq[1:2]
 
     # Assumes linearization around a fixed point
@@ -146,10 +192,11 @@ function acrobot_lqr_matrix(p; x_eq = [π, 0, 0, 0], Q = I(4), R = I(1))
         -m1 * g * lc1 * cos(θ1) - m2 * g * (l1 * cos(θ1) + lc2 * cos(θ1 + θ2)) -m2 * g * lc2 * cos(θ1 + θ2);
         -m2 * g * lc2 * cos(θ1 + θ2) -m2 * g * lc2 * cos(θ1 + θ2)
     ]
+    Jb = diagm([b1, b2])
 
     A_lin = [
         zeros(2, 2) I(2);
-        M \ Jτ_g zeros(2, 2)
+        M \ Jτ_g -M \ Jb
     ]
     B_lin = [zeros(2); M \ B]
 
@@ -170,7 +217,8 @@ lc1, lc2 = l1 / 2, l2 / 2
 I1 = m1 * l1^2 / 3
 I2 = m2 * l2^2 / 3
 g = 9.81
-p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g]
+b1, b2 = 0.1, 0.1
+p = [I1, I2, l1, l2, lc1, lc2, m1, m2, g, b1, b2]
 
 @mtkcompile acrobot_lqr = control_double_pendulum(acrobot, π_lqr(p; x_eq = [π, 0, 0, 0]))
 
