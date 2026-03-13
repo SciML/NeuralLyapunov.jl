@@ -241,7 +241,7 @@ Get the parameter symbols of the given double pendulum `pend` as a vector:
 function get_double_pendulum_param_symbols(pend)
     return [
         pend.I1, pend.I2, pend.l1, pend.l2, pend.lc1, pend.lc2, pend.m1, pend.m2, pend.g,
-        pend.b1, pend.b2
+        pend.b1, pend.b2,
     ]
 end
 
