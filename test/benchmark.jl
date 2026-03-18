@@ -57,6 +57,7 @@ using Test
     optimization_args = [:maxiters => 450]
 
     # Run benchmark
+    n = 200
     out = benchmark(
         sho_dynamics,
         lb,
@@ -66,7 +67,7 @@ using Test
         strategy,
         opt;
         simulation_time = 100,
-        n = 200,
+        n,
         p,
         optimization_args,
         ensemble_alg = EnsembleSerial()
@@ -82,6 +83,15 @@ using Test
     # Training is slower than evaluation in this example, since the dynamics are so simple
     # and don't depend on the neural network
     @test out.training_time > out.evaluation_time
+
+    # The initial conditions should span the state space, so the lowest x should be about
+    # lb[1] and the highest x should be about ub[1] and similar for v
+    Δx = (ub[1] - lb[1]) / n
+    Δv = (ub[2] - lb[2]) / n
+    @test minimum(out.data[!, "Initial x"]) < lb[1] + Δx
+    @test maximum(out.data[!, "Initial x"]) > ub[1] - Δx
+    @test minimum(out.data[!, "Initial v"]) < lb[2] + Δv
+    @test maximum(out.data[!, "Initial v"]) > ub[2] - Δv
 end
 
 ####################### Inverted pendulum policy search #######################
@@ -275,6 +285,7 @@ end
     optimization_args = [:maxiters => 600]
 
     # Run benchmark
+    n = 200
     out = benchmark(
         damped_pendulum,
         bounds,
@@ -283,7 +294,7 @@ end
         strategy,
         opt;
         simulation_time = 300,
-        n = 200,
+        n,
         optimization_args,
         endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, 1, 0], atol = 1.0e-3),
         rng = StableRNG(0)
@@ -295,6 +306,16 @@ end
 
     # Should accurately classify
     @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
+
+    # The initial conditions should span the state space, so the lowest θ should be about -π
+    # and the highest θ should be about π and the lowest ω should be about -10 and the
+    # highest ω should be about 10
+    Δθ = 2.0f0 * π / n
+    Δω = 20.0f0 / n
+    @test minimum(out.data[!, "Initial θ"]) < -π + Δθ
+    @test maximum(out.data[!, "Initial θ"]) > π - Δθ
+    @test minimum(out.data[!, "Initial θˍt"]) < -10.0f0 + Δω
+    @test maximum(out.data[!, "Initial θˍt"]) > 10.0f0 - Δω
 end
 
 ####################### Inverted pendulum policy search #######################
@@ -309,10 +330,11 @@ end
     τ, = unbound_inputs(driven_pendulum)
     driven_pendulum = mtkcompile(driven_pendulum; inputs = [τ], split = false)
     θ, ω = unknowns(driven_pendulum)
+    @assert string(θ) == "θ(t)"
 
     bounds = [
-        θ ∈ (0, 2π),
         ω ∈ (-2.0, 2.0),
+        θ ∈ (0, 2π),
     ]
 
     upright_equilibrium = [π, 0.0]
@@ -368,6 +390,7 @@ end
 
     # Run benchmark
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5.0e-3)
+    n = 200
     out = benchmark(
         driven_pendulum,
         bounds,
@@ -376,7 +399,7 @@ end
         strategy,
         opt;
         simulation_time = 200,
-        n = 200,
+        n,
         fixed_point = upright_equilibrium,
         optimization_args,
         endpoint_check,
@@ -390,4 +413,14 @@ end
 
     # Resulting classifier should be accurate
     @test (cm.Count[1] + cm.Count[3]) / sum(cm.Count) > 0.9
+
+    # The initial conditions should span the state space, so the lowest θ should be about -π
+    # and the highest θ should be about π and the lowest ω should be about -2 and the
+    # highest ω should be about 2
+    Δθ = 2.0f0 * π / n
+    Δω = 4.0f0 / n
+    @test minimum(out.data[!, "Initial θ"]) < 0 + Δθ
+    @test maximum(out.data[!, "Initial θ"]) > 2π - Δθ
+    @test minimum(out.data[!, "Initial θˍt"]) < -2.0f0 + Δω
+    @test maximum(out.data[!, "Initial θˍt"]) > 2.0f0 - Δω
 end
