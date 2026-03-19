@@ -179,7 +179,7 @@ function benchmark(
 
     bound_vars = map(b -> diff2term(b.variables), bounds)
     _bounds = map(unknowns(dynamics)) do x
-        dom = bounds[findfirst(Base.Fix1(===,x), bound_vars)].domain
+        dom = bounds[findfirst(Base.Fix1(===, x), bound_vars)].domain
         (dom.left, dom.right)
     end
     lb = first.(_bounds)
