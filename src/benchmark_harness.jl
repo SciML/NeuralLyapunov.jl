@@ -177,8 +177,13 @@ function benchmark(
     ics = initial_conditions(dynamics)
     p = [Symbolics.value(ics[param]) for param in params]
 
-    lb = [d.domain.left for d in bounds]
-    ub = [d.domain.right for d in bounds]
+    bound_vars = map(b -> diff2term(b.variables), bounds)
+    _bounds = map(unknowns(dynamics)) do x
+        dom = bounds[findfirst(Base.Fix1(===, x), bound_vars)].domain
+        (dom.left, dom.right)
+    end
+    lb = first.(_bounds)
+    ub = last.(_bounds)
 
     default_float_type = if simulation_time isa AbstractFloat
         typeof(simulation_time)
