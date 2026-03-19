@@ -17,7 +17,7 @@ concurrency:
 jobs:
   gpu-tests:
     name: "GPU Tests"
-    runs-on: [self-hosted, Linux, X64, gpu]
+    runs-on: [self-hosted, Linux, X64, gpu-t4]
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
