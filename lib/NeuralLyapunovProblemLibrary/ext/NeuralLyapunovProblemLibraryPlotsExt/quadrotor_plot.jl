@@ -117,7 +117,7 @@ end
 
 """
     plot_quadrotor_3d(x, y, z, φ, θ, ψ, [T, τφ, τθ, τψ,] p, t; title)
-    plot_quadrotor_3d(sol, p; title, N, x_symbol, y_symbol, z_symbol, φ_symbol, θ_symbol, ψ_symbol, T_symbol, τφ_symbol, τθ_symbol, τψ_symbol)
+    plot_quadrotor_3d(sol, p; <kwargs>)
 
 Plot the 3D quadrotor's trajectory.
 
@@ -143,22 +143,37 @@ constant length.
   - `title`: The title of the plot; defaults to no title (i.e., `title=""`).
   - `N`: The number of points to plot; when using `x`, `y`, `z`, etc., uses `length(t)`;
     defaults to 500 when using `sol`.
+  - `speed_control`: Whether the control inputs are rotor speeds or thrusts/torques;
+    defaults to `false` (i.e., thrusts/torques).
   - `x_symbol`: The symbol of the x-coordinate in `sol`; defaults to `:x`.
   - `y_symbol`: The symbol of the y-coordinate in `sol`; defaults to `:y`.
   - `z_symbol`: The symbol of the z-coordinate in `sol`; defaults to `:z`.
   - `φ_symbol`: The symbol of the roll in `sol`; defaults to `:φ`.
   - `θ_symbol`: The symbol of the pitch in `sol`; defaults to `:θ`.
   - `ψ_symbol`: The symbol of the yaw in `sol`; defaults to `:ψ`.
-  - `T_symbol`: The symbol of the thrust in `sol`; defaults to `:T`.
-  - `τφ_symbol`: The symbol of the roll torque in `sol`; defaults to `:τφ`.
-  - `τθ_symbol`: The symbol of the pitch torque in `sol`; defaults to `:τθ`.
-  - `τψ_symbol`: The symbol of the yaw torque in `sol`; defaults to `:τψ`.
+  - `T_symbol`: The symbol of the thrust in `sol`; defaults to `:T`, used when
+    `speed_control` is `false`.
+  - `τφ_symbol`: The symbol of the roll torque in `sol`; defaults to `:τφ`, used when
+    `speed_control` is `false`.
+  - `τθ_symbol`: The symbol of the pitch torque in `sol`; defaults to `:τθ`, used when
+    `speed_control` is `false`.
+  - `τψ_symbol`: The symbol of the yaw torque in `sol`; defaults to `:τψ`, used when
+    `speed_control` is `false`.
+  - `ω1²_symbol`: The symbol of the squared angular velocity of the first rotor in `sol`;
+    defaults to `:ω1²`, used when `speed_control` is `true`.
+  - `ω2²_symbol`: The symbol of the squared angular velocity of the second rotor in `sol`;
+    defaults to `:ω2²`, used when `speed_control` is `true`.
+  - `ω3²_symbol`: The symbol of the squared angular velocity of the third rotor in `sol`;
+    defaults to `:ω3²`, used when `speed_control` is `true`.
+  - `ω4²_symbol`: The symbol of the squared angular velocity of the fourth rotor in `sol`;
+    defaults to `:ω4²`, used when `speed_control` is `true`.
 """
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         sol,
         p;
         title = "",
         N = 500,
+        speed_control = false,
         x_symbol = :x,
         y_symbol = :y,
         z_symbol = :z,
@@ -168,7 +183,11 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         T_symbol = :T,
         τφ_symbol = :τφ,
         τθ_symbol = :τθ,
-        τψ_symbol = :τψ
+        τψ_symbol = :τψ,
+        ω1²_symbol = :ω1²,
+        ω2²_symbol = :ω2²,
+        ω3²_symbol = :ω3²,
+        ω4²_symbol = :ω4²,
     )
     t = LinRange(sol.t[1], sol.t[end], N)
     x = sol(t)[x_symbol]
@@ -177,18 +196,39 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
     φ = sol(t)[φ_symbol]
     θ = sol(t)[θ_symbol]
     ψ = sol(t)[ψ_symbol]
-    T = sol(t)[T_symbol]
-    τφ = sol(t)[τφ_symbol]
-    τθ = sol(t)[τθ_symbol]
-    τψ = sol(t)[τψ_symbol]
+
+    if speed_control
+        ω1² = sol(t)[ω1²_symbol]
+        ω2² = sol(t)[ω2²_symbol]
+        ω3² = sol(t)[ω3²_symbol]
+        ω4² = sol(t)[ω4²_symbol]
+        ω² = vcat(ω1²', ω2²', ω3²', ω4²')
+
+        # Convert angular speeds to thrusts and torques
+        k_F, k_M, L = p[9:11]
+        T̃ = [
+            k_F k_F k_F k_F;
+            0 k_F * L 0 -k_F * L;
+            -k_F * L 0 k_F * L 0;
+            k_M -k_M k_M -k_M
+        ] * ω²
+
+        T = T̃[1, :]
+        τφ = T̃[2, :]
+        τθ = T̃[3, :]
+        τψ = T̃[4, :]
+    else
+        T = sol(t)[T_symbol]
+        τφ = sol(t)[τφ_symbol]
+        τθ = sol(t)[τθ_symbol]
+        τψ = sol(t)[τψ_symbol]
+    end
     return plot_quadrotor_3d(x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title)
 end
 
-function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
-        x, y, z, φ, θ, ψ, p, t; title = ""
-    )
+function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(x, y, z, φ, θ, ψ, p, t; title = "")
     m, g = p[1:2]
-    T = fill(m * g / 4, length(t))
+    T = fill(m * g, length(t))
     τφ = zeros(length(t))
     τθ = zeros(length(t))
     τψ = zeros(length(t))
@@ -198,13 +238,27 @@ end
 function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         x, y, z, φ, θ, ψ, T, τφ, τθ, τψ, p, t; title = ""
     )
-    m, g = p[1:2]
-    L = 1.0
-    k = 1.0
+    T̃ = vcat(T', τφ', τθ', τψ')
 
-    # Calculate thrusts (rescaled as lengths)
-    τ = transpose(hcat(T, τφ ./ L, τθ ./ L, τψ ./ k))
-    F = max.(0.0, [1 0 -2 -1; 1 2 0 1; 1 0 2 -1; 1 -2 0 1] * τ ./ (m * g) .* L ./ 3)
+    # Unpack parameters
+    m, g = p[1:2]
+    if length(p) == 11
+        k_F, k_M, L = p[9:11]
+    else
+        k_F, k_M, L = 1, 1, 1
+    end
+
+    # Convert thrusts and torques to individual rotor thrusts
+    ω² = [
+        k_F k_F k_F k_F;
+        0 k_F * L 0 -k_F * L;
+        -k_F * L 0 k_F * L 0;
+        k_M -k_M k_M -k_M
+    ] \ T̃
+    f = k_F .* ω²
+
+    # Rescale thrusts as lengths
+    F = max.(0, f ./ (m * g) .* L ./ 3)
 
     return @animate for i in eachindex(t)
         # CoM position (world coordinates)

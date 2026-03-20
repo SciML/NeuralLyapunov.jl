@@ -16,20 +16,19 @@ function π_vertical_only(x, p, t; z_goal = 0.0, k_p = 1.0, k_d = 1.0)
     z = x[3]
     ż = x[9]
     m, g = p[1:2]
-    Izz = p[end]
+    L = p[end]
 
     # Calculate a characteristic length scale for scaling the PD controller
-    r = sqrt(Izz / m)
-    k_p = k_p * m * g / r
-    k_d = k_d * m * sqrt(g / r)
+    k_p = k_p * m * g / L
+    k_d = k_d * m * sqrt(g / L)
 
     # PD controller for vertical motion, limited to nonnegative thrust
     T0 = m * g
     T = T0 - k_p * (z - z_goal) - k_d * ż
-    return [T, 0, 0, 0]
+    return fill(T / 4, 4)
 end
 
-@named quadrotor_3d = Quadrotor3D()
+@named quadrotor_3d = Quadrotor3D(speed_control = true)
 @mtkcompile quadrotor_3d_vertical_only = control_quadrotor_3d(quadrotor_3d, π_vertical_only)
 
 # Hovering
@@ -39,7 +38,8 @@ g = 1.0
 Ixx = Iyy = m * L^2 / 6
 Izz = m * L^2 / 3
 Ixy = Ixz = Iyz = 0.0
-p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz]
+k_F, k_M, k_L = ones(3)
+p = [m, g, Ixx, Ixy, Ixz, Iyy, Iyz, Izz, k_F, k_M, k_L]
 τ = sqrt(L / g)
 
 q0 = [0, 0, rand(rng), 0, 0, 0]
@@ -72,16 +72,17 @@ u = get_quadrotor_3d_input_symbols(quadrotor_3d)
 anim = plot_quadrotor_3d(
     sol,
     p;
+    speed_control = true,
     x_symbol = q[1],
     y_symbol = q[2],
     z_symbol = q[3],
     φ_symbol = q[4],
     θ_symbol = q[5],
     ψ_symbol = q[6],
-    T_symbol = u[1],
-    τφ_symbol = u[2],
-    τθ_symbol = u[3],
-    τψ_symbol = u[4]
+    ω1²_symbol = u[1],
+    ω2²_symbol = u[2],
+    ω3²_symbol = u[3],
+    ω4²_symbol = u[4]
 )
 @test anim isa Plots.Animation
 # gif(anim, fps = 50)
