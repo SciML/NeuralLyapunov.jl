@@ -93,8 +93,12 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_planar(
 
         # Rotors
         top_rotor, bottom_rotor = rotors(x[i], y[i], θ[i], u1[i], u2[i], r)
-        plot!(top_rotor..., arrow = true, linewidth = 2, color = :red)
-        plot!(bottom_rotor..., arrow = true, linewidth = 2, color = :red)
+        if u1[i] > 0
+            plot!(top_rotor..., arrow = true, linewidth = 2, color = :red)
+        end
+        if u2[i] > 0
+            plot!(bottom_rotor..., arrow = true, linewidth = 2, color = :red)
+        end
 
         # Trajectory so far
         traj_x = x[1:i]
