@@ -147,7 +147,7 @@ Specifies a neural Lyapunov problem.
     decrease condition will be enforced.
 
 # Example
-```jldoctest; filter = r"(?m)^\\s*V̇\\(x\\)\\s*=\\s*2\\s*(?=.*φ\\(x\\))(?=.*∇φ\\(x\\))(?=.*f\\(x,\\s*p,\\s*t\\))(?:\\s*(?:φ\\(x\\)|∇φ\\(x\\)|f\\(x,\\s*p,\\s*t\\))\\s*(?:\\*\\s*(?:φ\\(x\\)|∇φ\\(x\\)|f\\(x,\\s*p,\\s*t\\))\\s*){2})\$"
+```jldoctest; filter = [r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"φ\\(x\\)" => "φ", r"\\s*\\*\\s*" => "", r"∇φ" => "∇", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(2|φ|∇|ẋ){4}\$"]
 julia> NeuralLyapunovSpecification(NonnegativeStructure(1), PositiveSemiDefinite(), StabilityISL())
 NeuralLyapunovSpecification
     Structure:

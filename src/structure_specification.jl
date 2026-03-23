@@ -11,7 +11,7 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest; filter = r"(?m)^\\s*V̇\\(x\\)\\s*=\\s*(?=.*f\\(x,\\s*p,\\s*t\\))(?=.*∇φ\\(x\\))(?:\\s*(?:f\\(x,\\s*p,\\s*t\\)\\s*\\*\\s*∇φ\\(x\\)|∇φ\\(x\\)\\s*\\*\\s*f\\(x,\\s*p,\\s*t\\))\\s*)\$"
+```jldoctest; filter = [r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"φ\\(x\\)" => "φ", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(∇φ\\s*\\*\\s*ẋ|ẋ\\s*\\*\\s*∇φ)\$"]
 julia> NoAdditionalStructure()
 NeuralLyapunovStructure
     Network dimension: 1
@@ -62,7 +62,7 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest; filter = [r"(?m)\\s*V\\(x\\)\\s*=\\s*(0\\.1\\s*log\\(\\s*1\\s*\\+\\s*\\(x\\s*-\\s*x_0\\)²\\)|\\|\\|\\s*φ\\(x\\)\\s*\\|\\|²)\\s*(?:\\+\\s*(?:0\\.1\\s*log\\(\\s*1\\s*\\+\\s*\\(x\\s*-\\s*x_0\\)²\\)|\\|\\|\\s*φ\\(x\\)\\s*\\|\\|²))\$", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(?:2\\(φ\\(x\\)\\)\\s*⋅\\s*\\(f\\(x,\\s*p,\\s*t\\)\\s*\\*\\s*Jφ\\(x\\)\\)\\s*\\+\\s*\\(0\\.2\\(x\\s*-\\s*x_0\\)\\s*\\*\\s*f\\(x,\\s*p,\\s*t\\)\\)\\s*/\\s*\\(1\\s*\\+\\s*\\(x\\s*-\\s*x_0\\)²\\)|\\(0\\.2\\(x\\s*-\\s*x_0\\)\\s*\\*\\s*f\\(x,\\s*p,\\s*t\\)\\)\\s*/\\s*\\(1\\s*\\+\\s*\\(x\\s*-\\s*x_0\\)²\\)\\s*\\+\\s*2\\(φ\\(x\\)\\)\\s*⋅\\s*\\(f\\(x,\\s*p,\\s*t\\)\\s*\\*\\s*Jφ\\(x\\)\\))\$"]
+```jldoctest; filter = [r"\\(?x - x_0\\)?" => "Δ", r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"\\s*\\*\\s*" => "", r"φ\\(x\\)|\\(φ\\(x\\)\\)" => "φ", r"\\|\\|φ\\|\\|²" => "φ²", r"0.1\\s*log\\((1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)" => "A", r"(?m)\\s*V\\(x\\)\\s*=\\s*(A\\s*\\+\\s*φ²|φ²\\s*\\+\\s*A)\$", r"2(φ⋅φ̇|φ̇⋅φ)" => "B", r"\\(?(1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)?"=> "C", r"\\(?0.2(Δẋ|ẋΔ)\\)?" => "D", r"D\\s*/\\s*C" => "E", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(B\\s*\\+\\s*E|E\\s*\\+\\s*B)\$"]
 julia> NonnegativeStructure(3; δ = 0.1)
 NeuralLyapunovStructure
     Network dimension: 3
