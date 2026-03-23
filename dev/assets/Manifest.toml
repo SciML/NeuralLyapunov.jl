@@ -58,9 +58,9 @@ version = "0.4.5"
 
 [[deps.Accessors]]
 deps = ["CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "MacroTools"]
-git-tree-sha1 = "856ecd7cebb68e5fc87abecd2326ad59f0f911f3"
+git-tree-sha1 = "2eeb2c9bef11013efc6f8f97f32ee59b146b09fb"
 uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
-version = "0.1.43"
+version = "0.1.44"
 
     [deps.Accessors.extensions]
     AxisKeysExt = "AxisKeys"
@@ -184,9 +184,9 @@ version = "1.11.0"
 
 [[deps.Atomix]]
 deps = ["UnsafeAtomics"]
-git-tree-sha1 = "29bb0eb6f578a587a49da16564705968667f5fa8"
+git-tree-sha1 = "b8651b2eb5796a386b0398a20b519a6a6150f75c"
 uuid = "a9b6321e-bd34-4604-b9c9-b65b8de01458"
-version = "1.1.2"
+version = "1.1.3"
 
     [deps.Atomix.extensions]
     AtomixCUDAExt = "CUDA"
@@ -1416,9 +1416,9 @@ weakdeps = ["Adapt", "FastBroadcast", "KernelAbstractions", "OrdinaryDiffEqCore"
 
 [[deps.KernelAbstractions]]
 deps = ["Adapt", "Atomix", "InteractiveUtils", "MacroTools", "PrecompileTools", "Requires", "StaticArrays", "UUIDs"]
-git-tree-sha1 = "fb14a863240d62fbf5922bf9f8803d7df6c62dc8"
+git-tree-sha1 = "f2e76d3ced51a2a9e185abc0b97494c7273f649f"
 uuid = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
-version = "0.9.40"
+version = "0.9.41"
 weakdeps = ["EnzymeCore", "LinearAlgebra", "SparseArrays"]
 
     [deps.KernelAbstractions.extensions]
@@ -1613,9 +1613,9 @@ weakdeps = ["ChainRulesCore", "SparseArrays", "Statistics"]
 
 [[deps.LinearSolve]]
 deps = ["ArrayInterface", "ChainRulesCore", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "OpenBLAS_jll", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "Setfield", "StaticArraysCore"]
-git-tree-sha1 = "57a7bea58da7de6906f2621294ea35656cb40c5f"
+git-tree-sha1 = "a118acd3945833455f9de6bae521c0414feaac2d"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "3.66.0"
+version = "3.67.0"
 
     [deps.LinearSolve.extensions]
     LinearSolveAMDGPUExt = "AMDGPU"
@@ -1942,9 +1942,9 @@ version = "0.1.3"
 
 [[deps.MathOptInterface]]
 deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "ForwardDiff", "JSON", "LinearAlgebra", "MutableArithmetics", "NaNMath", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays", "SpecialFunctions", "Test"]
-git-tree-sha1 = "7fb98657926ccb4de8f9bb96cda453700ca39a8b"
+git-tree-sha1 = "220a518968af92166a3e50c45f12569fcdf585ab"
 uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
-version = "1.49.0"
+version = "1.50.0"
 
 [[deps.MatrixEquations]]
 deps = ["LinearAlgebra", "LinearMaps"]
@@ -2052,9 +2052,9 @@ version = "1.24.0"
 
 [[deps.ModelingToolkitTearing]]
 deps = ["BipartiteGraphs", "CommonSolve", "DocStringExtensions", "Graphs", "LinearAlgebra", "ModelingToolkitBase", "Moshi", "OffsetArrays", "OrderedCollections", "SciMLBase", "Setfield", "SparseArrays", "StateSelection", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "UUIDs"]
-git-tree-sha1 = "85205b6ac778a6acfd6190cb2579214d114f6daf"
+git-tree-sha1 = "307a9fcb1514a4f5b04b714e8af42107cc24622b"
 uuid = "6bb917b9-1269-42b9-9f7c-b0dca72083ab"
-version = "1.9.0"
+version = "1.10.0"
 
 [[deps.MonteCarloIntegration]]
 deps = ["Distributions", "QuasiMonteCarlo", "Random"]
@@ -2186,9 +2186,9 @@ version = "0.6.2"
 
 [[deps.NeuralPDE]]
 deps = ["ADTypes", "Adapt", "AdvancedHMC", "ArrayInterface", "ChainRulesCore", "ComponentArrays", "ConcreteStructs", "Cubature", "Distributions", "DocStringExtensions", "DomainSets", "ForwardDiff", "Functors", "Integrals", "IntervalSets", "LinearAlgebra", "LogDensityProblems", "Lux", "LuxCore", "MCMCChains", "MLDataDevices", "ModelingToolkit", "MonteCarloMeasurements", "NeuralOperators", "Optimisers", "Optimization", "OptimizationOptimisers", "Printf", "QuasiMonteCarlo", "Random", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLBase", "Statistics", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "WeightInitializers", "Zygote"]
-git-tree-sha1 = "745665139212264d671b70ee57a685f25e390f18"
+git-tree-sha1 = "ab071a3362ab4d502c25563482699b8b649d546f"
 uuid = "315f7962-48a3-4962-8226-d0f33b1235f0"
-version = "5.22.0"
+version = "5.23.0"
 
     [deps.NeuralPDE.extensions]
     NeuralPDETensorBoardLoggerExt = "TensorBoardLogger"
@@ -2900,9 +2900,9 @@ weakdeps = ["FixedPointNumbers"]
 
 [[deps.ReactantCore]]
 deps = ["ExpressionExplorer", "MacroTools"]
-git-tree-sha1 = "f40fa78679f0d5584f6b83abed10e78c34d8bd9d"
+git-tree-sha1 = "924fb208b164252648988f3ab72b99d8a7763f4d"
 uuid = "a3311ec8-5e00-46d5-b541-4f83e724a433"
-version = "0.1.17"
+version = "0.1.18"
 
 [[deps.ReadOnlyArrays]]
 git-tree-sha1 = "e6f7ddf48cf141cb312b078ca21cb2d29d0dc11d"
@@ -3045,9 +3045,9 @@ version = "0.6.43"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "Moshi", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "0be0208add9b6836a701e0ac3ad30bda72fee51d"
+git-tree-sha1 = "2159782e0639da9a05856528950a4d9ba0aa7f46"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.150.0"
+version = "2.151.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -3284,9 +3284,9 @@ version = "1.0.4"
 
 [[deps.StateSelection]]
 deps = ["BipartiteGraphs", "DocStringExtensions", "FindFirstFunctions", "Graphs", "LinearAlgebra", "OrderedCollections", "Setfield", "SparseArrays"]
-git-tree-sha1 = "ae58a0d7f72dd4bb77574d8247b84b11f5517aea"
+git-tree-sha1 = "9549b7513b982eef19b79b3877e2a853ae89475f"
 uuid = "64909d44-ed92-46a8-bbd9-f047dfbdc84b"
-version = "1.5.1"
+version = "1.6.0"
 
     [deps.StateSelection.extensions]
     StateSelectionDeepDiffsExt = "DeepDiffs"
