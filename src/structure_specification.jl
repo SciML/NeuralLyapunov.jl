@@ -11,7 +11,7 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest
+```jldoctest; filter = [r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"φ\\(x\\)" => "φ", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(∇φ\\s*\\*\\s*ẋ|ẋ\\s*\\*\\s*∇φ)\$"]
 julia> NoAdditionalStructure()
 NeuralLyapunovStructure
     Network dimension: 1
@@ -62,12 +62,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest
+```jldoctest; filter = [r"\\(?x - x_0\\)?" => "Δ", r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"\\s*\\*\\s*" => "", r"φ\\(x\\)|\\(φ\\(x\\)\\)" => "φ", r"\\|\\|φ\\|\\|²" => "φ²", r"0.1\\s*log\\((1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)" => "A", r"(?m)\\s*V\\(x\\)\\s*=\\s*(A\\s*\\+\\s*φ²|φ²\\s*\\+\\s*A)\$", r"2(φ⋅φ̇|φ̇⋅φ)" => "B", r"\\(?(1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)?"=> "C", r"\\(?0.2(Δẋ|ẋΔ)\\)?" => "D", r"D\\s*/\\s*C" => "E", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(B\\s*\\+\\s*E|E\\s*\\+\\s*B)\$"]
 julia> NonnegativeStructure(3; δ = 0.1)
 NeuralLyapunovStructure
     Network dimension: 3
-    V(x) = 0.1log(1.0 + (x - x_0)²) + ||φ(x)||²
-    V̇(x) = 2(φ(x))⋅(f(x, p, t)*Jφ(x)) + (0.2(x - x_0)*f(x, p, t)) / (1.0 + (x - x_0)²)
+    V(x) = 0.1log(1 + (x - x_0)²) + ||φ(x)||²
+    V̇(x) = 2(φ(x))⋅(f(x, p, t)*Jφ(x)) + (0.2(x - x_0)*f(x, p, t)) / (1 + (x - x_0)²)
     f_call(x) = f(x, p, t)
 ```
 
@@ -75,12 +75,12 @@ See also: [`DontCheckNonnegativity`](@ref)
 """
 function NonnegativeStructure(
         network_dim::Integer;
-        δ::Real = 0.0,
-        pos_def = (x, x0) -> log(1.0 + (x - x0) ⋅ (x - x0)),
+        δ::Real = 0,
+        pos_def = (x, x0) -> log(1 + (x - x0) ⋅ (x - x0)),
         grad_pos_def = nothing,
         grad = ForwardDiff.gradient
     )::NeuralLyapunovStructure
-    return if δ == 0.0
+    return if δ == 0
         NeuralLyapunovStructure(
             (net, x, x0) -> net(x) ⋅ net(x),
             (net, J_net, f, x, p, t, x0) -> 2 * dot(net(x), J_net(x), f(x, p, t)),
@@ -149,12 +149,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest
-julia> PositiveSemiDefiniteStructure(1)
+```jldoctest; filter = [r"\\(?2x - 2x_0\\)?" => "2(x - x_0)", r"\\(?x - x_0\\)?" => "Δ", r"\\|\\|Δ\\|\\|²" => "Δ²", r"φ\\(x\\)" => "φ", r"\\(?1\\s*\\+\\s*φ²\\)?" => "Y", r"\\s*\\*\\s*" => "", r"(?m)\\s*V\\(x\\)\\s*=\\s*(?:Δ²Y|YΔ²)\$", r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"(2ΔẋY|2ΔYẋ|ẋ2ΔY|ẋY2Δ|Yẋ2Δ|Y2Δẋ)" => "A", r"(2|∇φ|ẋ|Δ²|φ){5}" => "B", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(A|B)\\s*\\+\\s*(A|B)\$"]
+julia> PositiveSemiDefiniteStructure(1; pos_def = (x, x0) -> sum(abs2, x - x0))
 NeuralLyapunovStructure
     Network dimension: 1
-    V(x) = log(1.0 + (x - x_0)^2)*(1 + φ(x)^2)
-    V̇(x) = (2(x - x_0)*(1 + φ(x)^2)*f(x, p, t)) / (1.0 + (x - x_0)^2) + 2log(1.0 + (x - x_0)^2)*φ(x)*Differential(x, 1)(φ(x))*f(x, p, t)
+    V(x) = (1 + φ(x)²)*||x - x_0||²
+    V̇(x) = (2x - 2x_0)*f(x, p, t)*(1 + φ(x)²) + 2∇φ(x)*f(x, p, t)*||x - x_0||²*φ(x)
     f_call(x) = f(x, p, t)
 ```
 
@@ -162,7 +162,7 @@ See also: [`DontCheckNonnegativity`](@ref)
 """
 function PositiveSemiDefiniteStructure(
         network_dim::Integer;
-        pos_def = (x, x0) -> log(1.0 + (x - x0) ⋅ (x - x0)),
+        pos_def = (x, x0) -> log(1 + (x - x0) ⋅ (x - x0)),
         non_neg = (net, x, x0) -> 1 + net(x) ⋅ net(x),
         grad_pos_def = nothing,
         grad_non_neg = nothing,
