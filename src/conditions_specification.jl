@@ -38,6 +38,8 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             # Replace LinearAlgebra.dot(A, A) with ||A||^2 for better readability
             dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?1)\))*)\s*\)"
             V = replace(V, dot_re => s"||\1||²")
+            # Replace abs2(A) with ||A||^2 for better readability
+            V = replace(V, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
             # Replace LinearAlgebra.dot with ⋅ for better readability
             dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
             V = replace(V, dot_re => s"(\1)⋅(\2)")
@@ -54,11 +56,15 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
             V̇ = replace(V̇, r",\s*Colon\(\)" => "")
             # Replace, e.g., [1:1] with [1]
             V̇ = replace(V̇, r"\b(\d+):\1\b" => s"\1")
+            # Replace abs2(A) with ||A||^2 for better readability
+            V̇ = replace(V̇, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
             # Replace LinearAlgebra.dot with ⋅ for better readability
             dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
             V̇ = replace(V̇, dot_re => s"(\1)⋅(\2)")
             # Replace ^2 with ²
             V̇ = replace(V̇, r"\^2" => "²")
+            # Replace Differential(x, 1)(φ(x)) with Jφ(x) for better readability
+            V̇ = replace(V̇, r"Differential\(x, 1\)\(φ\(x\)\)" => "Jφ(x)")
             println(io, "    V̇(x) = ", V̇)
         catch e
             println(io, "    V̇(x) = <could not display: $(e)>")
@@ -77,12 +83,24 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
         println(io, "NeuralLyapunovStructure")
         println(io, "    Network dimension: ", n)
         try
-            println(io, "    V(x) = ", s.V(φ, x, x_0))
+            V = string(s.V(φ, x, x_0))
+            # Replace abs2(A) with ||A||² for better readability
+            V = replace(V, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+            # Replace ^2 with ²
+            V = replace(V, r"\^2" => "²")
+            println(io, "    V(x) = ", V)
         catch e
             println(io, "    V(x) = <could not display: $(e)>")
         end
         try
-            println(io, "    V̇(x) = ", s.V̇(φ, ∇φ, f, x, p, t, x_0))
+            V̇ = string(s.V̇(φ, ∇φ, f, x, p, t, x_0))
+            # Replace abs2(A) with ||A||^2 for better readability
+            V̇ = replace(V̇, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+            # Replace ^2 with ²
+            V̇ = replace(V̇, r"\^2" => "²")
+            # Replace Differential(x, 1)(φ(x)) with ∇φ(x) for better readability
+            V̇ = replace(V̇, r"Differential\(x, 1\)\(φ\(x\)\)" => "∇φ(x)")
+            println(io, "    V̇(x) = ", V̇)
         catch e
             println(io, "    V̇(x) = <could not display: $(e)>")
         end
@@ -129,13 +147,13 @@ Specifies a neural Lyapunov problem.
     decrease condition will be enforced.
 
 # Example
-```jldoctest
+```jldoctest; filter = r"(?m)^\\s*V̇\\(x\\)\\s*=\\s*2\\s*(?=.*φ\\(x\\))(?=.*∇φ\\(x\\))(?=.*f\\(x,\\s*p,\\s*t\\))(?:\\s*(?:φ\\(x\\)|∇φ\\(x\\)|f\\(x,\\s*p,\\s*t\\))\\s*(?:\\*\\s*(?:φ\\(x\\)|∇φ\\(x\\)|f\\(x,\\s*p,\\s*t\\))\\s*){2})\$"
 julia> NeuralLyapunovSpecification(NonnegativeStructure(1), PositiveSemiDefinite(), StabilityISL())
 NeuralLyapunovSpecification
     Structure:
         NeuralLyapunovStructure
             Network dimension: 1
-            V(x) = φ(x)^2
+            V(x) = φ(x)²
             V̇(x) = 2φ(x)*∇φ(x)*f(x, p, t)
             f_call(x) = f(x, p, t)
     Minimization Condition:
