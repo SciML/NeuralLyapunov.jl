@@ -216,7 +216,7 @@ but differentiable approximations of this function may be employed.
 
 # Examples
 
-```jldoctest; filter = [r"0?\\.?5V" => "V", r"(?m)\\s*Trains for (V|V̇)\\(x\\) + (V|V̇)\\(x\\) ≤ 0\$"]
+```jldoctest; filter = [r"0?\\.?5V" => "V", r"(?m)\\s*Trains for (V|V̇)\\(x\\) \\+ (V|V̇)\\(x\\) ≤ 0\$"]
 julia> ExponentialStability(0.5)
 LyapunovDecreaseCondition
     Trains for 0.5V(x) + V̇(x) ≤ 0

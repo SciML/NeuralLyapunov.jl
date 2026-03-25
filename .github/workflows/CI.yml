@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.11'
+          - '1'
 #          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
         group:
           - 'core'
@@ -51,7 +51,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.11'
+          - '1'
 #          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
         group:
           - 'pendula'
