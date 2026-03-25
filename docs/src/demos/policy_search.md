@@ -17,7 +17,7 @@ using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, ComponentArrays
 using ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+import Optimization, OptimizationOptimisers
 using Random, StableRNGs
 
 rng = StableRNG(0)
@@ -98,7 +98,7 @@ prob = discretize(pde_system, discretization)
 
 res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.001); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 
@@ -256,11 +256,12 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 ```@example policy_search
 prob = discretize(pde_system, discretization)
 
-import Optimization, OptimizationOptimisers, OptimizationOptimJL
+using Optimization: solve, remake
+using OptimizationOptimisers: Adam
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimJL.BFGS(); maxiters = 300)
+res = solve(prob, Adam(0.01); maxiters = 300)
+prob = remake(prob, u0 = res.u)
+res = solve(prob, Adam(0.001); maxiters = 300)
 
 net = discretization.phi
 _θ = res.u.depvar
