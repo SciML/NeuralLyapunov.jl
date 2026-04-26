@@ -586,8 +586,8 @@ function simulate_ensemble(
         x0 = first(states)
         ensemble_prob = EnsembleProblem(
             ODEProblem(dynamics, x0, simulation_time, p);
-            prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
-            output_func = (sol, i) -> (sol.u[end], false),
+            prob_func = (prob, ctx) -> remake(prob, u0 = states[ctx.sim_id]),
+            output_func = (sol, ctx) -> (sol.u[end], false),
             u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
             reduction = function (u, data, I)
                 u[I] = data
