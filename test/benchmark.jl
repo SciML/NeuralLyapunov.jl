@@ -3,7 +3,6 @@ using ModelingToolkit: unbound_inputs
 import Boltz.Layers: PeriodicEmbedding, MLP
 using OptimizationOptimisers: Adam
 using OptimizationOptimJL: BFGS
-using SciMLBase: EnsembleSerial
 using StableRNGs, Random
 using Test
 
