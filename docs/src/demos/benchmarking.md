@@ -197,7 +197,7 @@ For example, the dynamics may not allocate memory (build arrays), so in-place dy
 For this reason, using `EnsembleDistributed()` or `EnsembleThreads()` is recommended, even when training occurs on GPU.
 
 ```@example benchmarking
-using OrdinaryDiffEq: EnsembleSerial
+using SciMLBase: EnsembleSerial
 
 benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,

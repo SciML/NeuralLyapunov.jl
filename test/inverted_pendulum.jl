@@ -1,4 +1,5 @@
 using NeuralPDE, Lux, NeuralLyapunov
+using OrdinaryDiffEqTsit5: Tsit5
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
@@ -153,8 +154,6 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 @test sum(dVdt_predict .> 0) / length(dVdt_predict) < 5.0e-3
 
 ################################## Simulate ###################################
-
-using OrdinaryDiffEq
 
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);

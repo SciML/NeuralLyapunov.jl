@@ -382,12 +382,12 @@ closed_loop_dynamics = ODEFunction(
     sys = pendulum
 )
 
-using OrdinaryDiffEq: AutoTsit5, Rosenbrock23
+using OrdinaryDiffEqTsit5: Tsit5
 
 # Starting still at bottom ...
 downward_equilibrium = zeros(2)
 ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 120.0], p)
-sol = solve(ode_prob, AutoTsit5(Rosenbrock23()))
+sol = solve(ode_prob, Tsit5())
 plot(sol)
 ```
 
