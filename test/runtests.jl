@@ -75,7 +75,6 @@ const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
         end
     end
 
-    # The following test run in different GitHub actions, so aren't in the "ci" group
     if GROUP == "all" || GROUP == "qa"
         if DEVICE == "cpu"
             @time @safetestset "Quality Assurance" begin
