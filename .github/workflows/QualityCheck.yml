@@ -23,6 +23,10 @@ jobs:
     steps:
       - name: Checkout Actions Repository
         uses: actions/checkout@v6
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
       - name: Check formatting with Runic
         uses: fredrikekre/runic-action@v1
         with:
