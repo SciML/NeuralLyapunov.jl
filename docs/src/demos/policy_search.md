@@ -404,7 +404,7 @@ Then, we'll start at a random state:
 # Starting at a random point ...
 x0 = lb .+ rand(2) .* (ub .- lb)
 ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 150.0], p)
-sol = solve(ode_prob, AutoTsit5(Rosenbrock23()))
+sol = solve(ode_prob, Tsit5())
 plot(sol)
 ```
 
