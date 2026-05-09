@@ -28,7 +28,7 @@ get_quadrotor_planar_input_symbols
 using Random; Random.seed!(200) # hide
 using ModelingToolkit
 using NeuralLyapunovProblemLibrary
-using OrdinaryDiffEq
+using OrdinaryDiffEqTsit5: Tsit5
 using Plots
 using LinearAlgebra
 using ControlSystemsBase: lqr, Continuous
@@ -115,7 +115,7 @@ using Random; Random.seed!(200) # hide
 using ModelingToolkit
 import ModelingToolkit: inputs
 using NeuralLyapunovProblemLibrary
-using OrdinaryDiffEq
+using OrdinaryDiffEqTsit5: Tsit5
 using Plots
 using LinearAlgebra
 using ControlSystemsBase: lqr, Continuous

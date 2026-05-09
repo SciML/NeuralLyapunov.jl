@@ -1,7 +1,7 @@
 using ModelingToolkit
 using ModelingToolkit: D_nounits as Dt
 using NeuralLyapunovProblemLibrary
-using OrdinaryDiffEq
+using OrdinaryDiffEqTsit5: Tsit5
 using Plots
 using LinearAlgebra
 using ControlSystemsBase: lqr, Continuous
