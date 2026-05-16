@@ -468,3 +468,49 @@ function numerical_local_lyapunov_functions(f, fixed_point, P, p, t0)
         return V, V̇
     end
 end
+
+struct QuadraticLyapunovFunction{T <: Real}
+    P::AbstractMatrix{T}
+    fixed_point::AbstractVector{T}
+    function QuadraticLyapunovFunction(P::AbstractMatrix{T1}, fixed_point::AbstractVector{T2})
+        return new{promote_type(T1, T2)}(copy(P), copy(fixed_point))
+    end
+end
+
+function (V::QuadraticLyapunovFunction)(x::AbstractVector)
+    return dot(x - V.fixed_point, V.P, x - V.fixed_point)
+end
+
+function (V::QuadraticLyapunovFunction)(x::AbstractMatrix)
+    return mapslices(V, x, dims = [1])
+end
+
+struct QuadraticLyapunovDecreaseFunction{T <: Real}
+    P::AbstractMatrix{T}
+    fixed_point::AbstractVector{T}
+    f
+    p::AbstractVector{T}
+    function QuadraticLyapunovDecreaseFunction(
+        P::AbstractMatrix{T1},
+        fixed_point::AbstractVector{T2},
+        f,
+        p::AbstractVector{T3}
+    ) where {T1 <: Real, T2 <: Real, T3 <: Real}
+        T = promote_type(T1, T2, T3)
+        return new{T}(
+            T.(copy(P)),
+            T.(copy(fixed_point)),
+            f,
+            T.(copy(p)),
+            zero(T)
+        )
+    end
+end
+
+function (V̇::QuadraticLyapunovDecreaseFunction)(x::AbstractVector)
+    return 2 * dot(V̇.f(x, V̇.p, zero(eltype(x))), V̇.P, x - V̇.fixed_point)
+end
+
+function (V̇::QuadraticLyapunovDecreaseFunction)(x::AbstractMatrix)
+    return mapslices(V̇, x, dims = [1])
+end
