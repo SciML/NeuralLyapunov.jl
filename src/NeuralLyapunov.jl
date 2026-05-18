@@ -66,7 +66,7 @@ export RoAAwareDecreaseCondition, make_RoA_aware
 export add_policy_search, get_policy
 
 # Local Lyapunov analysis
-export local_lyapunov
+export get_quadratic_lyapunov_function
 
 # Benchmarking tool
 export benchmark

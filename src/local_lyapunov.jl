@@ -1,5 +1,5 @@
 """
-    local_lyapunov(dynamics; <keyword_arguments>)
+    get_quadratic_lyapunov_function(dynamics; <keyword_arguments>)
 
 Get a quadratic Lyapunov function for the linearization of the given system around the fixed
 point. Return the Lyapunov function and its time derivative.
@@ -36,7 +36,7 @@ and its associated quadratic Lyapunov function.
     nor an `ODEFunction` nor an `ODEInputFunction`); inferred from `Q` or `fixed_point` if
     available.
 """
-function local_lyapunov(
+function get_quadratic_lyapunov_function(
     dynamics::System;
     fixed_point = zeros(length(unknowns(dynamics))),
     u_eq = zeros(length(unbound_inputs(dynamics))),
@@ -107,7 +107,7 @@ function local_lyapunov(
     return numerical_local_lyapunov_functions(f, fixed_point, P, p, t0)
 end
 
-function local_lyapunov(
+function get_quadratic_lyapunov_function(
     dynamics::ODEFunction;
     fixed_point = nothing,
     p = SciMLBase.NullParameters(),
@@ -156,7 +156,7 @@ function local_lyapunov(
     return numerical_local_lyapunov_functions(dynamics, fixed_point, P, p, t0)
 end
 
-function local_lyapunov(
+function get_quadratic_lyapunov_function(
     dynamics::ODEInputFunction;
     fixed_point = nothing,
     u_eq = nothing,
@@ -312,7 +312,7 @@ function local_lyapunov(
     return numerical_local_lyapunov_functions(f, fixed_point, P, p, t0)
 end
 
-function local_lyapunov(
+function get_quadratic_lyapunov_function(
     dynamics;
     fixed_point = nothing,
     u_eq = nothing,

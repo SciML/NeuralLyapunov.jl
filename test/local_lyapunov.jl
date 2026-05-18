@@ -20,7 +20,7 @@ using Test
     p = [1.0, 1.0]
     fixed_point = [0.0, 0.0]
 
-    V, V̇ = local_lyapunov(sho; fixed_point, p)
+    V, V̇ = get_quadratic_lyapunov_function(sho; fixed_point, p)
 
     # Sample V and V̇ on a grid
     lb = [-5.0, -2.0];
@@ -44,7 +44,7 @@ using Test
 
     # Test again with ODEFunction
     sho_odef = ODEFunction(sho; sys = SymbolCache([:x, :v], [:ζ, :ω_0]))
-    V, V̇ = local_lyapunov(sho_odef; fixed_point, p)
+    V, V̇ = get_quadratic_lyapunov_function(sho_odef; fixed_point, p)
 
     # Test positive definiteness of V
     V_samples = vec(V(reduce(hcat, filter(x -> sum(abs2, x) != 0, collect(states)))))
@@ -63,7 +63,7 @@ using Test
         return [zero(ζ) one(ζ); -ω_0^2 -2ζ * ω_0]
     end
     sho_odef = ODEFunction(sho; jac = sho_jac, sys = SymbolCache([:x, :v], [:ζ, :ω_0]))
-    V, V̇ = local_lyapunov(sho_odef; fixed_point, p)
+    V, V̇ = get_quadratic_lyapunov_function(sho_odef; fixed_point, p)
 
     # Test positive definiteness of V
     V_samples = vec(V(reduce(hcat, filter(x -> sum(abs2, x) != 0, collect(states)))))
@@ -93,7 +93,7 @@ end
     upright_equilibrium = [π, 0.0]
     p = [0.5, 1.0]
 
-    V, V̇ = local_lyapunov(
+    V, V̇ = get_quadratic_lyapunov_function(
         open_loop_pendulum_dynamics;
         fixed_point = upright_equilibrium,
         p,
@@ -128,7 +128,7 @@ end
         sys = SymbolCache(state_syms, parameter_syms)
     )
 
-    V, V̇ = local_lyapunov(
+    V, V̇ = get_quadratic_lyapunov_function(
         open_loop_pendulum_odeif;
         fixed_point = upright_equilibrium,
         p,
@@ -163,7 +163,7 @@ end
         sys = SymbolCache(state_syms, parameter_syms)
     )
 
-    V, V̇ = local_lyapunov(
+    V, V̇ = get_quadratic_lyapunov_function(
         open_loop_pendulum_odeif;
         fixed_point = upright_equilibrium,
         p,
@@ -189,7 +189,7 @@ end
     @mtkcompile damped_pendulum = Pendulum(; driven = false, defaults = Float32[5.0, 1.0])
     fixed_point = zeros(2)
 
-    V, V̇ = local_lyapunov(damped_pendulum)
+    V, V̇ = get_quadratic_lyapunov_function(damped_pendulum)
 
     # Test positive definiteness of V
     lb = [-π, -2.0]
@@ -226,7 +226,7 @@ end
     u_eq = fill(m * g / 2, 2)
     fixed_point = zeros(6)
 
-    V, V̇ = local_lyapunov(quadrotor; u_eq);
+    V, V̇ = get_quadratic_lyapunov_function(quadrotor; u_eq);
 
     # Test local negative definiteness of V̇
     @test V̇(fixed_point) == 0
