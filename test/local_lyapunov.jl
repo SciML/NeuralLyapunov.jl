@@ -23,8 +23,8 @@ using Test
     V, V̇ = get_quadratic_lyapunov_function(sho; fixed_point, p)
 
     # Sample V and V̇ on a grid
-    lb = [-5.0, -2.0];
-    ub = [5.0, 2.0];
+    lb = [-5.0, -2.0]
+    ub = [5.0, 2.0]
     Δx = (ub[1] - lb[1]) / 100
     Δv = (ub[2] - lb[2]) / 100
     xs = lb[1]:Δx:ub[1]
@@ -226,7 +226,7 @@ end
     u_eq = fill(m * g / 2, 2)
     fixed_point = zeros(6)
 
-    V, V̇ = get_quadratic_lyapunov_function(quadrotor; u_eq);
+    V, V̇ = get_quadratic_lyapunov_function(quadrotor; u_eq)
 
     # Test local negative definiteness of V̇
     @test V̇(fixed_point) == 0

@@ -30,7 +30,9 @@ end
     # value
     @test check_all_qualified_accesses_are_public(
         NeuralLyapunov;
-        ignore = (:NullParameters, :derivative, :gradient, :jacobian, :logscalar,
-            :__has_jac, :__has_controljac, :value)
+        ignore = (
+            :NullParameters, :derivative, :gradient, :jacobian, :logscalar, :__has_jac,
+            :__has_controljac, :value,
+        )
     ) === nothing
 end

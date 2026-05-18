@@ -37,12 +37,12 @@ and its associated quadratic Lyapunov function.
     available.
 """
 function get_quadratic_lyapunov_function(
-    dynamics::System;
-    fixed_point = zeros(length(unknowns(dynamics))),
-    u_eq = zeros(length(unbound_inputs(dynamics))),
-    Q = I(length(unknowns(dynamics))),
-    R = I(length(unbound_inputs(dynamics)))
-)
+        dynamics::System;
+        fixed_point = zeros(length(unknowns(dynamics))),
+        u_eq = zeros(length(unbound_inputs(dynamics))),
+        Q = I(length(unknowns(dynamics))),
+        R = I(length(unbound_inputs(dynamics)))
+    )
     # Check if system is closed-loop
     closed_loop = isempty(unbound_inputs(dynamics))
 
@@ -60,7 +60,7 @@ function get_quadratic_lyapunov_function(
         throw(
             ArgumentError(
                 "Inconsistent dimensions between Q ($n, $n), fixed_point ($x_dim), and " *
-                "unknowns of dynamics ($_x_dim)."
+                    "unknowns of dynamics ($_x_dim)."
             )
         )
     end
@@ -78,7 +78,7 @@ function get_quadratic_lyapunov_function(
             throw(
                 ArgumentError(
                     "Inconsistent dimensions between R ($n, $n) and unbound inputs of " *
-                    "dynamics ($u_dim)."
+                        "dynamics ($u_dim)."
                 )
             )
         end
@@ -99,7 +99,7 @@ function get_quadratic_lyapunov_function(
 
         # Generate closed-loop dynamics
         f = let _K = copy(K), x0 = copy(fixed_point), u0 = copy(u_eq),
-            _f = ODEInputFunction(dynamics)
+                _f = ODEInputFunction(dynamics)
             (x, _p, t) -> _f(x, -_K * (x - x0) + u0, _p, t)
         end
     end
@@ -108,11 +108,11 @@ function get_quadratic_lyapunov_function(
 end
 
 function get_quadratic_lyapunov_function(
-    dynamics::ODEFunction;
-    fixed_point = nothing,
-    p = SciMLBase.NullParameters(),
-    Q = nothing
-)
+        dynamics::ODEFunction;
+        fixed_point = nothing,
+        p = SciMLBase.NullParameters(),
+        Q = nothing
+    )
     # Determine the fixed point if it's not provided
     if fixed_point === nothing
         if dynamics.sys isa System
@@ -157,14 +157,14 @@ function get_quadratic_lyapunov_function(
 end
 
 function get_quadratic_lyapunov_function(
-    dynamics::ODEInputFunction;
-    fixed_point = nothing,
-    u_eq = nothing,
-    p = SciMLBase.NullParameters(),
-    Q = nothing,
-    R = nothing,
-    u_dim = 0
-)
+        dynamics::ODEInputFunction;
+        fixed_point = nothing,
+        u_eq = nothing,
+        p = SciMLBase.NullParameters(),
+        Q = nothing,
+        R = nothing,
+        u_dim = 0
+    )
     # Determine the fixed point if it's not provided
     if fixed_point === nothing
         if dynamics.sys isa System
@@ -201,7 +201,7 @@ function get_quadratic_lyapunov_function(
             throw(
                 ArgumentError(
                     "Inconsistent dimensions between u_dim ($u_dim) and " *
-                    "unbound inputs of underlying System ($_u_dim)."
+                        "unbound inputs of underlying System ($_u_dim)."
                 )
             )
         end
@@ -213,7 +213,7 @@ function get_quadratic_lyapunov_function(
                 throw(
                     ArgumentError(
                         "Inconsistent dimensions between u_dim ($u_dim) and u_eq " *
-                        "($(length(u_eq)))."
+                            "($(length(u_eq)))."
                     )
                 )
             end
@@ -227,7 +227,7 @@ function get_quadratic_lyapunov_function(
                 throw(
                     ArgumentError(
                         "Inconsistent dimensions between R ($n, $n) and unbound " *
-                        "inputs of underlying System ($u_dim)."
+                            "inputs of underlying System ($u_dim)."
                     )
                 )
             end
@@ -239,7 +239,7 @@ function get_quadratic_lyapunov_function(
             throw(
                 ArgumentError(
                     "u_dim could not be inferred from the provided arguments. Please " *
-                    "provide u_eq, u_dim, or a valid R matrix."
+                        "provide u_eq, u_dim, or a valid R matrix."
                 )
             )
         end
@@ -254,7 +254,7 @@ function get_quadratic_lyapunov_function(
                 throw(
                     ArgumentError(
                         "Inconsistent dimensions between u_dim ($u_dim) and u_eq " *
-                        "($(length(u_eq)))."
+                            "($(length(u_eq)))."
                     )
                 )
             end
@@ -313,15 +313,15 @@ function get_quadratic_lyapunov_function(
 end
 
 function get_quadratic_lyapunov_function(
-    dynamics;
-    fixed_point = nothing,
-    u_eq = nothing,
-    p = SciMLBase.NullParameters(),
-    Q = nothing,
-    R = nothing,
-    x_dim = 0,
-    u_dim = 0
-)
+        dynamics;
+        fixed_point = nothing,
+        u_eq = nothing,
+        p = SciMLBase.NullParameters(),
+        Q = nothing,
+        R = nothing,
+        x_dim = 0,
+        u_dim = 0
+    )
     # Infer and check consistency of fixed_point, Q, and x_dim
     if fixed_point === nothing
         if Q !== nothing
@@ -339,7 +339,7 @@ function get_quadratic_lyapunov_function(
             throw(
                 ArgumentError(
                     "x_dim could not be inferred from the provided arguments. Please " *
-                    "provide fixed_point, Q, or a positive x_dim."
+                        "provide fixed_point, Q, or a positive x_dim."
                 )
             )
         end
@@ -353,7 +353,7 @@ function get_quadratic_lyapunov_function(
             throw(
                 ArgumentError(
                     "Inconsistent dimensions between x_dim ($x_dim) and fixed_point " *
-                    "($(length(fixed_point)))."
+                        "($(length(fixed_point)))."
                 )
             )
         end
@@ -388,7 +388,7 @@ function get_quadratic_lyapunov_function(
                 throw(
                     ArgumentError(
                         "Inconsistent dimensions between u_dim ($u_dim) and u_eq " *
-                        "($(length(u_eq)))."
+                            "($(length(u_eq)))."
                     )
                 )
             end
@@ -435,7 +435,7 @@ function get_quadratic_lyapunov_function(
 
         # Generate closed-loop dynamics
         f = let _K = copy(K), x0 = copy(fixed_point), u0 = copy(u_eq)
-            (x, p, t) -> dynamics(x, u0 -_K * (x - x0), p, t)
+            (x, p, t) -> dynamics(x, u0 - _K * (x - x0), p, t)
         end
     else
         # Linearize dynamics
