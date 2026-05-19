@@ -5,8 +5,8 @@
 Evaluate the specified neural Lyapunov method on the given system. Return a `NamedTuple`
 containing the confusion matrix, optimization time, and other metrics listed below.
 
-Train a neural Lyapunov function as specified, then discretize the domain using a grid
-discretization and use the neural Lyapnov function to and the provided `classifier` to
+Train a neural Lyapunov function as specified, then discretize the domain using the provided
+sampling algorithm and use the neural Lyapunov function to and the provided `classifier` to
 predict whether grid points are in the region of attraction of the provided `fixed_point`.
 Finally, simulate the system from each grid point and check if the trajectories reach the
 fixed point. Return a confusion matrix for the neural Lyapunov classifier using the results
