@@ -1,12 +1,12 @@
 module NeuralLyapunov
 
 import ForwardDiff
-import JuMP
-using LinearAlgebra: I, dot, ⋅
+using LinearAlgebra: I, dot, ⋅, checksquare
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term
 using ModelingToolkit: @named, @parameters, System, PDESystem, parameters, unknowns,
-    initial_conditions, operation, unbound_inputs, independent_variables
+    initial_conditions, operation, unbound_inputs, independent_variables, generate_jacobian,
+    generate_control_jacobian
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake
@@ -23,6 +23,7 @@ using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
 using DataFrames: DataFrame
+using MatrixEquations: lyapc, arec
 
 const cpud = cpu_device()
 
@@ -65,7 +66,7 @@ export RoAAwareDecreaseCondition, make_RoA_aware
 export add_policy_search, get_policy
 
 # Local Lyapunov analysis
-export local_lyapunov
+export get_quadratic_lyapunov_function
 
 # Benchmarking tool
 export benchmark

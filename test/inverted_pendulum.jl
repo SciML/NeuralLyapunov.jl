@@ -212,8 +212,7 @@ p1 = plot(
     θs / pi,
     ωs,
     V_predict,
-    linetype =
-    :contourf,
+    linetype = :contourf,
     title = "V",
     xlabel = "θ/π",
     ylabel = "ω",
