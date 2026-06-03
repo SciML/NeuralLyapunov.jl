@@ -290,7 +290,7 @@ function NeuralLyapunovProblemLibrary.plot_quadrotor_3d(
         F4 = f4 * dir
 
         # Plot quadrotor body
-        # Conntect rotors 1 and 3
+        # Connect rotors 1 and 3
         plot(
             [rotor1[1], rotor3[1]],
             [rotor1[2], rotor3[2]],

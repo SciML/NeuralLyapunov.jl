@@ -11,12 +11,6 @@ on:
 jobs:
   downgrade:
     name: NeuralLyapunov
-    concurrency:
-      # Skip intermediate builds: always.
-      # Cancel intermediate builds: only if it is a pull request build.
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}
-      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -27,48 +21,13 @@ jobs:
           - 'local_lyapunov'
           - 'benchmarking'
           - 'unimplemented'
-        include:
-          - project: '.'
-            version: '1.11'
-            os: ubuntu-latest
-            arch: x64
-            allow_failure: false
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v1
-        with:
-          projects: ${{ format('{0}, {0}/test', matrix.project) }}
-          skip: LinearAlgebra, Pkg, Random, Test
-      - id: build-pkg
-        uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: ${{ matrix.project }}
-          precompile: yes
-      - id: build-test-pkg
-        uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: ${{ format('{0}/test', matrix.project) }}
-          precompile: yes
-      # On a successful build, check that the usual CI tests pass.
-      - if: ${{ steps.build-pkg.outcome == 'success' && steps.build-test-pkg.outcome == 'success' }}
-        uses: julia-actions/julia-runtest@v1
-        with:
-          project: ${{ matrix.project }}
-        env:
-          GROUP: ${{ matrix.group }}
-      # On a failed build, use julia-downgrade-compat to resolve a list of compatibility issues.
-      - if: ${{ always() && (steps.build-pkg.outcome == 'failure' || steps.build-test-pkg.outcome == 'failure') }}
-        uses: actions/checkout@v6
-      - if: ${{ always() && (steps.build-pkg.outcome == 'failure' || steps.build-test-pkg.outcome == 'failure') }}
-        uses: julia-actions/julia-downgrade-compat@v2
-        with:
-          mode: forcedeps
-          projects: ${{ format('{0}, {0}/test', matrix.project) }}
-          skip: LinearAlgebra, Pkg, Random, Test
-          julia_version: ${{ matrix.version }}
+    uses: "SciML/.github/.github/workflows/downgrade.yml@v1"
+    with:
+      julia-version: "1.11"
+      group: "${{ matrix.group }}"
+      projects: "., ./test"
+      skip: "LinearAlgebra, Pkg, Random, Test"
+    secrets: "inherit"
   library-downgrade:
     name: NeuralLyapunovProblemLibrary
     concurrency:
@@ -125,4 +84,3 @@ jobs:
           projects: ${{ format('{0}, {0}/test', matrix.project) }}
           skip: LinearAlgebra, Pkg, Random, Test
           julia_version: ${{ matrix.version }}
-  
