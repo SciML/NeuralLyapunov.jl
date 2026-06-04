@@ -1,0 +1,23 @@
+name: Downgrade Sublibraries
+
+on:
+  push:
+    branches:
+      - master
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  downgrade-sublibraries:
+    name: NeuralLyapunovProblemLibrary
+    uses: "SciML/.github/.github/workflows/sublibrary-downgrade.yml@v1"
+    with:
+      julia-version: "1.11"
+      skip: "LinearAlgebra, Pkg, Random, Test"
+      allow-reresolve: true
+    secrets: "inherit"
