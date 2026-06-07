@@ -25,6 +25,5 @@ jobs:
     with:
       julia-version: "1.11"
       group: "${{ matrix.group }}"
-      projects: "., ./test"
-      skip: "LinearAlgebra, Pkg, Random, Test"
+      skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,Random,Test"
     secrets: "inherit"

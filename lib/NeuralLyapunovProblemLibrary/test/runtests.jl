@@ -1,9 +1,9 @@
 using SafeTestsets: @safetestset
 
-const GROUP = lowercase(get(ENV, "GROUP", "all"))
+const GROUP = lowercase(get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", "all")))
 
 @time begin
-    if GROUP == "all" || GROUP == "pendula"
+    if GROUP == "all" || GROUP == "core" || GROUP == "pendula"
         @time @safetestset "Simple pendulum" begin
             include("pendulum_test.jl")
         end
@@ -13,7 +13,7 @@ const GROUP = lowercase(get(ENV, "GROUP", "all"))
         end
     end
 
-    if GROUP == "all" || GROUP == "quadrotors"
+    if GROUP == "all" || GROUP == "core" || GROUP == "quadrotors"
         @time @safetestset "Planar Quadrotor" begin
             include("planar_quadrotor_test.jl")
         end

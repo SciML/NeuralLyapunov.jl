@@ -14,9 +14,11 @@ concurrency:
 
 jobs:
   downgrade-sublibraries:
-    name: NeuralLyapunovProblemLibrary
     uses: "SciML/.github/.github/workflows/sublibrary-downgrade.yml@v1"
     with:
       julia-version: "1.11"
-      skip: "LinearAlgebra, Pkg, Random, Test"
+      # Every lib/* sublibrary is downgrade-tested (projects auto-discovered, no exclusions).
+      skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,Random,Test"
+      group-env-name: "NEURALLYAPUNOV_TEST_GROUP"
+      group-env-value: "Core"
     secrets: "inherit"
