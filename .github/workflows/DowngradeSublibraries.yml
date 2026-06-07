@@ -19,5 +19,4 @@ jobs:
     with:
       julia-version: "1.11"
       skip: "LinearAlgebra, Pkg, Random, Test"
-      allow-reresolve: true
     secrets: "inherit"
