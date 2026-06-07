@@ -1,9 +1,9 @@
 using SafeTestsets: @safetestset
 
-const GROUP = lowercase(get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", "all")))
+const GROUP = get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", "All"))
 
 @time begin
-    if GROUP == "all" || GROUP == "core" || GROUP == "pendula"
+    if GROUP == "All" || GROUP == "Core" || GROUP == "Pendula"
         @time @safetestset "Simple pendulum" begin
             include("pendulum_test.jl")
         end
@@ -13,7 +13,7 @@ const GROUP = lowercase(get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", 
         end
     end
 
-    if GROUP == "all" || GROUP == "core" || GROUP == "quadrotors"
+    if GROUP == "All" || GROUP == "Core" || GROUP == "Quadrotors"
         @time @safetestset "Planar Quadrotor" begin
             include("planar_quadrotor_test.jl")
         end
@@ -23,14 +23,14 @@ const GROUP = lowercase(get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", 
         end
     end
 
-    # The following test run in different GitHub actions, so aren't in the "ci" group
-    if GROUP == "all" || GROUP == "qa"
+    # The following test run in different GitHub actions, so aren't in the "Core" group
+    if GROUP == "All" || GROUP == "QA"
         @time @safetestset "Quality Assurance" begin
             include("qa_tests.jl")
         end
     end
 
-    if GROUP == "all" || GROUP == "doctests"
+    if GROUP == "All" || GROUP == "Doctests"
         @time @safetestset "Doctests" begin
             include("doctests.jl")
         end

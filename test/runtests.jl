@@ -1,13 +1,13 @@
 using Pkg
 using SafeTestsets: @safetestset
 
-const GROUP_RAW = get(ENV, "GROUP", "all")
-const GROUP = lowercase(GROUP_RAW)
+const GROUP_RAW = get(ENV, "GROUP", "All")
+const GROUP = GROUP_RAW
 const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
 
 # Detect sublibrary test groups.
 # GROUP can be a bare sublibrary name (Core test group) or
-# "{sublibrary}_{TEST_GROUP}" for any custom group (e.g., qa, pendula, ...).
+# "{sublibrary}_{TEST_GROUP}" for any custom group (e.g., QA, Pendula, ...).
 # Sublibraries declare their groups in test/test_groups.toml and read the group
 # from NEURALLYAPUNOV_TEST_GROUP.
 const LIB_DIR = joinpath(@__DIR__, "..", "lib")
@@ -60,7 +60,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             Pkg.test(BASE_GROUP, force_latest_compatible_version = false, allow_reresolve = true)
         end
     else
-        if GROUP == "all" || GROUP == "core"
+        if GROUP == "All" || GROUP == "Core"
             if DEVICE == "cpu"
                 @time @safetestset "Damped simple harmonic oscillator" begin
                     include("damped_sho.jl")
@@ -83,7 +83,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "policy_search"
+        if GROUP == "All" || GROUP == "Policy_search"
             if DEVICE == "cpu"
                 @time @safetestset "Policy search - inverted pendulum" begin
                     include("inverted_pendulum.jl")
@@ -94,7 +94,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "roa"
+        if GROUP == "All" || GROUP == "ROA"
             if DEVICE == "cpu"
                 @time @safetestset "Region of attraction estimation" begin
                     include("roa_estimation.jl")
@@ -102,7 +102,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "local_lyapunov"
+        if GROUP == "All" || GROUP == "Local_lyapunov"
             if DEVICE == "cpu"
                 @time @safetestset "Local Lyapunov function search" begin
                     include("local_lyapunov.jl")
@@ -110,7 +110,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "benchmarking"
+        if GROUP == "All" || GROUP == "Benchmarking"
             if DEVICE == "cpu"
                 @time @safetestset "Benchmarking tool" begin
                     include("benchmark.jl")
@@ -123,7 +123,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "unimplemented"
+        if GROUP == "All" || GROUP == "Unimplemented"
             if DEVICE == "cpu"
                 @time @safetestset "Errors for partially-implemented extensions" begin
                     include("unimplemented.jl")
@@ -131,7 +131,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "qa"
+        if GROUP == "All" || GROUP == "QA"
             if DEVICE == "cpu"
                 @time @safetestset "Quality Assurance" begin
                     include("qa_tests.jl")
@@ -144,7 +144,7 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
             end
         end
 
-        if GROUP == "all" || GROUP == "doctests"
+        if GROUP == "All" || GROUP == "Doctests"
             if DEVICE == "cpu"
                 @time @safetestset "Doctests" begin
                     include("doctests.jl")

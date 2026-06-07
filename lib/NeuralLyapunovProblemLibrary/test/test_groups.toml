@@ -1,13 +1,13 @@
 # NeuralLyapunovProblemLibrary supports julia >= 1.11, so the default
 # Core-on-[lts,1.11,1,pre] matrix does not apply (lts is 1.10). The functional
-# problem-model tests are split into the pendula and quadrotors groups; qa runs
+# problem-model tests are split into the Pendula and Quadrotors groups; QA runs
 # separately. runtests.jl reads NEURALLYAPUNOV_TEST_GROUP and additionally
-# accepts the "core" alias (= pendula + quadrotors) for the downgrade workflow.
-[pendula]
+# accepts the "Core" alias (= Pendula + Quadrotors) for the downgrade workflow.
+[Pendula]
 versions = ["1.11", "1"]
 
-[quadrotors]
+[Quadrotors]
 versions = ["1.11", "1"]
 
-[qa]
+[QA]
 versions = ["1"]
