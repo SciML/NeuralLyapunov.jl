@@ -8,31 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Doctests are run as a test group: the root package's Doctests group is part of
+# the CI.yml matrix (on its declared [1.11, 1] versions), and the sublibrary's
+# Doctests group runs via SublibraryCI.yml. This workflow only builds/deploys docs.
 jobs:
-  doctests:
-    name: doctests
-    concurrency:
-      # Skip intermediate builds: always.
-      # Cancel intermediate builds: only if it is a pull request build.
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-doctests
-      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - '.'
-          - 'lib/NeuralLyapunovProblemLibrary'
-        include:
-          - os: ubuntu-latest
-            arch: x64
-            version: '1'
-            allow_failure: false
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "${{ matrix.version }}"
-      project: "${{ matrix.project }}"
-      group: "doctests"
-    secrets: "inherit"
   build:
     name: Build
     concurrency:
