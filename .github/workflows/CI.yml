@@ -14,14 +14,14 @@ jobs:
     concurrency:
       # Skip intermediate builds: always.
       # Cancel intermediate builds: only if it is a pull request build.
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}-${{ matrix.version }}
       cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
     strategy:
       fail-fast: false
       matrix:
         version:
           # NeuralLyapunov supports julia >= 1.11; lts (1.10) is intentionally
-          # omitted until it is supported.
+          # omitted (below the compat floor), so 1.11 fills the canonical lts slot.
           - '1.11'
           - '1'
           - 'pre'
@@ -32,6 +32,15 @@ jobs:
           - 'Local_lyapunov'
           - 'Benchmarking'
           - 'Unimplemented'
+          - 'QA'
+          - 'Doctests'
+        exclude:
+          # QA and Doctests are dep-adding groups declared on [1.11, 1] in
+          # test/test_groups.toml; they do not run on 'pre'.
+          - group: 'QA'
+            version: 'pre'
+          - group: 'Doctests'
+            version: 'pre'
         include:
           - project: '.'
             os: ubuntu-latest
@@ -44,8 +53,9 @@ jobs:
       group: ${{ matrix.group }}
     secrets: "inherit"
 
-  # GPU tests are a dep-adding group (test/gpu/Project.toml) that runs on the
-  # self-hosted GPU runner. Folded in from the former bespoke GPU.yml.
+  # GPU tests are a dep-adding group (test/gpu/Project.toml) declared on [1] in
+  # test/test_groups.toml; it runs on the self-hosted GPU runner. Folded in from
+  # the former bespoke GPU.yml.
   gpu:
     name: "GPU Tests"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
@@ -57,4 +67,6 @@ jobs:
       timeout-minutes: 360
     secrets: "inherit"
   # lib/NeuralLyapunovProblemLibrary is tested by SublibraryCI.yml (project model),
-  # so it is intentionally not duplicated as a root CI matrix job.
+  # which expands the sublibrary's test/test_groups.toml (Pendula, Quadrotors,
+  # Doctests, QA) across its declared versions, so it is intentionally not
+  # duplicated as a root CI matrix job.
