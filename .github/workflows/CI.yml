@@ -8,65 +8,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   tests:
-    name: NeuralLyapunov
-    concurrency:
-      # Skip intermediate builds: always.
-      # Cancel intermediate builds: only if it is a pull request build.
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.project }}-${{matrix.group}}-${{ matrix.version }}
-      cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          # NeuralLyapunov supports julia >= 1.11; lts (1.10) is intentionally
-          # omitted (below the compat floor), so 1.11 fills the canonical lts slot.
-          - '1.11'
-          - '1'
-          - 'pre'
-        group:
-          - 'Core'
-          - 'Policy_search'
-          - 'ROA'
-          - 'Local_lyapunov'
-          - 'Benchmarking'
-          - 'Unimplemented'
-          - 'QA'
-          - 'Doctests'
-        exclude:
-          # QA and Doctests are dep-adding groups declared on [1.11, 1] in
-          # test/test_groups.toml; they do not run on 'pre'.
-          - group: 'QA'
-            version: 'pre'
-          - group: 'Doctests'
-            version: 'pre'
-        include:
-          - project: '.'
-            os: ubuntu-latest
-            arch: x64
-            allow_failure: false
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "${{ matrix.version }}"
-      project: "${{ matrix.project }}"
-      group: ${{ matrix.group }}
+    uses: "SciML/.github/.github/workflows/grouped-tests.yml@v1"
     secrets: "inherit"
-
-  # GPU tests are a dep-adding group (test/gpu/Project.toml) declared on [1] in
-  # test/test_groups.toml; it runs on the self-hosted GPU runner. Folded in from
-  # the former bespoke GPU.yml.
-  gpu:
-    name: "GPU Tests"
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "1"
-      project: "."
-      group: "GPU"
-      runner: '["self-hosted", "Linux", "X64", "gpu"]'
-      timeout-minutes: 360
-    secrets: "inherit"
-  # lib/NeuralLyapunovProblemLibrary is tested by SublibraryCI.yml (project model),
-  # which expands the sublibrary's test/test_groups.toml (Pendula, Quadrotors,
-  # Doctests, QA) across its declared versions, so it is intentionally not
-  # duplicated as a root CI matrix job.

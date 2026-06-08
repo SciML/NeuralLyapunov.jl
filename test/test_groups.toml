@@ -3,8 +3,10 @@
 # compat floor). Base groups run on [lts->1.11, 1, pre] in the main test env and
 # are part of the `All` run. QA and Doctests are the canonical [lts->1.11, 1]
 # groups; QA, Doctests, and GPU carry their own test/<group>/Project.toml and run
-# only when selected (excluded from `All`). The root CI.yml matrix realizes every
-# group below at exactly these versions, so this file and CI agree.
+# only when selected (excluded from `All`). This file is the single source of
+# truth for the root CI matrix: CI.yml is a thin caller of
+# grouped-tests.yml@v1, which expands the groups below via
+# scripts/compute_affected_sublibraries.jl --root-matrix.
 [Core]
 versions = ["1.11", "1", "pre"]
 
@@ -32,4 +34,4 @@ versions = ["1.11", "1"]
 [GPU]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "gpu"]
-timeout = 60
+timeout = 360
