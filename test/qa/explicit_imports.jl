@@ -1,18 +1,8 @@
-using SafeTestsets: @safetestset
+using ExplicitImports
+using Test: @test
+import NeuralLyapunov
 
-@safetestset "Aqua: Quality Assurance" begin
-    println("Aqua quality assurance tests")
-    import Aqua, NeuralLyapunov, Test
-
-    Aqua.test_all(NeuralLyapunov)
-end
-
-@safetestset "Explicit Imports: Quality Assurance" begin
-    println("Explicit imports tests")
-    using ExplicitImports
-    using Test: @test
-    import NeuralLyapunov
-
+@testset "Explicit Imports" begin
     @test check_no_implicit_imports(NeuralLyapunov; skip = (Base, Core)) === nothing
     @test check_no_stale_explicit_imports(NeuralLyapunov) === nothing
     @test check_no_self_qualified_accesses(NeuralLyapunov) === nothing

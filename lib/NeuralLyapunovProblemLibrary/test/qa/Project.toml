@@ -1,0 +1,15 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+NeuralLyapunovProblemLibrary = "83723521-ca9c-4edc-8e64-505178d150fe"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+NeuralLyapunovProblemLibrary = {path = "../.."}
+
+[compat]
+Aqua = "0.8.11"
+ExplicitImports = "1.13.1"
+NeuralLyapunovProblemLibrary = "0.2.2"
+Test = "1"
+julia = "1.11"
