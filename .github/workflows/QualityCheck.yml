@@ -31,5 +31,5 @@ jobs:
     with:
       julia-version: "${{ matrix.version }}"
       project: "${{ matrix.project }}"
-      group: "qa"
+      group: "QA"
     secrets: "inherit"

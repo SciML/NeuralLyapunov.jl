@@ -15,12 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         group:
-          - 'core'
-          - 'policy_search'
-          - 'roa'
-          - 'local_lyapunov'
-          - 'benchmarking'
-          - 'unimplemented'
+          - 'Core'
+          - 'Policy_search'
+          - 'ROA'
+          - 'Local_lyapunov'
+          - 'Benchmarking'
+          - 'Unimplemented'
     uses: "SciML/.github/.github/workflows/downgrade.yml@v1"
     with:
       julia-version: "1.11"

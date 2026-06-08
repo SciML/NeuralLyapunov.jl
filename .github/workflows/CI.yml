@@ -23,12 +23,12 @@ jobs:
           - '1'
 #          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
         group:
-          - 'core'
-          - 'policy_search'
-          - 'roa'
-          - 'local_lyapunov'
-          - 'benchmarking'
-          - 'unimplemented'
+          - 'Core'
+          - 'Policy_search'
+          - 'ROA'
+          - 'Local_lyapunov'
+          - 'Benchmarking'
+          - 'Unimplemented'
         include:
           - project: '.'
             os: ubuntu-latest
