@@ -23,7 +23,6 @@ jobs:
           - 'Unimplemented'
     uses: "SciML/.github/.github/workflows/downgrade.yml@v1"
     with:
-      julia-version: "1.11"
+      julia-version: "lts"
       group: "${{ matrix.group }}"
-      skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,Random,Test"
     secrets: "inherit"
