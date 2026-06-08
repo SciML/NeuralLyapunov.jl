@@ -1,9 +1,7 @@
 using Pkg
 using SafeTestsets: @safetestset
 
-const GROUP_RAW = get(ENV, "GROUP", "All")
-const GROUP = GROUP_RAW
-const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
+const GROUP = get(ENV, "GROUP", "All")
 
 # Detect sublibrary test groups.
 # GROUP can be a bare sublibrary name (Core test group) or
@@ -22,10 +20,13 @@ function _detect_sublibrary_group(group, lib_dir)
     return (group, "Core")
 end
 
-const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
+const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP, LIB_DIR)
 
-function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
+# Dep-adding groups carry their own test/<group>/Project.toml; activate +
+# instantiate it before including that group's tests. These groups are NOT part
+# of the `All` run, which executes only the base groups in the main test env.
+function activate_group_env(group)
+    Pkg.activate(joinpath(@__DIR__, group))
     return Pkg.instantiate()
 end
 
@@ -65,99 +66,86 @@ end
             Pkg.test(BASE_GROUP, force_latest_compatible_version = false, allow_reresolve = true)
         end
     else
+        # Base groups: run in the main test env and are part of `All`.
         if GROUP == "All" || GROUP == "Core"
-            if DEVICE == "cpu"
-                @time @safetestset "Damped simple harmonic oscillator" begin
-                    include("damped_sho.jl")
-                end
-                @time @safetestset "Damped pendulum" begin
-                    include("damped_pendulum.jl")
-                end
-                @time @safetestset "Damped pendulum - AdditiveLyapunovNet structure" begin
-                    include("damped_pendulum_lux.jl")
-                end
-                @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
-                    include("damped_pendulum_lux_2.jl")
-                end
+            @time @safetestset "Damped simple harmonic oscillator" begin
+                include("core/damped_sho.jl")
             end
-
-            if DEVICE == "gpu"
-                @time @safetestset "CUDA test - Damped SHO" begin
-                    include("damped_sho_CUDA.jl")
-                end
+            @time @safetestset "Damped pendulum" begin
+                include("core/damped_pendulum.jl")
+            end
+            @time @safetestset "Damped pendulum - AdditiveLyapunovNet structure" begin
+                include("core/damped_pendulum_lux.jl")
+            end
+            @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
+                include("core/damped_pendulum_lux_2.jl")
             end
         end
 
         if GROUP == "All" || GROUP == "Policy_search"
-            if DEVICE == "cpu"
-                @time @safetestset "Policy search - inverted pendulum" begin
-                    include("inverted_pendulum.jl")
-                end
-                @time @safetestset "Policy search - inverted pendulum (ODESystem)" begin
-                    include("inverted_pendulum_ODESystem.jl")
-                end
+            @time @safetestset "Policy search - inverted pendulum" begin
+                include("policy_search/inverted_pendulum.jl")
+            end
+            @time @safetestset "Policy search - inverted pendulum (ODESystem)" begin
+                include("policy_search/inverted_pendulum_ODESystem.jl")
             end
         end
 
         if GROUP == "All" || GROUP == "ROA"
-            if DEVICE == "cpu"
-                @time @safetestset "Region of attraction estimation" begin
-                    include("roa_estimation.jl")
-                end
+            @time @safetestset "Region of attraction estimation" begin
+                include("roa/roa_estimation.jl")
             end
         end
 
         if GROUP == "All" || GROUP == "Local_lyapunov"
-            if DEVICE == "cpu"
-                @time @safetestset "Local Lyapunov function search" begin
-                    include("local_lyapunov.jl")
-                end
+            @time @safetestset "Local Lyapunov function search" begin
+                include("local_lyapunov/local_lyapunov.jl")
             end
         end
 
         if GROUP == "All" || GROUP == "Benchmarking"
-            if DEVICE == "cpu"
-                @time @safetestset "Benchmarking tool" begin
-                    include("benchmark.jl")
-                end
-            end
-            if DEVICE == "gpu"
-                @time @safetestset "Benchmarking tool - CUDA" begin
-                    include("benchmark_CUDA.jl")
-                end
+            @time @safetestset "Benchmarking tool" begin
+                include("benchmarking/benchmark.jl")
             end
         end
 
         if GROUP == "All" || GROUP == "Unimplemented"
-            if DEVICE == "cpu"
-                @time @safetestset "Errors for partially-implemented extensions" begin
-                    include("unimplemented.jl")
-                end
+            @time @safetestset "Errors for partially-implemented extensions" begin
+                include("unimplemented/unimplemented.jl")
             end
         end
 
-        if GROUP == "All" || GROUP == "QA"
-            if DEVICE == "cpu"
-                activate_qa_env()
-                @time @safetestset "Quality Assurance" begin
-                    include("qa/qa.jl")
-                end
-                @time @safetestset "Explicit Imports" begin
-                    include("qa/explicit_imports.jl")
-                end
-                #= JET tests are not essential and currently terminate unexpectedly
-                @time @safetestset "JET: Static Analysis" begin
-                    include("qa/jet.jl")
-                end
-                =#
+        # Dep-adding groups: each carries its own Project.toml and is excluded
+        # from `All` (which runs in the main test env).
+        if GROUP == "QA"
+            activate_group_env("qa")
+            @time @safetestset "Quality Assurance" begin
+                include("qa/qa.jl")
+            end
+            @time @safetestset "Explicit Imports" begin
+                include("qa/explicit_imports.jl")
+            end
+            #= JET tests are not essential and currently terminate unexpectedly
+            @time @safetestset "JET: Static Analysis" begin
+                include("qa/jet.jl")
+            end
+            =#
+        end
+
+        if GROUP == "Doctests"
+            activate_group_env("doctests")
+            @time @safetestset "Doctests" begin
+                include("doctests/doctests.jl")
             end
         end
 
-        if GROUP == "All" || GROUP == "Doctests"
-            if DEVICE == "cpu"
-                @time @safetestset "Doctests" begin
-                    include("doctests.jl")
-                end
+        if GROUP == "GPU"
+            activate_group_env("gpu")
+            @time @safetestset "CUDA test - Damped SHO" begin
+                include("gpu/damped_sho_CUDA.jl")
+            end
+            @time @safetestset "Benchmarking tool - CUDA" begin
+                include("gpu/benchmark_CUDA.jl")
             end
         end
     end

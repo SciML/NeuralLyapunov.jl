@@ -20,8 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         version:
+          # NeuralLyapunov supports julia >= 1.11; lts (1.10) is intentionally
+          # omitted until it is supported.
+          - '1.11'
           - '1'
-#          - 'lts' # LTS is 1.10, which isn't currently supported, but should eventually be
+          - 'pre'
         group:
           - 'Core'
           - 'Policy_search'
@@ -39,6 +42,19 @@ jobs:
       julia-version: "${{ matrix.version }}"
       project: "${{ matrix.project }}"
       group: ${{ matrix.group }}
+    secrets: "inherit"
+
+  # GPU tests are a dep-adding group (test/gpu/Project.toml) that runs on the
+  # self-hosted GPU runner. Folded in from the former bespoke GPU.yml.
+  gpu:
+    name: "GPU Tests"
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "1"
+      project: "."
+      group: "GPU"
+      runner: '["self-hosted", "Linux", "X64", "gpu"]'
+      timeout-minutes: 360
     secrets: "inherit"
   # lib/NeuralLyapunovProblemLibrary is tested by SublibraryCI.yml (project model),
   # so it is intentionally not duplicated as a root CI matrix job.

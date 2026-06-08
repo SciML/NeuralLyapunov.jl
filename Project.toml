@@ -29,17 +29,13 @@ NeuralLyapunovProblemLibrary = {path = "lib/NeuralLyapunovProblemLibrary"}
 Boltz = "1.7.1"
 ComponentArrays = "0.15.37"
 DataFrames = "1.8"
-DiffEqGPU = "3.14"
-Documenter = "1"
 ForwardDiff = "1.3.3"
 LinearAlgebra = "1"
 Lux = "1.31.4"
-LuxCUDA = "0.3.5"
 LuxCore = "1.5.1"
 MLDataDevices = "1.17.9"
 MatrixEquations = "2.5.7"
 ModelingToolkit = "11.26.7"
-NLopt = "1"
 NeuralLyapunovProblemLibrary = "0.2.2"
 NeuralPDE = "6.0.0"
 Optimization = "5.5.1"
@@ -60,10 +56,6 @@ julia = "1.11"
 
 [extras]
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
-DiffEqGPU = "071ae1c0-96b5-11e9-1965-c90190d839ea"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
-NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
 NeuralLyapunovProblemLibrary = "83723521-ca9c-4edc-8e64-505178d150fe"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
 OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
@@ -74,4 +66,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ComponentArrays", "DiffEqGPU", "Documenter", "LuxCUDA", "NLopt", "NeuralLyapunovProblemLibrary", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "Pkg", "Random", "SafeTestsets", "Test"]
+test = ["ComponentArrays", "NeuralLyapunovProblemLibrary", "Optimization", "OptimizationOptimJL", "OptimizationOptimisers", "Pkg", "Random", "SafeTestsets", "Test"]
