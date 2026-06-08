@@ -24,6 +24,11 @@ end
 
 const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 @time begin
     if isdir(joinpath(LIB_DIR, BASE_GROUP))
         Pkg.activate(joinpath(LIB_DIR, BASE_GROUP))
@@ -133,12 +138,16 @@ const BASE_GROUP, TEST_GROUP = _detect_sublibrary_group(GROUP_RAW, LIB_DIR)
 
         if GROUP == "All" || GROUP == "QA"
             if DEVICE == "cpu"
+                activate_qa_env()
                 @time @safetestset "Quality Assurance" begin
-                    include("qa_tests.jl")
+                    include("qa/qa.jl")
+                end
+                @time @safetestset "Explicit Imports" begin
+                    include("qa/explicit_imports.jl")
                 end
                 #= JET tests are not essential and currently terminate unexpectedly
                 @time @safetestset "JET: Static Analysis" begin
-                    include("jet_tests.jl")
+                    include("qa/jet.jl")
                 end
                 =#
             end

@@ -1,6 +1,12 @@
+using Pkg
 using SafeTestsets: @safetestset
 
 const GROUP = get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", "All"))
+
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
 
 @time begin
     if GROUP == "All" || GROUP == "Core" || GROUP == "Pendula"
@@ -25,8 +31,12 @@ const GROUP = get(ENV, "NEURALLYAPUNOV_TEST_GROUP", get(ENV, "GROUP", "All"))
 
     # The following test run in different GitHub actions, so aren't in the "Core" group
     if GROUP == "All" || GROUP == "QA"
+        activate_qa_env()
         @time @safetestset "Quality Assurance" begin
-            include("qa_tests.jl")
+            include("qa/qa.jl")
+        end
+        @time @safetestset "Explicit Imports" begin
+            include("qa/explicit_imports.jl")
         end
     end
 
