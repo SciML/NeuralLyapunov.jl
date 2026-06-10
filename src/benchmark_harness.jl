@@ -83,10 +83,6 @@ the user or generated automatically).
     `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
     used, unless overridden here; if not provided here and cannot be inferred,
     `[:param1, :param2, ...]` will be used.
-  - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-    actually be a fixed point; defaults to `false`; when `dynamics isa System`, the value
-    is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
-    an `ODEInputFunction`, the value is inferred by the type of `dynamics`.
   - `optimization_args`: arguments to be passed into the optimization solver, as a vector of
     `Pair`s. For more information, see the
     [Optimization.jl docs](https://docs.sciml.ai/Optimization/stable/API/solve/).
@@ -283,7 +279,6 @@ function benchmark(
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
-        policy_search = false,
         optimization_args = [],
         simulation_time,
         ode_solver = AutoTsit5(Rosenbrock23()),
@@ -354,7 +349,6 @@ function benchmark(
         p,
         state_syms,
         parameter_syms,
-        policy_search
     )
 
     _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
@@ -443,11 +437,9 @@ function _benchmark(
         p
     )
 
-    f = if f isa ODEFunction
-        f
-    else
-        let fc = spec.structure.f_call, _f = f, net = phi_to_net(phi, θ)
-            ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
+    if neural_controller(spec.structure)
+        f = let _f = f, u = get_policy(phi, θ, spec.structure; fixed_point)
+            ODEFunction((x, _p, t) -> _f(x, u(x), _p, t))
         end
     end
 

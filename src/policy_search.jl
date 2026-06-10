@@ -1,3 +1,77 @@
+
+"""
+    NeuralLyapunovControlStructure(V, V̇, control_structure, network_dim, control_dim)
+
+Specifies the structure of the neural Lyapunov function and its derivative.
+
+Allows the user to define the Lyapunov in terms of the neural network, potentially
+structurally enforcing some Lyapunov conditions.
+
+# Fields
+  - `V(phi, state, fixed_point)`: outputs the value of the Lyapunov function at `state`.
+  - `V̇(phi, J_phi, state, dstate_dt, fixed_point)`: outputs the time derivative of
+    the Lyapunov function at `state`.
+  - `control_structure(phi_c, state, fixed_point)`: transforms the final `control_dim`
+    outputs of the neural net before passing them as `u` into the dynamics `f(x, u, p, t)`.
+  - `network_dim`: the dimension of the output of the neural network.
+  - `control_dim`: the number of neural network outputs used in the control policy.
+
+`phi` and `J_phi` above are both functions of `state` alone.
+"""
+struct NeuralLyapunovControlStructure{TV, TDV, U, D <: Integer, C <: Integer} <: AbstractNeuralLyapunovStructure{true}
+    V::TV
+    V̇::TDV
+    control_structure::U
+    network_dim::D
+    control_dim::C
+end
+
+get_V(spec::NeuralLyapunovControlStructure) = spec.V
+get_V̇(spec::NeuralLyapunovControlStructure) = spec.V̇
+get_network_dim(spec::NeuralLyapunovControlStructure) = spec.network_dim
+get_control_structure(spec::NeuralLyapunovControlStructure) = spec.control_structure
+get_control_dim(spec::NeuralLyapunovControlStructure) = spec.control_dim
+
+function Base.show(io::IO, s::NeuralLyapunovControlStructure)
+    n = s.network_dim
+    @variables φ_V(..) ∇φ_V(..) φ_c(..) ∇φ_c(..) x ẋ x_0 p t
+    println(io, "NeuralLyapunovControlStructure")
+    println(io, "    Network dimension: ", n)
+    try
+        V = string(s.V(φ_V, x, x_0))
+        # Replace abs2(A) with ||A||² for better readability
+        V = replace(V, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+        # Replace ^2 with ²
+        V = replace(V, r"\^2" => "²")
+        println(io, "    V(x) = ", V)
+    catch e
+        println(io, "    V(x) = <could not display: $(e)>")
+    end
+    try
+        V̇ = string(s.V̇(φ_V, ∇φ_V, x, ẋ, x_0))
+        # Replace abs2(A) with ||A||^2 for better readability
+        V̇ = replace(V̇, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+        # Replace ^2 with ²
+        V̇ = replace(V̇, r"\^2" => "²")
+        # Replace Differential(x, 1)(φ(x)) with ∇φ(x) for better readability
+        V̇ = replace(V̇, r"Differential\(x, 1\)\(φ\(x\)\)" => "∇φ(x)")
+        println(io, "    V̇(x) = ", V̇)
+    catch e
+        println(io, "    V̇(x) = <could not display: $(e)>")
+    end
+    try
+        u = string(s.control_structure(φ_c, x, x_0))
+        # Replace abs2(A) with ||A||^2 for better readability
+        u = replace(u, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+        # Replace ^2 with ²
+        u = replace(u, r"\^2" => "²")
+        println(io, "    u(x) = ", u)
+    catch e
+        println(io, "    u(x) = <could not display: $(e)>")
+    end
+    return
+end
+
 """
     add_policy_search(lyapunov_structure, new_dims; control_structure)
 
@@ -21,51 +95,30 @@ input). When evaluating the dynamics, it uses `u = control_structure(phi_end(x))
 The other `lyapunov_structure.network_dim` outputs are used for calculating ``V`` and ``V̇``,
 as specified originally by `lyapunov_structure`.
 
-```jldoctest
+```jldoctest; filter = [r"(ẋ|ẋ)" => "y", r"\\(x\\)" => "", r"\\s*\\*\\s*" => "", r"∇φ_V" => "∇", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(2|∇|φ_V|y){4}\$"]
 add_policy_search(NonnegativeStructure(3), 1)
 # output
-NeuralLyapunovStructure
+NeuralLyapunovControlStructure
     Network dimension: 4
-    V(x) = ||(φ(x))[1:3]||²
-    V̇(x) = 2((φ(x))[1:3])⋅(f(x, (φ(x))[4], p, t)*(Jφ(x))[1:3])
-    f_call(x) = f(x, (φ(x))[4], p, t)
+    V(x) = φ_V(x)²
+    V̇(x) = 2∇φ_V(x)*φ_V(x)*ẋ
+    u(x) = φ_c(x)
 ```
 """
 function add_policy_search(
-        lyapunov_structure::NeuralLyapunovStructure,
+        lyapunov_structure::AbstractNeuralLyapunovStructure{false},
         new_dims::Integer;
-        control_structure = identity
-    )::NeuralLyapunovStructure
-    return let V = lyapunov_structure.V, V̇ = lyapunov_structure.V̇,
-            V_dim = lyapunov_structure.network_dim, u = control_structure
-
-        NeuralLyapunovStructure(
-            function (net, state, fixed_point)
-                return if length(size(state)) < 2
-                    if V_dim == 1
-                        V(st -> net(st)[1], state, fixed_point)
-                    else
-                        V(st -> net(st)[1:V_dim], state, fixed_point)
-                    end
-                else
-                    V(st -> net(st)[1:V_dim, :], state, fixed_point)
-                end
-            end,
-            function (net, J_net, f, state, params, t, fixed_point)
-                return V̇(
-                    st -> net(st)[1:V_dim], st -> J_net(st)[1:V_dim, :],
-                    (st, p, t) -> f(st, u(net(st)[(V_dim + 1):end]), p, t), state, params,
-                    t, fixed_point
-                )
-            end,
-            (f, net, state, p, t) -> f(state, u(net(state)[(V_dim + 1):end]), p, t),
-            V_dim + new_dims
-        )
+        control_structure = (phi, x, x0) -> phi(x)
+    )::NeuralLyapunovControlStructure
+    let V = get_V(lyapunov_structure), V̇ = get_V̇(lyapunov_structure),
+            V_dim = get_network_dim(lyapunov_structure), u = control_structure
+        return NeuralLyapunovControlStructure(V, V̇, u, V_dim + new_dims, new_dims)
     end
 end
 
 """
-    get_policy(phi, θ, network_dim, control_dim; control_structure)
+    get_policy(phi, θ, network_dim, control_dim; fixed_point, control_structure)
+    get_policy(phi, θ, structure::AbstractNeuralLyapunovStructure{true}; fixed_point)
 
 Generate a Julia function representing the control policy/unmodeled portion of the dynamics
 as a function of the state.
@@ -73,7 +126,7 @@ as a function of the state.
 The returned function can operate on a state vector or columnwise on a matrix of state
 vectors.
 
-# Arguments
+# Positional Arguments
   - `phi`: the neural network, represented as `phi(state, θ)` if the neural network has a
     single output, or a `Vector` of the same with one entry per neural network output.
   - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the
@@ -81,8 +134,11 @@ vectors.
     second (if there are multiple), and so on.
   - `network_dim`: total number of neural network outputs.
   - `control_dim`: number of neural network outputs used in the control policy.
+  - `structure::AbstractNeuralLyapunovStructure{true}`: provides the control structure and
+    dimensions for the neural network outputs used in the control policy.
 
 # Keyword Arguments
+  - `fixed_point`: the fixed point of the system.
   - `control_structure`: transforms the final `control_dim` outputs of the neural net before
     passing them into the dynamics; defaults to `identity`, passing in the neural network
     outputs unchanged.
@@ -92,20 +148,37 @@ function get_policy(
         θ,
         network_dim::Integer,
         control_dim::Integer;
-        control_structure = identity
+        fixed_point = nothing,
+        control_structure = (phi, x, x0) -> phi(x)
     )
     network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
 
     function policy(state::AbstractVector)
-        return control_structure(network_func(state))
+        return control_structure(
+            network_func,
+            state,
+            isnothing(fixed_point) ? zero(state) : fixed_point
+        )
     end
     function policy(states::AbstractMatrix)
-        return mapslices(
-            control_structure,
-            network_func(states),
-            dims = [1]
-        )
+        return mapslices(policy, states, dims = [1])
     end
 
     return policy
+end
+
+function get_policy(
+    phi,
+    θ,
+    structure::AbstractNeuralLyapunovStructure{true};
+    fixed_point = nothing
+)
+    return get_policy(
+        phi,
+        θ,
+        get_network_dim(structure),
+        get_control_dim(structure);
+        control_structure = get_control_structure(structure),
+        fixed_point
+    )
 end

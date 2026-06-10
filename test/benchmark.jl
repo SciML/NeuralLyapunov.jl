@@ -182,7 +182,6 @@ end
         optimization_args,
         state_syms,
         parameter_syms,
-        policy_search = true,
         endpoint_check,
         classifier,
         init_params = ps,

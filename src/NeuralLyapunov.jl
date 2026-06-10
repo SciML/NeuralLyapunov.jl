@@ -41,8 +41,8 @@ include("benchmark_harness.jl")
 include("lux_structures.jl")
 
 # Lyapunov function structures
-export NeuralLyapunovStructure, NoAdditionalStructure, NonnegativeStructure,
-    PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
+export NeuralLyapunovStructure, NeuralLyapunovControlStructure, NoAdditionalStructure,
+    NonnegativeStructure, PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
 
 # Lux structures
 export AdditiveLyapunovNet, MultiplicativeLyapunovNet, SoSPooling,

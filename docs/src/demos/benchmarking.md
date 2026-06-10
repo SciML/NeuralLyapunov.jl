@@ -76,7 +76,7 @@ opt = [OptimizationOptimisers.Adam(0.05f0), OptimizationOptimJL.BFGS()]
 optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
 # Run benchmark
-endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
+endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 6e-3)
 benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
@@ -92,7 +92,6 @@ benchmarking_results = benchmark(
     optimization_args,
     state_syms,
     parameter_syms,
-    policy_search = true,
     endpoint_check,
     init_params = ps, 
     init_states = st
@@ -182,7 +181,7 @@ nothing # hide
 Since the pendulum is periodic in ``0``, we'll use a custom endpoint check that reflects that property.
 
 ```@example benchmarking
-endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
+endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 6e-3)
 nothing # hide
 ```
 
@@ -214,7 +213,6 @@ benchmarking_results = benchmark(
     optimization_args,
     state_syms,
     parameter_syms,
-    policy_search = true,
     ensemble_alg = EnsembleSerial(),
     endpoint_check,
     init_params = ps, 

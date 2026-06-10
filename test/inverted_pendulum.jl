@@ -81,7 +81,6 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
     p,
     state_syms,
     parameter_syms,
-    policy_search = true
 )
 
 ######################## Construct OptimizationProblem ########################
