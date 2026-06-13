@@ -1,7 +1,6 @@
 using NeuralPDE, NeuralLyapunov, NeuralLyapunovProblemLibrary
 using ModelingToolkit: unbound_inputs
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
 using Random
 using Lux, LuxCUDA, ComponentArrays
 using Boltz.Layers: ShiftTo, MLP, PeriodicEmbedding
@@ -330,8 +329,8 @@ end
     )
 
     # Define optimization parameters
-    opt = [Adam(0.1f0), BFGS()]
-    optimization_args = [[:maxiters => 500], [:maxiters => 500]]
+    opt = Adam(0.1f0)
+    optimization_args = [:maxiters => 500]
 
     # Run benchmark
     endpoint_check = (x) -> ≈(periodic_embedding(x), fixed_point_embedded, atol = 0.01f0)
