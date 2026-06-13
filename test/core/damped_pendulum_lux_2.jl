@@ -2,7 +2,6 @@ using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibr
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
@@ -72,8 +71,6 @@ prob = discretize(pde_system, discretization)
 ########################## Solve OptimizationProblem ##########################
 
 res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 

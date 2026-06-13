@@ -1,7 +1,6 @@
 using NeuralPDE, NeuralLyapunov
 import Optimization
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
 using Random
 using Lux, LuxCUDA, ComponentArrays
 using Boltz.Layers: MLP
@@ -64,9 +63,7 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, Adam(); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
+res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 (V, V̇) = get_numerical_lyapunov_function(

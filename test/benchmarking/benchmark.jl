@@ -2,7 +2,6 @@ using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary
 using ModelingToolkit: unbound_inputs
 import Boltz.Layers: PeriodicEmbedding, MLP
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test
 
@@ -384,8 +383,8 @@ end
     )
 
     # Define optimization parameters
-    opt = [Adam(0.05), BFGS()]
-    optimization_args = [[:maxiters => 300], [:maxiters => 300]]
+    opt = Adam(0.05)
+    optimization_args = [:maxiters => 300]
 
     # Run benchmark
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5.0e-3)
