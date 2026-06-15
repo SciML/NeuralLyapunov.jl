@@ -20,7 +20,6 @@ jobs:
           - 'ROA'
           - 'Local_lyapunov'
           - 'Benchmarking'
-          - 'GPU'
     uses: "SciML/.github/.github/workflows/downgrade.yml@v1"
     with:
       julia-version: "lts"
