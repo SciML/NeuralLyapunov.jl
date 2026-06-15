@@ -20,9 +20,9 @@ jobs:
           - 'ROA'
           - 'Local_lyapunov'
           - 'Benchmarking'
-          - 'Unimplemented'
+          - 'GPU'
     uses: "SciML/.github/.github/workflows/downgrade.yml@v1"
     with:
-      julia-version: "1.11"
+      julia-version: "lts"
       group: "${{ matrix.group }}"
     secrets: "inherit"
