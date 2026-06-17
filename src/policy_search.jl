@@ -1,4 +1,3 @@
-
 """
     NeuralLyapunovControlStructure(V, V̇, control_structure, network_dim, control_dim)
 
@@ -168,11 +167,11 @@ function get_policy(
 end
 
 function get_policy(
-    phi,
-    θ,
-    structure::AbstractNeuralLyapunovStructure{true};
-    fixed_point = nothing
-)
+        phi,
+        θ,
+        structure::AbstractNeuralLyapunovStructure{true};
+        fixed_point = nothing
+    )
     return get_policy(
         phi,
         θ,

@@ -123,8 +123,8 @@ end
 
 Return the control structure specified by `spec`.
 """
-function get_control_structure(str::AbstractNeuralLyapunovStructure{nc}) where nc
-    if nc
+function get_control_structure(str::AbstractNeuralLyapunovStructure{nc}) where {nc}
+    return if nc
         error(
             "control_structure not implemented for AbstractNeuralLyapunovStructure of " *
                 "type $(typeof(str))."
@@ -139,8 +139,8 @@ end
 
 Return the control dimension specified by `spec`.
 """
-function get_control_dim(str::AbstractNeuralLyapunovStructure{nc}) where nc
-    if nc
+function get_control_dim(str::AbstractNeuralLyapunovStructure{nc}) where {nc}
+    return if nc
         error(
             "control_dim not implemented for AbstractNeuralLyapunovStructure of type " *
                 string(typeof(str))
@@ -156,7 +156,7 @@ end
 Return `true` if `str` specifies a neural controller (i.e., if `str` is a subtype of
 `AbstractNeuralLyapunovStructure{true}`) and `false` otherwise.
 """
-neural_controller(::AbstractNeuralLyapunovStructure{nc}) where nc = nc
+neural_controller(::AbstractNeuralLyapunovStructure{nc}) where {nc} = nc
 
 """
     check_nonnegativity(cond::AbstractLyapunovMinimizationCondition)

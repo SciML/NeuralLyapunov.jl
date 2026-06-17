@@ -47,7 +47,7 @@ function get_numerical_lyapunov_function(
         deriv = ForwardDiff.derivative,
         jac = ForwardDiff.jacobian,
         J_net = nothing
-    ) where nc
+    ) where {nc}
     # network_func is the numerical form of neural network output
     if nc
         u_dim = get_control_dim(structure)
@@ -122,7 +122,7 @@ end
 
 function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0)
     # Numerical time derivative of Lyapunov function
-    function V̇(x::AbstractVector{T}) where T <: Real
+    function V̇(x::AbstractVector{T}) where {T <: Real}
         dstate_dt = f(x, params, zero(T))
         return V̇_structure(net, J_net, x, dstate_dt, x0)
     end
@@ -134,7 +134,7 @@ end
 
 function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0, u)
     # Numerical time derivative of Lyapunov function
-    function V̇(x::AbstractVector{T}) where T <: Real
+    function V̇(x::AbstractVector{T}) where {T <: Real}
         dstate_dt = f(x, u(net, x, x0), params, zero(T))
         return V̇_structure(net, J_net, x, dstate_dt, x0)
     end
@@ -145,10 +145,10 @@ function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0, u)
 end
 
 function get_V̇_from_deriv(V, f, p, deriv)
-    function V̇(x::AbstractVector{T}) where T <: Real
+    function V̇(x::AbstractVector{T}) where {T <: Real}
         return deriv(δt -> V(x + δt * f(x, p, zero(T))), zero(T))
     end
-    function V̇(x::AbstractMatrix{T}) where T <: Real
+    function V̇(x::AbstractMatrix{T}) where {T <: Real}
         ẋ = mapslices(x, dims = [1]) do state
             return f(state, p, zero(T))
         end
@@ -158,11 +158,11 @@ function get_V̇_from_deriv(V, f, p, deriv)
 end
 
 function get_V̇_from_deriv(V, f, p, deriv, u, u_net, x0)
-    function V̇(x::AbstractVector{T}) where T <: Real
+    function V̇(x::AbstractVector{T}) where {T <: Real}
         ẋ = f(x, u(u_net, x, x0), p, zero(T))
         return deriv(δt -> V(x + δt * ẋ), zero(T))
     end
-    function V̇(x::AbstractMatrix{T}) where T <: Real
+    function V̇(x::AbstractMatrix{T}) where {T <: Real}
         ẋ = mapslices(state -> f(state, u(u_net, state, x0), p, zero(T)), x, dims = [1])
         return deriv(δt -> V(x + δt * ẋ), zero(T))
     end
