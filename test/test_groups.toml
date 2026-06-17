@@ -1,35 +1,32 @@
-# NeuralLyapunov supports julia >= 1.11, so the canonical lts (1.10) entry is
-# replaced by 1.11 throughout (1.11 fills the lts slot since lts is below the
-# compat floor). Base groups run on [lts->1.11, 1, pre] in the main test env and
-# are part of the `All` run. QA and Doctests are the canonical [lts->1.11, 1]
-# groups; QA, Doctests, and GPU carry their own test/<group>/Project.toml and run
-# only when selected (excluded from `All`). This file is the single source of
-# truth for the root CI matrix: CI.yml is a thin caller of
-# grouped-tests.yml@v1, which expands the groups below via
-# scripts/compute_affected_sublibraries.jl --root-matrix.
+# Base groups run on [lts, 1, pre] in the main test env and are part of the `All`
+# run. QA and Doctests are the canonical [lts, 1] groups; QA, Doctests, and GPU 
+# carry their own test/<group>/Project.toml and run only when selected (excluded
+# from `All`). This file is the single source of truth for the root CI matrix: 
+# CI.yml is a thin caller of grouped-tests.yml@v1, which expands the groups below
+# via scripts/compute_affected_sublibraries.jl --root-matrix.
 [Core]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Policy_search]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [ROA]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Local_lyapunov]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Benchmarking]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Unimplemented]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Doctests]
-versions = ["1.11", "1"]
+versions = ["lts", "1"]
 
 [QA]
-versions = ["1.11", "1"]
+versions = ["lts", "1"]
 
 [GPU]
 versions = ["1"]
