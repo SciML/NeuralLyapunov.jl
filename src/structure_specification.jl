@@ -1,4 +1,110 @@
 """
+    NeuralLyapunovStructure(V, V̇, network_dim)
+
+Specifies the structure of the neural Lyapunov function and its derivative.
+
+Allows the user to define the Lyapunov in terms of the neural network, potentially
+structurally enforcing some Lyapunov conditions.
+
+# Fields
+  - `V(phi, state, fixed_point)`: outputs the value of the Lyapunov function at `state`.
+  - `V̇(phi, J_phi, state, d_state_dt, fixed_point)`: outputs the time derivative of the
+    Lyapunov function at `state`.
+  - `network_dim`: the dimension of the output of the neural network.
+
+`phi` and `J_phi` above are both functions of `state` alone.
+"""
+struct NeuralLyapunovStructure{TV, TDV, D <: Integer} <: AbstractNeuralLyapunovStructure{false}
+    V::TV
+    V̇::TDV
+    network_dim::D
+end
+
+function Base.show(io::IO, s::NeuralLyapunovStructure)
+    n = s.network_dim
+    if n > 1
+        @variables φ(..)[1:n] Jφ(..)[1:n, 1:1] x dxdt x_0 p t
+        println(io, "NeuralLyapunovStructure")
+        println(io, "    Network dimension: ", n)
+        try
+            V = string(s.V(φ, x, x_0))
+            # Regex to simplify broadcasting notation for better readability
+            # Replace, e.g., [1:1] with [1]
+            V = replace(V, r"\b(\d+):\1\b" => s"\1")
+            # Replace LinearAlgebra.dot(A, A) with ||A||^2 for better readability
+            dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?1)\))*)\s*\)"
+            V = replace(V, dot_re => s"||\1||²")
+            # Replace abs2(A) with ||A||^2 for better readability
+            V = replace(V, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+            # Replace LinearAlgebra.dot with ⋅ for better readability
+            dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
+            V = replace(V, dot_re => s"(\1)⋅(\2)")
+            # Replace ^2 with ²
+            V = replace(V, r"\^2" => "²")
+            println(io, "    V(x) = ", V)
+        catch e
+            println(io, "    V(x) = <could not display: $e>")
+        end
+        try
+            V̇ = string(s.V̇(φ, Jφ, x, dxdt, x_0))
+            # Regex to simplify broadcasting notation for better readability
+            # Replace, e.g., [1:2, Colon()] with [1:2]
+            V̇ = replace(V̇, r",\s*Colon\(\)" => "")
+            # Replace, e.g., [1:1] with [1]
+            V̇ = replace(V̇, r"\b(\d+):\1\b" => s"\1")
+            # Replace abs2(A) with ||A||^2 for better readability
+            V̇ = replace(V̇, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+            # Replace LinearAlgebra.dot with ⋅ for better readability
+            dot_re = r"LinearAlgebra\.dot\(\s*((?:[^()]+|\((?1)\))*)\s*,\s*((?:[^()]+|\((?2)\))*)\s*\)"
+            V̇ = replace(V̇, dot_re => s"(\1)⋅(\2)")
+            # Replace ^2 with ²
+            V̇ = replace(V̇, r"\^2" => "²")
+            # Replace Differential(x, 1)(φ(x)) with Jφ(x) for better readability
+            V̇ = replace(V̇, r"Differential\(x, 1\)\(φ\(x\)\)" => "Jφ(x)")
+            # Replace dxdt with ẋ for better readability
+            V̇ = replace(V̇, r"dxdt" => "ẋ")
+            println(io, "    V̇(x) = ", V̇)
+        catch e
+            println(io, "    V̇(x) = <could not display: $(e)>")
+        end
+    else
+        @variables φ(..) ∇φ(..) x dxdt x_0 p t
+        println(io, "NeuralLyapunovStructure")
+        println(io, "    Network dimension: ", n)
+        try
+            V = string(s.V(φ, x, x_0))
+            # Replace abs2(A) with ||A||² for better readability
+            V = replace(V, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+            # Replace ^2 with ²
+            V = replace(V, r"\^2" => "²")
+            println(io, "    V(x) = ", V)
+        catch e
+            println(io, "    V(x) = <could not display: $(e)>")
+        end
+        try
+            V̇ = string(s.V̇(φ, ∇φ, x, dxdt, x_0))
+            # Replace abs2(A) with ||A||^2 for better readability
+            V̇ = replace(V̇, r"abs2\(\s*((?:[^()]+|\((?1)\))*)\s*\)" => s"||\1||²")
+            # Replace ^2 with ²
+            V̇ = replace(V̇, r"\^2" => "²")
+            # Replace Differential(x, 1)(φ(x)) with ∇φ(x) for better readability
+            V̇ = replace(V̇, r"Differential\(x, 1\)\(φ\(x\)\)" => "∇φ(x)")
+            # Replace dxdt with ẋ for better readability
+            V̇ = replace(V̇, r"dxdt" => "ẋ")
+            println(io, "    V̇(x) = ", V̇)
+        catch e
+            println(io, "    V̇(x) = <could not display: $(e)>")
+        end
+    end
+    return
+end
+
+get_V(spec::NeuralLyapunovStructure) = spec.V
+get_V̇(spec::NeuralLyapunovStructure) = spec.V̇
+get_network_dim(spec::NeuralLyapunovStructure) = spec.network_dim
+neural_controller(::NeuralLyapunovStructure) = false
+
+"""
     NoAdditionalStructure()
 
 Create a [`NeuralLyapunovStructure`](@ref) where the Lyapunov function is the neural network
@@ -11,20 +117,18 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest; filter = [r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"φ\\(x\\)" => "φ", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(∇φ\\s*\\*\\s*ẋ|ẋ\\s*\\*\\s*∇φ)\$"]
+```jldoctest; filter = [r"ẋ" => "ẋ", r"φ\\(x\\)" => "φ", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(∇φ\\s*\\*\\s*ẋ|ẋ\\s*\\*\\s*∇φ)\$"]
 julia> NoAdditionalStructure()
 NeuralLyapunovStructure
     Network dimension: 1
     V(x) = φ(x)
-    V̇(x) = ∇φ(x)*f(x, p, t)
-    f_call(x) = f(x, p, t)
+    V̇(x) = ∇φ(x)*ẋ
 ```
 """
 function NoAdditionalStructure()::NeuralLyapunovStructure
     return NeuralLyapunovStructure(
         (net, x, x0) -> net(x),
-        (net, grad_net, f, x, p, t, x0) -> grad_net(x) ⋅ f(x, p, t),
-        (f, net, x, p, t) -> f(x, p, t),
+        (net, grad_net, x, ẋ, x0) -> grad_net(x) ⋅ ẋ,
         1
     )
 end
@@ -62,13 +166,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest; filter = [r"\\(?x - x_0\\)?" => "Δ", r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"\\s*\\*\\s*" => "", r"φ\\(x\\)|\\(φ\\(x\\)\\)" => "φ", r"\\|\\|φ\\|\\|²" => "φ²", r"0.1\\s*log\\((1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)" => "A", r"(?m)\\s*V\\(x\\)\\s*=\\s*(A\\s*\\+\\s*φ²|φ²\\s*\\+\\s*A)\$", r"(ẋJφ|Jφẋ|\\(ẋJφ\\)|\\(Jφẋ\\))" => "φ̇", r"2(φ⋅φ̇|φ̇⋅φ)" => "B", r"\\(?(1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)?"=> "C", r"\\(?0.2(Δẋ|ẋΔ)\\)?" => "D", r"D\\s*/\\s*C" => "E", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(B\\s*\\+\\s*E|E\\s*\\+\\s*B)\$"]
+```jldoctest; filter = [r"\\(?x - x_0\\)?" => "Δ", r"ẋ" => "ẋ", r"\\s*\\*\\s*" => "", r"φ\\(x\\)|\\(φ\\(x\\)\\)" => "φ", r"\\|\\|φ\\|\\|²" => "φ²", r"0.1\\s*log\\((1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)" => "A", r"(?m)\\s*V\\(x\\)\\s*=\\s*(A\\s*\\+\\s*φ²|φ²\\s*\\+\\s*A)\$", r"(ẋJφ|Jφẋ|\\(ẋJφ\\)|\\(Jφẋ\\))" => "φ̇", r"2(φ⋅φ̇|φ̇⋅φ)" => "B", r"\\(?(1\\s*\\+\\s*Δ²|Δ²\\s*\\+\\s*1)\\)?"=> "C", r"\\(?0.2(Δẋ|ẋΔ)\\)?" => "D", r"D\\s*/\\s*C" => "E", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(B\\s*\\+\\s*E|E\\s*\\+\\s*B)\$"]
 julia> NonnegativeStructure(3; δ = 0.1)
 NeuralLyapunovStructure
     Network dimension: 3
     V(x) = 0.1log(1 + (x - x_0)²) + ||φ(x)||²
-    V̇(x) = 2(φ(x))⋅(f(x, p, t)*Jφ(x)) + (0.2(x - x_0)*f(x, p, t)) / (1 + (x - x_0)²)
-    f_call(x) = f(x, p, t)
+    V̇(x) = 2(φ(x))⋅(ẋ*Jφ(x)) + (0.2(x - x_0)*ẋ) / (1 + (x - x_0)²)
 ```
 
 See also: [`DontCheckNonnegativity`](@ref)
@@ -83,8 +186,7 @@ function NonnegativeStructure(
     return if δ == 0
         NeuralLyapunovStructure(
             (net, x, x0) -> net(x) ⋅ net(x),
-            (net, J_net, f, x, p, t, x0) -> 2 * dot(net(x), J_net(x), f(x, p, t)),
-            (f, net, x, p, t) -> f(x, p, t),
+            (net, J_net, x, ẋ, x0) -> 2 * dot(net(x), J_net(x), ẋ),
             network_dim
         )
     else
@@ -100,10 +202,9 @@ function NonnegativeStructure(
         end
         NeuralLyapunovStructure(
             (net, x, x0) -> net(x) ⋅ net(x) + δ * pos_def(x, x0),
-            function (net, J_net, f, x, p, t, x0)
-                return 2 * dot(net(x), J_net(x), f(x, p, t)) + δ * grad_pos_def(x, x0) ⋅ f(x, p, t)
+            function (net, J_net, x, ẋ, x0)
+                return 2 * dot(net(x), J_net(x), ẋ) + δ * grad_pos_def(x, x0) ⋅ ẋ
             end,
-            (f, net, x, p, t) -> f(x, p, t),
             network_dim
         )
     end
@@ -149,13 +250,12 @@ Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
 
 # Example
-```jldoctest; filter = [r"\\(?2x - 2x_0\\)?" => "2(x - x_0)", r"\\(?x - x_0\\)?" => "Δ", r"\\|\\|Δ\\|\\|²" => "Δ²", r"φ\\(x\\)" => "φ", r"\\(?1\\s*\\+\\s*φ²\\)?" => "Y", r"\\s*\\*\\s*" => "", r"(?m)\\s*V\\(x\\)\\s*=\\s*(?:Δ²Y|YΔ²)\$", r"f\\(\\s*x,\\s*p,\\s*t\\s*\\)" => "ẋ", r"(2ΔẋY|2ΔYẋ|ẋ2ΔY|ẋY2Δ|Yẋ2Δ|Y2Δẋ)" => "A", r"(2|∇φ|ẋ|Δ²|φ){5}" => "B", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(A|B)\\s*\\+\\s*(A|B)\$"]
+```jldoctest; filter = [r"\\(?2x - 2x_0\\)?" => "2(x - x_0)", r"\\(?x - x_0\\)?" => "Δ", r"\\|\\|Δ\\|\\|²" => "Δ²", r"φ\\(x\\)" => "φ", r"\\(?1\\s*\\+\\s*φ²\\)?" => "Y", r"\\s*\\*\\s*" => "", r"(?m)\\s*V\\(x\\)\\s*=\\s*(?:Δ²Y|YΔ²)\$", r"ẋ" => "ẋ", r"(2ΔẋY|2ΔYẋ|ẋ2ΔY|ẋY2Δ|Yẋ2Δ|Y2Δẋ)" => "A", r"(2|∇φ|ẋ|Δ²|φ){5}" => "B", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(A|B)\\s*\\+\\s*(A|B)\$"]
 julia> PositiveSemiDefiniteStructure(1; pos_def = (x, x0) -> sum(abs2, x - x0))
 NeuralLyapunovStructure
     Network dimension: 1
     V(x) = (1 + φ(x)²)*||x - x_0||²
-    V̇(x) = (2x - 2x_0)*f(x, p, t)*(1 + φ(x)²) + 2∇φ(x)*f(x, p, t)*||x - x_0||²*φ(x)
-    f_call(x) = f(x, p, t)
+    V̇(x) = (2x - 2x_0)*ẋ*(1 + φ(x)²) + 2∇φ(x)*ẋ*||x - x_0||²*φ(x)
 ```
 
 See also: [`DontCheckNonnegativity`](@ref)
@@ -187,13 +287,11 @@ function PositiveSemiDefiniteStructure(
     end
     return NeuralLyapunovStructure(
         (net, x, x0) -> pos_def(x, x0) * non_neg(net, x, x0),
-        function (net, J_net, f, x, p, t, x0)
-            ẋ = f(x, p, t)
+        function (net, J_net, x, ẋ, x0)
             d_pos_def = ẋ ⋅ grad_pos_def(x, x0)
             d_non_neg = ẋ ⋅ grad_non_neg(net, J_net, x, x0)
             return d_pos_def * non_neg(net, x, x0) + pos_def(x, x0) * d_non_neg
         end,
-        (f, net, x, p, t) -> f(x, p, t),
         network_dim
     )
 end

@@ -3,4 +3,11 @@
 ```@docs
 NeuralLyapunov.phi_to_net
 NeuralLyapunov.NeuralLyapunovBenchmarkLogger
+NeuralLyapunov.AbstractNeuralLyapunovStructure
+NeuralLyapunov.get_V
+NeuralLyapunov.get_V̇
+NeuralLyapunov.neural_controller
+NeuralLyapunov.get_network_dim
+NeuralLyapunov.get_control_dim
+NeuralLyapunov.get_control_structure
 ```

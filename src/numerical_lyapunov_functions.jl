@@ -20,8 +20,7 @@ ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar 
     single output, `θ` should be the parameters of the network.
   - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the
     neural Lyapunov function.
-  - `dynamics`: the system dynamics, as a function to be used in conjunction with
-    `structure.f_call`.
+  - `dynamics`: the system dynamics, as a function `ẋ = f(x[, u], p, t)`.
   - `fixed_point`: the equilibrium point being analyzed by the Lyapunov function.
 
 # Keyword Arguments
@@ -40,7 +39,7 @@ ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar 
 function get_numerical_lyapunov_function(
         phi,
         θ,
-        structure::NeuralLyapunovStructure,
+        structure::AbstractNeuralLyapunovStructure{nc},
         dynamics,
         fixed_point::AbstractVector;
         p = SciMLBase.NullParameters(),
@@ -48,17 +47,22 @@ function get_numerical_lyapunov_function(
         deriv = ForwardDiff.derivative,
         jac = ForwardDiff.jacobian,
         J_net = nothing
-    )
+    ) where nc
     # network_func is the numerical form of neural network output
-    network_func = phi_to_net(phi, θ)
-
-    # V is the numerical form of Lyapunov function
-    V = let V_structure = structure.V, net = network_func, x0 = fixed_point
-        V(state::AbstractVector) = V_structure(net, state, x0)
-        V(states::AbstractMatrix) = mapslices(V, states, dims = [1])
+    if nc
+        u_dim = get_control_dim(structure)
+        φ_dim = get_network_dim(structure) - u_dim
+        network_func = phi_to_net(phi, θ; idx = 1:φ_dim)
+    else
+        φ_dim = get_network_dim(structure)
+        network_func = phi_to_net(phi, θ)
     end
 
-    return if use_V̇_structure
+
+    # V is the numerical form of Lyapunov function
+    V = get_numerical_V(structure.V, network_func, copy(fixed_point))
+
+    if use_V̇_structure
         # Make Jacobian of network_func
         network_jacobian = if isnothing(J_net)
             let net = network_func, J = jac
@@ -70,36 +74,99 @@ function get_numerical_lyapunov_function(
             end
         end
 
-        let _V = V, V̇_structure = structure.V̇, net = network_func, x0 = fixed_point,
-                f = dynamics, params = p, _J_net = network_jacobian
-
-            # Numerical time derivative of Lyapunov function
-            V̇(state::AbstractVector) = V̇_structure(net, _J_net, f, state, params, 0.0, x0)
-            V̇(states::AbstractMatrix) = mapslices(V̇, states, dims = [1])
-
-            return _V, V̇
+        V̇ = if nc
+            get_V̇_from_structure(
+                structure.V̇,
+                network_func,
+                network_jacobian,
+                dynamics,
+                copy(p),
+                copy(fixed_point),
+                get_control_structure(structure)
+            )
+        else
+            get_V̇_from_structure(
+                structure.V̇,
+                network_func,
+                network_jacobian,
+                dynamics,
+                copy(p),
+                copy(fixed_point)
+            )
         end
+        return V, V̇
     else
-        let f_call = structure.f_call, _V = V, net = network_func, f = dynamics, params = p,
-                _deriv = deriv
-
-            # Numerical time derivative of Lyapunov function
-            function V̇(state::AbstractVector)
-                return _deriv(
-                    δt -> _V(state + δt * f_call(f, net, state, params, 0.0)),
-                    0.0
-                )
-            end
-            function V̇(states::AbstractMatrix)
-                ẋ = mapslices(states, dims = [1]) do state
-                    return f_call(f, net, state, params, 0.0)
-                end
-                return _deriv(δt -> _V(states + δt * ẋ), 0.0)
-            end
-
-            return _V, V̇
+        V̇ = if nc
+            control_network = phi_to_net(phi, θ; idx = (φ_dim + 1):(φ_dim + u_dim))
+            get_V̇_from_deriv(
+                V,
+                dynamics,
+                copy(p),
+                deriv,
+                get_control_structure(structure),
+                control_network,
+                copy(fixed_point)
+            )
+        else
+            get_V̇_from_deriv(V, dynamics, copy(p), deriv)
         end
+        return V, V̇
     end
+end
+
+function get_numerical_V(V_structure, net, x0)
+    V(x::AbstractVector) = V_structure(net, x, x0)
+    V(x::AbstractMatrix) = mapslices(V, x, dims = [1])
+    return V
+end
+
+function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0)
+    # Numerical time derivative of Lyapunov function
+    function V̇(x::AbstractVector{T}) where T <: Real
+        dstate_dt = f(x, params, zero(T))
+        return V̇_structure(net, J_net, x, dstate_dt, x0)
+    end
+    function V̇(x::AbstractMatrix)
+        return mapslices(V̇, x, dims = [1])
+    end
+    return V̇
+end
+
+function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0, u)
+    # Numerical time derivative of Lyapunov function
+    function V̇(x::AbstractVector{T}) where T <: Real
+        dstate_dt = f(x, u(net, x, x0), params, zero(T))
+        return V̇_structure(net, J_net, x, dstate_dt, x0)
+    end
+    function V̇(x::AbstractMatrix)
+        return mapslices(V̇, x, dims = [1])
+    end
+    return V̇
+end
+
+function get_V̇_from_deriv(V, f, p, deriv)
+    function V̇(x::AbstractVector{T}) where T <: Real
+        return deriv(δt -> V(x + δt * f(x, p, zero(T))), zero(T))
+    end
+    function V̇(x::AbstractMatrix{T}) where T <: Real
+        ẋ = mapslices(x, dims = [1]) do state
+            return f(state, p, zero(T))
+        end
+        return deriv(δt -> V(x + δt * ẋ), zero(T))
+    end
+    return V̇
+end
+
+function get_V̇_from_deriv(V, f, p, deriv, u, u_net, x0)
+    function V̇(x::AbstractVector{T}) where T <: Real
+        ẋ = f(x, u(u_net, x, x0), p, zero(T))
+        return deriv(δt -> V(x + δt * ẋ), zero(T))
+    end
+    function V̇(x::AbstractMatrix{T}) where T <: Real
+        ẋ = mapslices(state -> f(state, u(u_net, state, x0), p, zero(T)), x, dims = [1])
+        return deriv(δt -> V(x + δt * ẋ), zero(T))
+    end
+    return V̇
 end
 
 """
