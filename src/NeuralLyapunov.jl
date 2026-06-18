@@ -4,7 +4,7 @@ import ForwardDiff
 using LinearAlgebra: I, dot, ⋅, checksquare
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term
-using ModelingToolkit: @named, @parameters, System, PDESystem, parameters, unknowns,
+using ModelingToolkitBase: @named, @parameters, System, PDESystem, parameters, unknowns,
     initial_conditions, operation, unbound_inputs, independent_variables, generate_jacobian,
     generate_control_jacobian
 import SciMLBase
