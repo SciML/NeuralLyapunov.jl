@@ -1,17 +1,9 @@
-# The functional problem-model tests are split into the Pendula and Quadrotors 
-# base groups, which run in the package's main test env; Doctests also runs in the
-# main env. QA carries its own test/qa/Project.toml (adds Aqua + ExplicitImports) 
-# and runs separately. runtests.jl reads NEURALLYAPUNOV_TEST_GROUP and 
-# additionally accepts the "Core" alias (= Pendula + Quadrotors) for the downgrade
-# workflow.
-[Pendula]
-versions = ["lts", "1", "pre"]
-
-[Quadrotors]
+[Core]
 versions = ["lts", "1", "pre"]
 
 [Doctests]
 versions = ["lts", "1"]
+in_all = false
 
 [QA]
 versions = ["lts", "1"]
