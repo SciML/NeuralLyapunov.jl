@@ -10,6 +10,6 @@ NeuralLyapunovProblemLibrary = {path = "../.."}
 [compat]
 Aqua = "0.8.11"
 ExplicitImports = "1.13.1"
-NeuralLyapunovProblemLibrary = "0.2.2"
+NeuralLyapunovProblemLibrary = "0.2.3"
 Test = "1"
-julia = "1.11"
+julia = "1.10"
