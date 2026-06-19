@@ -5,4 +5,5 @@
 /docs/build/
 /docs/src/assets/Project.toml
 Manifest.toml
+Manifest-v*.toml
 .vscode/settings.json
