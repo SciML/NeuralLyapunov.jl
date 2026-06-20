@@ -382,8 +382,13 @@ end
     )
 
     # Define optimization parameters
-    opt = Adam(0.05)
-    optimization_args = [:maxiters => 300]
+    # A low-learning-rate refinement phase follows the initial Adam(0.05) phase so
+    # the policy converges to a deeper, more reproducible minimum. A single short
+    # Adam(0.05) phase leaves the classifier accuracy hovering just around the 0.9
+    # acceptance threshold, which floating-point non-determinism across Julia
+    # versions can tip below it; the refinement phase restores a comfortable margin.
+    opt = [Adam(0.05), Adam(0.001)]
+    optimization_args = [[:maxiters => 300], [:maxiters => 300]]
 
     # Run benchmark
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5.0e-3)
