@@ -58,7 +58,7 @@ function NeuralLyapunovPDESystem(
     if isempty(state_syms)
         state_syms = [Symbol(:x, i) for i in 1:state_dim]
     end
-    state = [first(@parameters $s) for s in state_syms]
+    state = [only(@parameters $s) for s in state_syms]
 
     ######################## Define parameter symbols #########################
     # Define parameter symbols, if not already defined
@@ -78,7 +78,7 @@ function NeuralLyapunovPDESystem(
         )
     end
 
-    params = [first(@parameters $s) for s in parameter_syms]
+    params = [only(@parameters $s) for s in parameter_syms]
 
     ##################### Define default parameter values #####################
     initial_conditions = if p == SciMLBase.NullParameters()
@@ -218,7 +218,7 @@ function NeuralLyapunovPDESystem(
     # e.g., if the state is ω(t), we just want ω
     _state = operation.(unknowns(dynamics))
     state_syms = Symbol.(_state)
-    state = [first(@parameters $s) for s in state_syms]
+    state = [only(@parameters $s) for s in state_syms]
 
     ###################### Remove derivatives in domains ######################
     domains = map(d -> operation(diff2term(d.variables)) ∈ d.domain, bounds)
@@ -264,7 +264,7 @@ function _NeuralLyapunovPDESystem(
     output_dim = get_network_dim(structure)
     control_dim = policy_search ? get_control_dim(structure) : 0
     net_syms = [Symbol(:φ, i) for i in 1:output_dim]
-    net = [first(@variables $s(..)) for s in net_syms]
+    net = [only(@variables $s(..)) for s in net_syms]
 
     # φ(x) is the symbolic form of neural network output
     φ(x) = Num.([φi(x...) for φi in net[1:(output_dim - control_dim)]])
