@@ -178,19 +178,21 @@ Return the network as a function of state alone.
 
 # Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
-    output, or a `Vector` of the same with one entry per neural network output.
+    output, or an `AbstractVector` of the same with one entry per neural network output;
+    typically this is the `phi` field of the output of `NeuralPDE.PhysicsInformedNN`.
+    When `phi isa NeuralPDE.Phi` (or an `AbstractVector` thereof), the returned function is
+    a `StatefulLuxLayer` that can be called on a state vector.
   - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
     `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
     parameters of the second (if there are multiple), and so on. If the neural network has a
     single output, `θ` should be the parameters of the network.
   - `idx`: the neural network outputs to include in the returned function; defaults to all
-    and only applicable when `phi isa Vector`.
+    and only applicable when `phi isa AbstractVector`. For each `i` in `idx`, `:φi` must be
+    a key in `θ`.
 """
-function phi_to_net(phi, θ)
-    return Base.Fix2(phi, θ)
-end
+phi_to_net(phi, θ) = Base.Fix2(phi, θ)
 
-function phi_to_net(phi::Vector, θ; idx = eachindex(phi))
+function phi_to_net(phi::AbstractVector, θ; idx = eachindex(phi))
     let _θ = θ, φ = phi, _idx = idx
         return function (x)
             return reduce(
@@ -199,4 +201,20 @@ function phi_to_net(phi::Vector, θ; idx = eachindex(phi))
             )
         end
     end
+end
+
+function phi_to_net(phi::Phi, θ)
+    model = phi.smodel.model
+    st = phi.smodel.st
+    return StatefulLuxLayer{true}(model, θ, st)
+end
+
+function phi_to_net(phi::AbstractVector{<:Phi}, θ; idx = eachindex(phi))
+    models = NamedTuple(map(((i, φ),) -> Symbol(:φ, i) => φ.smodel.model, zip(idx, phi[idx])))
+    model = Parallel(vcat; models...)
+
+    θ = θ[Tuple(Symbol(:φ, i) for i in idx)]
+    st = NamedTuple(map(((i, φ),) -> Symbol(:φ, i) => φ.smodel.st, zip(idx, phi[idx])))
+
+    return StatefulLuxLayer{true}(model, θ, st)
 end

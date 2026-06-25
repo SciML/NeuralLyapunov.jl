@@ -24,11 +24,12 @@ using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProbl
     EnsembleDistributed, remake
 import Base.show
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
-using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
+using NeuralPDE: PhysicsInformedNN, discretize, LogOptions, Phi
 import NeuralPDE
 using OrdinaryDiffEqTsit5: AutoTsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23
 import LuxCore
+using LuxCore: StatefulLuxLayer
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
 using MLDataDevices: cpu_device
 using Boltz.Layers: ShiftTo
