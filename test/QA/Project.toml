@@ -1,6 +1,5 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 NeuralLyapunov = "61252e1c-87f0-426a-93a7-3cdb1ed5a867"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
@@ -11,9 +10,8 @@ NeuralLyapunov = {path = "../.."}
 
 [compat]
 Aqua = "0.8.11"
-ExplicitImports = "1.13.1"
 NeuralLyapunov = "0.4.3"
 SafeTestsets = "0.1, 1"
-SciMLTesting = "1"
+SciMLTesting = "1.6"
 Test = "1"
 julia = "1.10"
