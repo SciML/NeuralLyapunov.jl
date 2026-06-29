@@ -5,11 +5,8 @@ using SciMLTesting, NeuralLyapunov, Test
 explicit_imports_public_ignore = (:diff2term, :sample)
 
 # ForwardDiff doesn't export or mark derivative, gradient, or jacobian as public, nor
-# does NeuralPDE mark logscalar as public, nor does SciMLBase mark its __has_jac and
-# __has_controljac internals as public.
-qualified_accesses_public_ignore = (
-    :derivative, :gradient, :jacobian, :logscalar, :__has_jac, :__has_controljac,
-)
+# does NeuralPDE mark logscalar as public.
+qualified_accesses_public_ignore = (:derivative, :gradient, :jacobian, :logscalar)
 
 run_qa(
     NeuralLyapunov;
