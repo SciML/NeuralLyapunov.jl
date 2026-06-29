@@ -1,6 +1,9 @@
-using NeuralLyapunovProblemLibrary
-using Aqua
+using SciMLTesting, NeuralLyapunovProblemLibrary, Test
 
-@testset "Aqua" begin
-    Aqua.test_all(NeuralLyapunovProblemLibrary)
-end
+run_qa(
+    NeuralLyapunovProblemLibrary;
+    explicit_imports = true,
+    ei_kwargs = (;
+        no_implicit_imports = (; skip = (Base, Core)),
+    ),
+)
