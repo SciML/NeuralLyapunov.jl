@@ -26,7 +26,11 @@ as the value of ``V(x)`` crosses the threshold ``ρ``, resulting in the dual los
 
 and
 
-``\\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``.
+``\\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``
+
+when `log_scale == false`.
+When `log_scale == true`, ``V(x) - ρ`` is replaced by ``\\log\\(\\frac{V(x)}{̢ρ}\\)`` in both
+equations.
 
 Note that a hard transition, which only enforces the in-RoA equation when ``V(x) ≤ ρ`` and
 the out-of-RoA equation when ``V(x) > ρ`` can be provided by a `sigmoid` which is exactly
@@ -77,6 +81,18 @@ struct RoAAwareDecreaseCondition{C <: AbstractLyapunovDecreaseCondition, S, R <:
     sigmoid::S
     ρ::R
     out_of_RoA_penalty::P
+    log_scale::Bool
+end
+
+function RoAAwareDecreaseCondition(
+        cond::C,
+        sigmoid::S,
+        ρ::R,
+        out_of_RoA_penalty::P
+    ) where {C <: AbstractLyapunovDecreaseCondition, S, R <: Real, P}
+    return RoAAwareDecreaseCondition{C, S, R, P}(
+        cond, sigmoid, ρ, out_of_RoA_penalty, false
+    )
 end
 
 function Base.show(io::IO, cond::RoAAwareDecreaseCondition)
@@ -104,14 +120,16 @@ check_decrease(cond::RoAAwareDecreaseCondition)::Bool = check_decrease(cond.cond
 function get_decrease_condition(cond::RoAAwareDecreaseCondition)
     if check_decrease(cond)
         in_RoA_penalty = get_decrease_condition(cond.cond)
+        log_scale = cond.log_scale
         return function (V, dVdt, x, fixed_point)
             _V = V(x)
             _V = _V isa AbstractVector ? _V[] : _V
             _V̇ = dVdt(x)
             _V̇ = _V̇ isa AbstractVector ? _V̇[] : _V̇
+            scaled_V = log_scale ? log(_V / cond.ρ) : _V - cond.ρ
             return [
-                cond.sigmoid(cond.ρ - _V) * in_RoA_penalty(V, dVdt, x, fixed_point),
-                cond.sigmoid(_V - cond.ρ) *
+                cond.sigmoid(-scaled_V) * in_RoA_penalty(V, dVdt, x, fixed_point),
+                cond.sigmoid(scaled_V) *
                     cond.out_of_RoA_penalty(_V, _V̇, x, fixed_point, cond.ρ),
             ]
         end
@@ -152,7 +170,11 @@ as the value of ``V(x)`` crosses the threshold ``ρ``, resulting in the dual los
 
 and
 
-``\\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``.
+``\\texttt{sigmoid}(V(x) - ρ) (\\text{out-of-RoA expression}) = 0``
+
+when `log_scale == false`.
+When `log_scale == true`, ``V(x) - ρ`` is replaced by ``\\log\\(\\frac{V(x)}{̢ρ}\\)`` in both
+equations.
 
 Note that a hard transition, which only enforces the in-RoA equation when ``V(x) ≤ ρ`` and
 the out-of-RoA equation when ``V(x) > ρ`` can be provided by a `sigmoid` which is exactly
@@ -181,12 +203,14 @@ function make_RoA_aware(
         cond::AbstractLyapunovDecreaseCondition;
         ρ = 1.0,
         out_of_RoA_penalty = (V, dVdt, state, fixed_point, _ρ) -> 0.0,
-        sigmoid = (x) -> x .≥ zero.(x)
+        sigmoid = (x) -> x .≥ zero.(x),
+        log_scale = false
     )::RoAAwareDecreaseCondition
     return RoAAwareDecreaseCondition(
         cond,
         sigmoid,
         ρ,
-        out_of_RoA_penalty
+        out_of_RoA_penalty,
+        log_scale
     )
 end
