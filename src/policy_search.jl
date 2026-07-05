@@ -94,7 +94,7 @@ input). When evaluating the dynamics, it uses `u = control_structure(phi_end(x))
 The other `lyapunov_structure.network_dim` outputs are used for calculating ``V`` and ``V̇``,
 as specified originally by `lyapunov_structure`.
 
-```jldoctest; filter = [r"(ẋ|ẋ)" => "y", r"\\(x\\)" => "", r"\\s*\\*\\s*" => "", r"∇φ_V" => "∇", r"(?m)\\s*V̇\\(x\\)\\s*=\\s*(2|∇|φ_V|y){4}\$"]
+```jldoctest; filter = [r"(ẋ|ẋ)" => "y", r"\\(x\\)" => "", r"\\s*\\*\\s*" => "", r"∇φ_V" => "∇", r"(?m)\\s*V̇\\s*=\\s*(2|∇|φ_V|y){4}\\s*\$"]
 add_policy_search(NonnegativeStructure(3), 1)
 # output
 NeuralLyapunovControlStructure
