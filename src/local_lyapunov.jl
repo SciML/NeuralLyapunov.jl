@@ -1,3 +1,8 @@
+# SciMLBase exposes a public `has_jac`, but has no public predicate for the `controljac`
+# field, so we reproduce its `hasfield && !== nothing` pattern locally instead of reaching
+# into the `SciMLBase.__has_controljac` internal.
+_has_controljac(f) = hasfield(typeof(f), :controljac) && f.controljac !== nothing
+
 """
     get_quadratic_lyapunov_function(dynamics; <keyword_arguments>)
 
@@ -143,7 +148,7 @@ function get_quadratic_lyapunov_function(
     end
 
     # Linearize the system
-    if SciMLBase.__has_jac(dynamics) && dynamics.jac !== nothing
+    if SciMLBase.has_jac(dynamics)
         A = dynamics.jac(fixed_point, p, t0)
     else
         A = ForwardDiff.jacobian(x -> dynamics(x, p, t0), fixed_point)
@@ -289,13 +294,13 @@ function get_quadratic_lyapunov_function(
     end
 
     # Linearize dynamics
-    if SciMLBase.__has_jac(dynamics) && dynamics.jac !== nothing
+    if SciMLBase.has_jac(dynamics)
         A = dynamics.jac(fixed_point, u_eq, p, t0)
     else
         A = ForwardDiff.jacobian(x -> dynamics(x, u_eq, p, t0), fixed_point)
     end
 
-    if SciMLBase.__has_controljac(dynamics) && dynamics.controljac !== nothing
+    if _has_controljac(dynamics)
         B = dynamics.controljac(fixed_point, u_eq, p, t0)
     else
         B = ForwardDiff.jacobian(u -> dynamics(fixed_point, u, p, t0), u_eq)

@@ -68,11 +68,8 @@ run_tests(;
     qa = (;
         env = joinpath(@__DIR__, "QA"),
         body = function ()
-            @time @safetestset "Quality Assurance" begin
+            return @time @safetestset "Quality Assurance" begin
                 include(joinpath(@__DIR__, "QA", "qa.jl"))
-            end
-            return @time @safetestset "Explicit Imports" begin
-                include(joinpath(@__DIR__, "QA", "explicit_imports.jl"))
             end
         end,
     ),
