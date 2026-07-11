@@ -11,6 +11,7 @@ qualified_accesses_public_ignore = (:derivative, :gradient, :jacobian, :logscala
 run_qa(
     NeuralLyapunov;
     explicit_imports = true,
+    api_docs_kwargs = (; rendered = true),
     ei_kwargs = (;
         no_implicit_imports = (; skip = (Base, Core)),
         all_explicit_imports_are_public = (; ignore = explicit_imports_public_ignore),
