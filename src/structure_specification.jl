@@ -160,7 +160,8 @@ used.
     `state`. If `isnothing(grad_pos_def)` (as is the default), the gradient of `pos_def`
     will be evaluated using `grad`.
   - `grad`: a function for evaluating gradients to be used when `isnothing(grad_pos_def)`;
-    defaults to, and expects the same arguments as, `ForwardDiff.gradient`.
+    defaults to, and expects the same arguments as, a `DifferentiationInterface.gradient`
+    call using `AutoForwardDiff`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
@@ -181,7 +182,7 @@ function NonnegativeStructure(
         δ::Real = 0,
         pos_def = (x, x0) -> log(1 + (x - x0) ⋅ (x - x0)),
         grad_pos_def = nothing,
-        grad = ForwardDiff.gradient
+        grad = _forward_gradient
     )::NeuralLyapunovStructure
     return if δ == 0
         NeuralLyapunovStructure(
@@ -244,7 +245,7 @@ so [`DontCheckNonnegativity(false)`](@ref) should be used.
     be evaluated using `grad`.
   - `grad`: a function for evaluating gradients to be used when `isnothing(grad_pos_def) ||
     isnothing(grad_non_neg)`; defaults to, and expects the same arguments as,
-    `ForwardDiff.gradient`.
+    `DifferentiationInterface.gradient` using `AutoForwardDiff`.
 
 Dynamics are assumed to be in `f(state, p, t)` form, as in an `ODEFunction`. For
 `f(state, input, p, t)`, consider using [`add_policy_search`](@ref).
@@ -266,7 +267,7 @@ function PositiveSemiDefiniteStructure(
         non_neg = (net, x, x0) -> 1 + net(x) ⋅ net(x),
         grad_pos_def = nothing,
         grad_non_neg = nothing,
-        grad = ForwardDiff.gradient
+        grad = _forward_gradient
     )::NeuralLyapunovStructure
     _grad(f, x::AbstractArray{T}) where {T <: Num} = Symbolics.gradient(f(x), x)
     _grad(f, x::T) where {T <: Num} = Symbolics.derivative(f(x), x)

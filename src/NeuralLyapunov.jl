@@ -1,9 +1,10 @@
 module NeuralLyapunov
 
+import DifferentiationInterface
 import ForwardDiff
 using LinearAlgebra: I, dot, ⋅, checksquare
 import Symbolics
-using Symbolics: @variables, Equation, Num, diff2term
+using Symbolics: @variables, Equation, Num
 using ModelingToolkitBase: @named, @parameters, System, PDESystem, parameters, unknowns,
     initial_conditions, operation, unbound_inputs, independent_variables, generate_jacobian,
     generate_control_jacobian
@@ -26,6 +27,11 @@ using DataFrames: DataFrame
 using MatrixEquations: lyapc, arec
 
 const cpud = cpu_device()
+const _ad_backend = DifferentiationInterface.AutoForwardDiff()
+
+_forward_derivative(f, x) = DifferentiationInterface.derivative(f, _ad_backend, x)
+_forward_gradient(f, x) = DifferentiationInterface.gradient(f, _ad_backend, x)
+_forward_jacobian(f, x) = DifferentiationInterface.jacobian(f, _ad_backend, x)
 
 include("conditions_specification.jl")
 include("structure_specification.jl")
