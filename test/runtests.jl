@@ -12,8 +12,11 @@ run_tests(;
         @time @safetestset "Damped pendulum - AdditiveLyapunovNet structure" begin
             include(joinpath(@__DIR__, "Core", "damped_pendulum_lux.jl"))
         end
-        return @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
+        @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
             include(joinpath(@__DIR__, "Core", "damped_pendulum_lux_2.jl"))
+        end
+        return @time @safetestset "Derivative-specified domain bounds" begin
+            include(joinpath(@__DIR__, "Core", "derivative_domain_bounds.jl"))
         end
     end,
     groups = Dict(

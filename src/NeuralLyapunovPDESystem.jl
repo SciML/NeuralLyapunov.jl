@@ -221,7 +221,7 @@ function NeuralLyapunovPDESystem(
     state = [first(@parameters $s) for s in state_syms]
 
     ###################### Remove derivatives in domains ######################
-    domains = map(d -> operation(d.variables) ∈ d.domain, bounds)
+    domains = map(d -> operation(diff2term(d.variables)) ∈ d.domain, bounds)
     domain_vars = map(d -> d.variables, domains)
     if Set(_state) != Set(domain_vars)
         error(
