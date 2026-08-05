@@ -29,9 +29,11 @@ ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar 
     false`, ``V̇(x)`` is calculated using `deriv` as ``\\frac{∂}{∂t} V(x + t f(x))`` at
     ``t = 0``; defaults to `false`, as it is more efficient in many cases.
   - `deriv`: a function for calculating derivatives; defaults to (and expects same arguments
-    as) `ForwardDiff.derivative`; only used when `use_V̇_structure` is `false`.
+    as) `DifferentiationInterface.derivative` with an `AutoForwardDiff` backend; only used
+    when `use_V̇_structure` is `false`.
   - `jac`: a function for calculating Jacobians; defaults to (and expects same arguments as)
-    `ForwardDiff.jacobian`; only used when `use_V̇_structure` is `true`.
+    `DifferentiationInterface.jacobian` with an `AutoForwardDiff` backend; only used when
+    `use_V̇_structure` is `true`.
   - `J_net`: the Jacobian of the neural network, specified as a function
     `J_net(phi, θ, state)`; if `isnothing(J_net)` (as is the default), `J_net` will be
     calculated using `jac`; only used when `use_V̇_structure` is `true`.
@@ -44,8 +46,8 @@ function get_numerical_lyapunov_function(
         fixed_point::AbstractVector;
         p = SciMLBase.NullParameters(),
         use_V̇_structure::Bool = false,
-        deriv = ForwardDiff.derivative,
-        jac = ForwardDiff.jacobian,
+        deriv = _forward_derivative,
+        jac = _forward_jacobian,
         J_net = nothing
     ) where {nc}
     # network_func is the numerical form of neural network output

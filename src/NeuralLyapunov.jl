@@ -1,5 +1,6 @@
 module NeuralLyapunov
 
+import DifferentiationInterface
 import ForwardDiff
 using LinearAlgebra: I, dot, ⋅, checksquare
 import Symbolics
@@ -26,6 +27,11 @@ using DataFrames: DataFrame
 using MatrixEquations: lyapc, arec
 
 const cpud = cpu_device()
+const _ad_backend = DifferentiationInterface.AutoForwardDiff()
+
+_forward_derivative(f, x) = DifferentiationInterface.derivative(f, _ad_backend, x)
+_forward_gradient(f, x) = DifferentiationInterface.gradient(f, _ad_backend, x)
+_forward_jacobian(f, x) = DifferentiationInterface.jacobian(f, _ad_backend, x)
 
 include("conditions_specification.jl")
 include("structure_specification.jl")

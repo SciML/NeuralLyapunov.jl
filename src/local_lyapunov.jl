@@ -151,7 +151,7 @@ function get_quadratic_lyapunov_function(
     if SciMLBase.has_jac(dynamics)
         A = dynamics.jac(fixed_point, p, t0)
     else
-        A = ForwardDiff.jacobian(x -> dynamics(x, p, t0), fixed_point)
+        A = _forward_jacobian(x -> dynamics(x, p, t0), fixed_point)
     end
 
     # Solve the Lyapunov equation
@@ -297,13 +297,13 @@ function get_quadratic_lyapunov_function(
     if SciMLBase.has_jac(dynamics)
         A = dynamics.jac(fixed_point, u_eq, p, t0)
     else
-        A = ForwardDiff.jacobian(x -> dynamics(x, u_eq, p, t0), fixed_point)
+        A = _forward_jacobian(x -> dynamics(x, u_eq, p, t0), fixed_point)
     end
 
     if _has_controljac(dynamics)
         B = dynamics.controljac(fixed_point, u_eq, p, t0)
     else
-        B = ForwardDiff.jacobian(u -> dynamics(fixed_point, u, p, t0), u_eq)
+        B = _forward_jacobian(u -> dynamics(fixed_point, u, p, t0), u_eq)
     end
 
     # Solve the LQR problem via Riccati equation
@@ -430,8 +430,8 @@ function get_quadratic_lyapunov_function(
     t0 = zero(T)
     if lqr
         # Linearize dynamics
-        A = ForwardDiff.jacobian(x -> dynamics(x, u_eq, p, t0), fixed_point)
-        B = ForwardDiff.jacobian(u -> dynamics(fixed_point, u, p, t0), u_eq)
+        A = _forward_jacobian(x -> dynamics(x, u_eq, p, t0), fixed_point)
+        B = _forward_jacobian(u -> dynamics(fixed_point, u, p, t0), u_eq)
 
         # Solve the LQR problem via Riccati equation
         P, _, K, _, _ = arec(A, B, R, Q)
@@ -444,7 +444,7 @@ function get_quadratic_lyapunov_function(
         end
     else
         # Linearize dynamics
-        A = ForwardDiff.jacobian(x -> dynamics(x, p, t0), fixed_point)
+        A = _forward_jacobian(x -> dynamics(x, p, t0), fixed_point)
 
         # Solve the Lyapunov equation
         P = lyapc(A', Q)
