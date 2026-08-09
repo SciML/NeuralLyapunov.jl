@@ -1,4 +1,4 @@
-using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
+using NeuralPDE, SciMLBase, Lux, NeuralLyapunov, ComponentArrays
 using Boltz.Layers: MLP
 import Optimization
 using OptimizationOptimisers: Adam
