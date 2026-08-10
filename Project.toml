@@ -4,6 +4,7 @@ version = "0.4.7"
 authors = ["Nicholas Klugman <13633349+nicholaskl97@users.noreply.github.com>"]
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
@@ -24,6 +25,7 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
+BenchmarkTools = "1.8.0"
 Boltz = "1.7.1"
 ComponentArrays = "0.15.37"
 DataFrames = "1.8"

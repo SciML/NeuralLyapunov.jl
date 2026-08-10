@@ -129,7 +129,7 @@ end
                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
             ) for _ in 1:dim_output
     ]
-    ps, st = Lux.setup(StableRNG(0), chain)
+    ps, st = Lux.setup(StableRNG(200), chain)
 
     # Define neural network discretization
     strategy = QuasiRandomTraining(10000)
@@ -349,7 +349,7 @@ end
                 MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
             ) for _ in 1:dim_output
     ]
-    ps, st = Lux.setup(StableRNG(0), chain)
+    ps, st = Lux.setup(StableRNG(200), chain)
     ps = ps |> f64
     st = st |> f64
 

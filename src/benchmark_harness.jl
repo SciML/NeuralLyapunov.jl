@@ -127,7 +127,11 @@ the user or generated automatically).
       `fixed_point` (as determined by `endpoint_check`).
     - "Classification": classification of each point, either "TP" (true positive),
       "TN" (true negative), "FP" (false positive), or "FN" (false negative).
-  - `training_time`: time taken to train the neural Lyapunov function (in seconds).
+  - `training_time`: time taken to train the neural Lyapunov function (in seconds); time is
+    measured using
+    [`BenchmarkTools.@btimed`](https://juliaci.github.io/BenchmarkTools.jl/stable/reference/#BenchmarkTools.@btimed-Tuple),
+    so set `BenchmarkTools.DEFAULT_PARAMETERS` for greater control (in most cases, the
+    default parameters will lead to the optimization only being solved once).
   - `evaluation_time`: time taken to run the evaluation simulations (in seconds).
   - `θ`: the parameters of the neural Lyapunov function.
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
@@ -414,7 +418,7 @@ function _benchmark(
     opt_prob = discretize(pde_system, discretization)
 
     # Solve OptimizationProblem
-    training = @timed benchmark_solve(opt_prob, opt, optimization_args)
+    training = @btimed benchmark_solve($opt_prob, $opt, $optimization_args)
     training_time = training.time
 
     # Get parameters from optimization result
