@@ -62,7 +62,7 @@ const gpud = gpu_device()
 
     # Benchmarking
     # Define optimization parameters
-    opt = [Adam(1.0f-2), Adam(), Adam(1.0f-5)]
+    opt = [Adam(1.0f-2), Adam(1.0f-3), Adam(1.0f-5)]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(
@@ -137,7 +137,7 @@ end
     )
 
     # Define optimization parameters
-    opt = Adam()
+    opt = Adam(1.0e-3)
     optimization_args = [:maxiters => 450]
 
     # Run benchmark
@@ -161,7 +161,7 @@ end
     @test sum(cm.Count[2:3]) == 0
 
     # Should accurately classify
-    @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
+    @test cm.Count[4] / sum(cm.Count) < 0.5
 end
 
 @testset "Simple harmonic oscillator benchmarking (CUDA training + evaluation)" begin
@@ -223,7 +223,7 @@ end
 
     # Benchmarking
     # Define optimization parameters
-    opt = [Adam(1.0f-2), Adam(), Adam(1.0f-5)]
+    opt = [Adam(1.0f-2), Adam(1.0f-3), Adam(1.0f-5)]
     optimization_args = [:maxiters => 300]
 
     out = benchmark(

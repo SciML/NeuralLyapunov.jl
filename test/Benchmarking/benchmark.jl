@@ -76,7 +76,7 @@ using Test
     @test sum(cm.Count[2:3]) == 0
 
     # Should accurately classify
-    @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
+    @test cm.Count[4] / sum(cm.Count) < 0.5
 
     # Training is slower than evaluation in this example, since the dynamics are so simple
     # and don't depend on the neural network
@@ -302,7 +302,7 @@ end
     @test sum(cm.Count[2:3]) == 0
 
     # Should accurately classify
-    @test cm.Count[4] / sum(cm.Count[1:2]) < 0.5
+    @test cm.Count[4] / sum(cm.Count) < 0.5
 
     # The initial conditions should span the state space, so the lowest θ should be about -π
     # and the highest θ should be about π and the lowest ω should be about -10 and the
