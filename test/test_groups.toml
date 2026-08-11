@@ -18,6 +18,7 @@ versions = ["lts", "1", "pre"]
 
 [Benchmarking]
 versions = ["lts", "1", "pre"]
+timeout = 360
 
 [Unimplemented]
 versions = ["lts", "1", "pre"]
