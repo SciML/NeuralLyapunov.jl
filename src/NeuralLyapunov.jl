@@ -13,7 +13,6 @@ using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProbl
     EnsembleDistributed, remake
 import Base.show
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
-using BenchmarkTools: @btimed
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
 import NeuralPDE
 using OrdinaryDiffEqTsit5: AutoTsit5

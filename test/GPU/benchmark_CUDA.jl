@@ -254,8 +254,8 @@ end
 @testset "Policy search on inverted pendulum benchmarking (CUDA training)" begin
     println("Benchmark: Inverted Pendulum - Policy Search (CUDA training)")
 
-    rng = StableRNG(200)
-    Random.seed!(200)
+    rng = StableRNG(0)
+    Random.seed!(0)
 
     # Define dynamics and domain
     p = Float32[0.5f0, 1.0f0]
@@ -280,14 +280,14 @@ end
 
     # Define neural network discretization
     dim_state = length(bounds)
-    dim_hidden = 30
-    dim_output = 5
+    dim_hidden = 10
+    dim_output = 3
     dim_u = 1
     chain = [
         Chain(
             periodic_embedding_layer,
             AdditiveLyapunovNet(
-                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_hidden, dim_output), tanh);
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_output), tanh);
                 dim_ϕ = dim_output,
                 fixed_point = fixed_point_embedded
             )
@@ -295,7 +295,7 @@ end
         Chain(
             periodic_embedding_layer,
             ShiftTo(
-                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_hidden, dim_u), tanh),
+                MLP(dim_state + 1, (dim_hidden, dim_hidden, dim_u), tanh),
                 fixed_point_embedded,
                 [0.0f0]
             )
@@ -306,7 +306,7 @@ end
     st = st |> gpud |> f32
 
     # Define neural network discretization
-    strategy = QuasiRandomTraining(20000)
+    strategy = QuasiRandomTraining(10000)
 
     # Define neural Lyapunov structure and minimization condition
     structure = NoAdditionalStructure()
@@ -329,7 +329,7 @@ end
     )
 
     # Define optimization parameters
-    opt = [Adam(0.1f0), Adam(0.01f0)]
+    opt = Adam(0.1f0)
     optimization_args = [:maxiters => 500]
 
     # Run benchmark
