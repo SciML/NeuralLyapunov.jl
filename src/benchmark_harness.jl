@@ -418,12 +418,11 @@ function _benchmark(
     training_time = training.time
 
     # Get parameters from optimization result
-    u = training.value
-    θ = (discretization.phi isa AbstractArray ? u.depvar : u) |> cpud
     phi = PhysicsInformedNN(
         chain, strategy; init_params = init_params |> cpud,
         init_states = init_states |> cpud
     ).phi
+    θ = (phi isa AbstractArray ? training.value.depvar : training.value) |> cpud
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,
