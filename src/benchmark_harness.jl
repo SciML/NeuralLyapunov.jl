@@ -407,26 +407,22 @@ function _benchmark(
     )
     log_options = LogOptions(; log_frequency)
 
-    training = @timed begin
-        # Construct OptimizationProblem
-        discretization = PhysicsInformedNN(
-            chain, strategy; init_params, init_states, logger, log_options
-        )
-        opt_prob = discretize(pde_system, discretization)
+    # Construct OptimizationProblem
+    discretization = PhysicsInformedNN(
+        chain, strategy; init_params, init_states, logger, log_options
+    )
+    opt_prob = discretize(pde_system, discretization)
 
-        # Solve OptimizationProblem
-        u = benchmark_solve(opt_prob, opt, optimization_args)
-
-        # Get parameters from optimization result
-        phi = discretization.phi
-        θ = phi isa AbstractArray ? u.depvar : u
-    end
+    # Solve OptimizationProblem
+    training = @timed benchmark_solve(opt_prob, opt, optimization_args)
     training_time = training.time
-    θ = training.value |> cpud
+
+    # Get parameters from optimization result
     phi = PhysicsInformedNN(
         chain, strategy; init_params = init_params |> cpud,
         init_states = init_states |> cpud
     ).phi
+    θ = (phi isa AbstractArray ? training.value.depvar : training.value) |> cpud
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,
