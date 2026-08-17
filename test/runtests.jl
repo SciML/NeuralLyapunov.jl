@@ -20,6 +20,11 @@ run_tests(;
         end
     end,
     groups = Dict(
+        "Interface" => function ()
+            return @time @safetestset "Generic interface contracts" begin
+                include(joinpath(@__DIR__, "Interface", "interfaces.jl"))
+            end
+        end,
         "Policy_search" => function ()
             @time @safetestset "Policy search - inverted pendulum" begin
                 include(joinpath(@__DIR__, "Policy_search", "inverted_pendulum.jl"))
@@ -76,7 +81,7 @@ run_tests(;
             end
         end,
     ),
-    all = ["Core", "Policy_search", "ROA", "Local_lyapunov", "Benchmarking", "Unimplemented"],
+    all = ["Core", "Interface", "Policy_search", "ROA", "Local_lyapunov", "Benchmarking", "Unimplemented"],
     sublib_env = "NEURALLYAPUNOV_TEST_GROUP",
     lib_dir = joinpath(dirname(@__DIR__), "lib"),
 )

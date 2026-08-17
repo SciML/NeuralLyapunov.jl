@@ -1,3 +1,14 @@
+"""
+    NeuralLyapunov
+
+Build and train neural Lyapunov-function formulations for dynamical systems.
+
+The package exposes composable structures for the candidate Lyapunov function, its
+minimization condition, and its decrease condition. These components are assembled into
+symbolic `ModelingToolkitBase.PDESystem`s for use with NeuralPDE. The abstract types and
+generic functions documented on the developer API page are extension points for packages
+that provide additional formulations.
+"""
 module NeuralLyapunov
 
 import DifferentiationInterface
