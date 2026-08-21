@@ -36,6 +36,7 @@ using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
 using DataFrames: DataFrame
 using MatrixEquations: lyapc, arec
+using PrecompileTools: @compile_workload, @setup_workload
 
 const cpud = cpu_device()
 const _ad_backend = DifferentiationInterface.AutoForwardDiff()
@@ -87,5 +88,35 @@ export get_quadratic_lyapunov_function
 
 # Benchmarking tool
 export benchmark
+
+@setup_workload begin
+    @compile_workload begin
+        structure = NonnegativeStructure(1; δ = 0.1)
+        spec = NeuralLyapunovSpecification(
+            structure,
+            DontCheckNonnegativity(),
+            AsymptoticStability()
+        )
+        dynamics = (x, p, t) -> -x
+        pde_system = NeuralLyapunovPDESystem(
+            dynamics,
+            [-1.0, -1.0],
+            [1.0, 1.0],
+            spec;
+            name = :precompile_workload
+        )
+        phi = (x, θ) -> [sum(x)]
+        V, V̇ = get_numerical_lyapunov_function(
+            phi,
+            nothing,
+            structure,
+            dynamics,
+            [0.0, 0.0]
+        )
+        V([0.5, -0.5])
+        V̇([0.5, -0.5])
+        pde_system
+    end
+end
 
 end
