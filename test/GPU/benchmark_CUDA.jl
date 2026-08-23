@@ -1,5 +1,5 @@
-using NeuralPDE, NeuralLyapunov, NeuralLyapunovProblemLibrary
-using ModelingToolkit: unbound_inputs
+using NeuralPDE, NeuralLyapunov, NeuralLyapunovProblemLibrary, SciMLBase
+using ModelingToolkit: unbound_inputs, mtkcompile, unknowns, @named
 using OptimizationOptimisers: Adam
 using Random
 using Lux, LuxCUDA, ComponentArrays

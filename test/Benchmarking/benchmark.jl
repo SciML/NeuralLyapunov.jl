@@ -1,5 +1,5 @@
-using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary
-using ModelingToolkit: unbound_inputs
+using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary, SciMLBase
+using ModelingToolkit: unbound_inputs, mtkcompile, unknowns, @mtkcompile, @named
 import Boltz.Layers: PeriodicEmbedding, MLP
 using OptimizationOptimisers: Adam
 using StableRNGs, Random

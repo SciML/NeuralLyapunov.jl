@@ -1,4 +1,5 @@
-using NeuralPDE, NeuralLyapunov
+using NeuralPDE, NeuralLyapunov, SciMLBase
+using ModelingToolkitBase: @named
 import Optimization
 using OptimizationOptimisers: Adam
 using Random
