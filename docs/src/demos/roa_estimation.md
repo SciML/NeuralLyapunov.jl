@@ -14,6 +14,7 @@ We'll train in the larger domain ``x \in [-2, 2]``.
 
 ```julia
 using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
+using ModelingToolkitBase: @named
 import Optimization, OptimizationOptimisers
 using Random, StableRNGs
 
@@ -168,6 +169,8 @@ decrease_condition = make_RoA_aware(decrease_condition)
 We package these in a `NeuralLyapunovSpecification` and use it to construct a `PDESystem`.
 
 ```@example RoA
+using ModelingToolkitBase: @named # for the `@named` macro
+
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 

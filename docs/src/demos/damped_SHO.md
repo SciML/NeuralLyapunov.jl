@@ -16,7 +16,8 @@ We'll consider just the box domain ``x \in [-5, 5], v \in [-2, 2]``.
 ## Copy-Pastable Code
 
 ```julia
-using NeuralPDE, Lux, NeuralLyapunov
+using NeuralPDE, Lux, NeuralLyapunov, SciMLBase
+using ModelingToolkitBase: @named
 import Optimization, OptimizationOptimisers
 using StableRNGs, Random
 
@@ -194,6 +195,8 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 ```
 
 ```@example SHO
+using ModelingToolkitBase: @named # for the `@named` macro
+
 # Construct PDESystem
 @named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
 ```
