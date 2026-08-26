@@ -15,6 +15,7 @@ We'll jointly train a neural controller ``\tau = u \left( \theta, \frac{d\theta}
 ```julia
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, ComponentArrays
 using ModelingToolkit: inputs
+using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem
 using NeuralLyapunovProblemLibrary
 import Boltz.Layers: PeriodicEmbedding
 import Optimization, OptimizationOptimisers
@@ -270,6 +271,8 @@ _θ = res.u.depvar
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.
 
 ```@example policy_search
+using SciMLBase: ODEInputFunction
+
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum)
 params = setdiff(parameters(pendulum), unbound_inputs(pendulum))
 ics = initial_conditions(pendulum)
@@ -377,6 +380,8 @@ Now, let's simulate the closed-loop dynamics to verify that the controller can g
 First, we'll start at the downward equilibrium:
 
 ```@example policy_search
+using SciMLBase: ODEFunction, ODEProblem
+
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
     sys = pendulum
