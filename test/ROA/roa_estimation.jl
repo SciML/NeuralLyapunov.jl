@@ -1,4 +1,5 @@
 using NeuralPDE, Lux, ComponentArrays, NeuralLyapunov
+using ModelingToolkitBase: @named
 import Optimization
 using OptimizationOptimisers: Adam
 using Boltz.Layers: MLP

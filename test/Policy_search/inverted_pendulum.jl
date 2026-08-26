@@ -1,4 +1,5 @@
-using NeuralPDE, Lux, NeuralLyapunov
+using NeuralPDE, SciMLBase, Lux, NeuralLyapunov
+using ModelingToolkitBase: @named
 using OrdinaryDiffEqTsit5: Tsit5
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization

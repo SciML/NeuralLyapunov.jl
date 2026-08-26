@@ -1,6 +1,7 @@
 using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, NeuralLyapunovProblemLibrary
 using OrdinaryDiffEqTsit5: Tsit5
 using ModelingToolkit: unbound_inputs
+using SciMLBase: ODEInputFunction
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
