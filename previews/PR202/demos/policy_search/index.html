@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Policy Search on the Driven Inverted Pendulum · NeuralLyapunov.jl</title><meta name="title" content="Policy Search on the Driven Inverted Pendulum · NeuralLyapunov.jl"/><meta property="og:title" content="Policy Search on the Driven Inverted Pendulum · NeuralLyapunov.jl"/><meta property="twitter:title" content="Policy Search on the Driven Inverted Pendulum · NeuralLyapunov.jl"/><meta name="description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:description" content="Documentation for NeuralLyapunov.jl."/><meta property="twitter:description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:url" content="https://docs.sciml.ai/NeuralLyapunov/stable/demos/policy_search/"/><meta property="twitter:url" content="https://docs.sciml.ai/NeuralLyapunov/stable/demos/policy_search/"/><link rel="canonical" href="https://docs.sciml.ai/NeuralLyapunov/stable/demos/policy_search/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="NeuralLyapunov.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">NeuralLyapunov.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../man/">Components of a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/pdesystem/">Solving a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/minimization/">Lyapunov Minimization Condition</a></li><li><a class="tocitem" href="../../man/decrease/">Lyapunov Decrease Condition</a></li><li><a class="tocitem" href="../../man/structure/">Structuring a Neural Lyapunov function</a></li><li><a class="tocitem" href="../../man/roa/">Training for Region of Attraction Identification</a></li><li><a class="tocitem" href="../../man/policy_search/">Policy Search and Network-Dependent Dynamics</a></li><li><a class="tocitem" href="../../man/benchmarking/">Benchmarking neural Lyapunov methods</a></li><li><a class="tocitem" href="../../man/local_lyapunov/">Local Lyapunov analysis</a></li></ul></li><li><span class="tocitem">Demonstrations</span><ul><li><a class="tocitem" href="../damped_SHO/">Damped Simple Harmonic Oscillator</a></li><li><a class="tocitem" href="../roa_estimation/">Estimating the Region of Attraction</a></li><li class="is-active"><a class="tocitem" href>Policy Search on the Driven Inverted Pendulum</a><ul class="internal"><li><a class="tocitem" href="#Copy-Pastable-Code"><span>Copy-Pastable Code</span></a></li><li><a class="tocitem" href="#Detailed-description"><span>Detailed description</span></a></li></ul></li><li><a class="tocitem" href="../benchmarking/">Benchmarking a neural Lyapunov method</a></li></ul></li><li><span class="tocitem">Test Problem Library</span><ul><li><a class="tocitem" href="../../lib/">NeuralLyapunovProblemLibrary.jl</a></li><li><a class="tocitem" href="../../lib/pendulum/">Pendulum Model</a></li><li><a class="tocitem" href="../../lib/double_pendulum/">Double Pendulum Model</a></li><li><a class="tocitem" href="../../lib/quadrotor/">Quadrotor Models</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Demonstrations</a></li><li class="is-active"><a href>Policy Search on the Driven Inverted Pendulum</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Policy Search on the Driven Inverted Pendulum</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl/blob/master/docs/src/demos/policy_search.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Policy-Search-on-the-Driven-Inverted-Pendulum"><a class="docs-heading-anchor" href="#Policy-Search-on-the-Driven-Inverted-Pendulum">Policy Search on the Driven Inverted Pendulum</a><a id="Policy-Search-on-the-Driven-Inverted-Pendulum-1"></a><a class="docs-heading-anchor-permalink" href="#Policy-Search-on-the-Driven-Inverted-Pendulum" title="Permalink"></a></h1><p>In this demonstration, we&#39;ll search for a neural network policy to stabilize the upright equilibrium of the inverted pendulum.</p><p>The governing differential equation for the driven pendulum is:</p><p class="math-container">\[\frac{d^2 \theta}{dt^2} + 2 \zeta \omega_0 \frac{d \theta}{dt} + \omega_0^2 \sin(\theta) = \tau,\]</p><p>where <span>$\theta$</span> is the counterclockwise angle from the downward equilibrium, <span>$\zeta$</span> and <span>$\omega_0$</span> are system parameters, and <span>$\tau$</span> is our control input&amp;mdash;the torque.</p><p>We&#39;ll jointly train a neural controller <span>$\tau = u \left( \theta, \frac{d\theta}{dt} \right)$</span> and neural Lyapunov function <span>$V$</span> which will certify the stability of the closed-loop system.</p><h2 id="Copy-Pastable-Code"><a class="docs-heading-anchor" href="#Copy-Pastable-Code">Copy-Pastable Code</a><a id="Copy-Pastable-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Copy-Pastable-Code" title="Permalink"></a></h2><pre><code class="language-julia hljs">using NeuralPDE, Lux, ModelingToolkit, NeuralLyapunov, ComponentArrays
+using ModelingToolkit: inputs
+using NeuralLyapunovProblemLibrary
+import Boltz.Layers: PeriodicEmbedding
+import Optimization, OptimizationOptimisers
+using Random, StableRNGs
+
+rng = StableRNG(0)
+Random.seed!(200)
+
+######################### Define dynamics and domain ##########################
+
+@named pendulum = Pendulum(; defaults = [0.5, 1.0])
+τ, = unbound_inputs(pendulum)
+pendulum = mtkcompile(pendulum; inputs = [τ], split = false)
+θ, ω = unknowns(pendulum)
+
+bounds = [
+    θ ∈ (0, 2π),
+    ω ∈ (-2.0, 2.0)
+]
+
+upright_equilibrium = [π, 0.0]
+
+####################### Specify neural Lyapunov problem #######################
+
+# Define neural network discretization
+# We use an input layer that is periodic with period 2π with respect to θ
+dim_state = length(bounds)
+dim_hidden = 20
+dim_phi = 2
+dim_u = 1
+dim_output = dim_phi + dim_u
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
+             Dense(3, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1)
+         ) for _ in 1:dim_output]
+ps, st = Lux.setup(rng, chain)
+ps = ps |&gt; ComponentArray |&gt; f64
+st = st |&gt; f64
+
+# Define neural network discretization
+strategy = QuasiRandomTraining(5000)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+
+# Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
+structure = PositiveSemiDefiniteStructure(
+    dim_phi;
+    pos_def = (x, x0) -&gt; log(1.0 + periodic_pos_def(x, x0))
+)
+structure = add_policy_search(structure, dim_u)
+
+minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+# Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
+
+############################# Construct PDESystem #############################
+
+@named pde_system = NeuralLyapunovPDESystem(
+    pendulum,
+    bounds,
+    spec;
+    fixed_point = upright_equilibrium
+)
+
+######################## Construct OptimizationProblem ########################
+
+prob = discretize(pde_system, discretization)
+
+########################## Solve OptimizationProblem ##########################
+
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
+prob = Optimization.remake(prob, u0 = res.u)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.001); maxiters = 300)
+
+###################### Get numerical numerical functions ######################
+
+net = discretization.phi
+_θ = res.u.depvar
+
+open_loop_pendulum_dynamics = ODEInputFunction(pendulum)
+params = setdiff(parameters(pendulum), unbound_inputs(pendulum))
+ics = initial_conditions(pendulum)
+p = [Symbolics.value(ics[param]) for param in params]
+
+V, V̇ = get_numerical_lyapunov_function(
+    net,
+    _θ,
+    structure,
+    open_loop_pendulum_dynamics,
+    upright_equilibrium;
+    p
+)
+
+u = get_policy(net, _θ, dim_output, dim_u)</code></pre><h2 id="Detailed-description"><a class="docs-heading-anchor" href="#Detailed-description">Detailed description</a><a id="Detailed-description-1"></a><a class="docs-heading-anchor-permalink" href="#Detailed-description" title="Permalink"></a></h2><p>In this example, we&#39;ll use the <a href="../../lib/pendulum/#NeuralLyapunovProblemLibrary.Pendulum"><code>Pendulum</code></a> model in <a href="../../lib/">NeuralLyaupnovProblemLibrary.jl</a>.</p><pre><code class="language-julia hljs">using ModelingToolkit, NeuralLyapunovProblemLibrary
+using ModelingToolkit: unbound_inputs
+
+@named pendulum = Pendulum(; defaults = [0.5, 1.0])
+τ, = unbound_inputs(pendulum)
+pendulum = mtkcompile(pendulum; inputs = [τ], split = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr1">Model pendulum:</span>
+<span class="sgr1">Equations (2):</span>
+  2 standard: see equations(pendulum)
+<span class="sgr1">Unknowns (2):</span> see unknowns(pendulum)
+  θ(t)
+  θˍt(t)
+<span class="sgr1">Parameters (3):</span> see parameters(pendulum)
+  ζ
+  ω_0
+  τ(t) [defaults to <span class="sgr34">missing</span>]</code></pre><p>Since the angle <span>$\theta$</span> is periodic with period <span>$2\pi$</span>, our box domain will be one period in <span>$\theta$</span> and an interval in <span>$\frac{d\theta}{dt}$</span>.</p><pre><code class="language-julia hljs">upright_equilibrium = [π, 0.0]
+
+θ, ω = unknowns(pendulum)
+
+bounds = [
+    θ ∈ (0, 2π),
+    ω ∈ (-2.0, 2.0)
+]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{Symbolics.VarDomainPairing}:
+ Symbolics.VarDomainPairing(θ(t), 0.0 .. 6.283185307179586)
+ Symbolics.VarDomainPairing(θˍt(t), -2.0 .. 2.0)</code></pre><p>We&#39;ll use an architecture that&#39;s <span>$2\pi$</span>-periodic in <span>$\theta$</span> so that we can train on just one period of <span>$\theta$</span> and don&#39;t need to add any periodic boundary conditions. To achieve that, we use <code>Boltz.Layers.PeriodicEmbedding([1], [2pi])</code>, enforces <code>2pi</code>-periodicity in input number <code>1</code>. Additionally, we include output dimensions for both the neural Lyapunov function and the neural controller.</p><p>Other than that, setting up the neural network using Lux and NeuralPDE training strategy is no different from any other physics-informed neural network problem. For more on that aspect, see the <a href="https://docs.sciml.ai/NeuralPDE/stable/">NeuralPDE documentation</a>.</p><pre><code class="language-julia hljs">using Lux, ComponentArrays
+using Boltz.Layers: PeriodicEmbedding
+using StableRNGs
+
+# Stable random number generator for doc stability
+rng = StableRNG(0)
+
+# Define neural network discretization
+# We use an input layer that is periodic with period 2π with respect to θ
+dim_state = length(bounds)
+dim_hidden = 20
+dim_phi = 2
+dim_u = 1
+dim_output = dim_phi + dim_u
+chain = [Chain(
+             PeriodicEmbedding([1], [2π]),
+             Dense(dim_state + 1, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1)
+         ) for _ in 1:dim_output]
+ps, st = Lux.setup(rng, chain)
+ps = ps |&gt; ComponentArray |&gt; f64
+st = st |&gt; f64</code></pre><pre><code class="language-julia hljs">using NeuralPDE
+
+# Define neural network discretization
+strategy = QuasiRandomTraining(5000)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>The default Lyapunov candidate from <a href="../../man/structure/#NeuralLyapunov.PositiveSemiDefiniteStructure"><code>PositiveSemiDefiniteStructure</code></a> is:</p><p class="math-container">\[V(x) = \left( 1 + \lVert \phi(x) \rVert^2 \right) \log \left( 1 + \lVert x \rVert^2 \right),\]</p><p>which structurally enforces positive definiteness. We&#39;ll modify the second factor to be <span>$2\pi$</span>-periodic in <span>$\theta$</span>:</p><pre><code class="language-julia hljs">using NeuralLyapunov
+
+# Define neural Lyapunov structure
+periodic_pos_def = function (state, fixed_point)
+    θ, ω = state
+    θ_eq, ω_eq = fixed_point
+    return (sin(θ) - sin(θ_eq))^2 + (cos(θ) - cos(θ_eq))^2 + 0.1 * (ω - ω_eq)^2
+end
+
+structure = PositiveSemiDefiniteStructure(
+    dim_phi;
+    pos_def = (x, x0) -&gt; log(1.0 + periodic_pos_def(x, x0))
+)</code></pre><p>In addition to representing the neural Lyapunov function, our neural network must also represent the controller. For this, we use the <a href="../../man/policy_search/#NeuralLyapunov.add_policy_search"><code>add_policy_search</code></a> function, which tells NeuralLyapunov to expect dynamics with a control input and to treat the last <code>dim_u</code> dimensions of the neural network as the output of our controller.</p><pre><code class="language-julia hljs">structure = add_policy_search(structure, dim_u)</code></pre><p>Since our Lyapunov candidate structurally enforces positive definiteness, we use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity</code></a>.</p><pre><code class="language-julia hljs">minimization_condition = DontCheckNonnegativity(check_fixed_point = false)
+
+# Define Lyapunov decrease condition
+decrease_condition = AsymptoticStability(strength = periodic_pos_def)
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
+
+# Construct PDESystem
+@named pde_system = NeuralLyapunovPDESystem(
+    pendulum,
+    bounds,
+    spec;
+    fixed_point = upright_equilibrium
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">PDESystem
+Equations: Symbolics.Equation[max(<span class="sgr34">0</span>, (<span class="sgr34">1.0</span> + cos(θ))^<span class="sgr34">2</span> + (-<span class="sgr34">1.2246467991473532e-16</span> + sin(θ))^<span class="sgr34">2</span> + <span class="sgr34">0.1</span>(θˍt^<span class="sgr34">2</span>) + (<span class="sgr34">1</span> + φ2(θ, θˍt)^<span class="sgr34">2</span> + φ1(θ, θˍt)^<span class="sgr34">2</span>)*(((-<span class="sgr34">2</span>(<span class="sgr34">1.0</span> + cos(θ))*sin(θ) + <span class="sgr34">2</span>cos(θ)*(-<span class="sgr34">1.2246467991473532e-16</span> + sin(θ)))*θˍt) / (<span class="sgr34">1.0</span> + (<span class="sgr34">1.0</span> + cos(θ))^<span class="sgr34">2</span> + (-<span class="sgr34">1.2246467991473532e-16</span> + sin(θ))^<span class="sgr34">2</span> + <span class="sgr34">0.1</span>(θˍt^<span class="sgr34">2</span>)) + (<span class="sgr34">0.2</span>(φ3(θ, θˍt) - NaNMath.sin(θ)*(ω_0^<span class="sgr34">2</span>) - <span class="sgr34">2</span>ζ*θˍt*ω_0)*θˍt) / (<span class="sgr34">1.0</span> + (<span class="sgr34">1.0</span> + cos(θ))^<span class="sgr34">2</span> + (-<span class="sgr34">1.2246467991473532e-16</span> + sin(θ))^<span class="sgr34">2</span> + <span class="sgr34">0.1</span>(θˍt^<span class="sgr34">2</span>))) + ((<span class="sgr34">2</span>φ2(θ, θˍt)*Differential(θ, 1)(φ2(θ, θˍt)) + <span class="sgr34">2</span>φ1(θ, θˍt)*Differential(θ, 1)(φ1(θ, θˍt)))*θˍt + (<span class="sgr34">2</span>φ2(θ, θˍt)*Differential(θˍt, 1)(φ2(θ, θˍt)) + <span class="sgr34">2</span>φ1(θ, θˍt)*Differential(θˍt, 1)(φ1(θ, θˍt)))*(φ3(θ, θˍt) - NaNMath.sin(θ)*(ω_0^<span class="sgr34">2</span>) - <span class="sgr34">2</span>ζ*θˍt*ω_0))*log(<span class="sgr34">1.0</span> + (<span class="sgr34">1.0</span> + cos(θ))^<span class="sgr34">2</span> + (-<span class="sgr34">1.2246467991473532e-16</span> + sin(θ))^<span class="sgr34">2</span> + <span class="sgr34">0.1</span>(θˍt^<span class="sgr34">2</span>))) ~ <span class="sgr34">0</span>]
+Boundary Conditions: Symbolics.Equation[φ3(<span class="sgr34">3.141592653589793</span>, <span class="sgr34">0.0</span>) - <span class="sgr34">1.2246467991473532e-16</span>(ω_0^<span class="sgr34">2</span>) ~ <span class="sgr34">0</span>]
+Domain: Symbolics.VarDomainPairing[Symbolics.VarDomainPairing(θ, 0.0 .. 6.283185307179586), Symbolics.VarDomainPairing(θˍt, -2.0 .. 2.0)]
+Dependent Variables: Symbolics.Num[φ1(θ, θˍt), φ2(θ, θˍt), φ3(θ, θˍt)]
+Independent Variables: Symbolics.Num[θ, θˍt]
+Parameters: SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}[ζ, ω_0]
+Default Parameter ValuesModelingToolkitBase.AtomicArrayDict{SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}, Dict{SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}, SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}}}(ζ =&gt; <span class="sgr34">0.5</span>, ω_0 =&gt; <span class="sgr34">1.0</span>)</code></pre><p>Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.</p><pre><code class="language-julia hljs">prob = discretize(pde_system, discretization)
+
+using Optimization: solve, remake
+using OptimizationOptimisers: Adam
+
+res = solve(prob, Adam(0.01); maxiters = 300)
+prob = remake(prob, u0 = res.u)
+res = solve(prob, Adam(0.001); maxiters = 300)
+
+net = discretization.phi
+_θ = res.u.depvar</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ComponentVector{Float64,SubArray...}(φ1 = (layer_1 = Float64[], layer_2 = (weight = [-0.11370029143783625 0.2899255169730159 -0.7810244583721815; 0.06261090020193191 0.4546476074112975 0.2929594963764903; … ; -0.9277558596517808 0.7193658319399607 -1.4052837276999852; -0.38498480613423347 -1.1620029255616287 -0.9469747181838819], bias = [-0.585492598459492, 0.23614391170412008, 0.557186497380954, 0.6702788903742896, 0.3744953289812824, 0.4126359079914487, -0.48470897856838147, -0.3778317906969986, -0.29785892853119483, 0.07417727053479932, -0.8875179625614181, -0.3029388841624728, -0.026685918245359878, -0.6715557078807022, 0.10648128859297902, 0.5014166699722439, -0.478776409169967, -0.2994484216268852, -0.34663564657272433, -0.7108153679322177]), layer_3 = (weight = [-0.33592043530187854 -0.3096477830718984 … -0.18470890170657298 -0.18394424041505997; -0.31098181355668053 -0.6082319496443941 … -0.3494837281937045 -0.35381560008537516; … ; 0.012334014303586483 -0.7558707895995848 … -0.4820630910379582 0.8943254837929434; -0.18220897407140202 0.3675549338005196 … -0.30676345788623455 0.4514975142161052], bias = [0.0918823351619257, -0.05895306965442554, 0.10639830995722994, 0.07777386776537212, -0.1685035478152066, 0.040475907010808436, -0.44308653867421144, -0.08133455440209249, -0.2531581241204863, 0.15204980806339366, 0.13950157018674833, 0.2931554989926188, 0.2948748383507054, -0.06289848319323502, -0.20194059833869854, 0.3189119438322529, 0.040385072521745745, -0.26791455112272505, -0.2762100741615311, 0.3584041239108021]), layer_4 = (weight = [-0.14031858719825122 -0.22114172238028962 … -0.2337668926006312 -0.10132460636301319], bias = [0.0080351191851849])), φ2 = (layer_1 = Float64[], layer_2 = (weight = [0.644408800229685 1.242194951398216 -0.2890900704079937; 0.341207434896706 0.692627369026704 -0.15696245548491825; … ; -1.4744575737478562 0.42436967115771396 1.3874728273593702; 1.2455714922479533 -0.9763784005313446 -1.6320038273625201], bias = [0.28472300200980505, -0.012421898649984992, -0.16110891738779634, -0.32790855415053083, 0.36642899180961197, 0.0002014769460459868, -0.6543897445217733, 0.24890685814646177, -0.09385923279737113, -0.49961997980278633, 0.5093307072926739, 0.03302118056467066, -0.07890093387906892, -0.26027357306119964, 0.2498138071203715, -0.30586188693060834, -0.1701200356625272, 0.47504645664853506, -0.10933787854309293, 0.016341865021871866]), layer_3 = (weight = [-0.08195908547908921 -0.5616078872946356 … -0.7320387763622827 0.059836062712613866; 0.10684917036952876 -0.4285932874810619 … 0.14765547523771136 -0.08888860917904416; … ; -0.8158646775224648 -0.27896247226040916 … 0.48003334111847207 -0.16654457256714983; -0.44289561174601005 -0.43453938945995907 … 0.2933739454402966 -0.8679900258739877], bias = [0.029435070261004902, 0.1682477008201117, 0.27917511426521313, -0.38473498206469986, -0.3816718294173689, 0.14794431150335954, 0.49122684375646697, 0.5266610896459428, 0.3789080461685141, -0.12386075508373705, -0.007805614658100047, -0.06904430744121917, 0.21556996493948694, 0.407759623662659, 0.4285105726818648, 0.07141678023865604, -0.30447467469718836, -0.05843313042872786, 0.22572794505278793, -0.017908695849799015]), layer_4 = (weight = [0.1592662005503413 0.4493080358832833 … 0.34129475126354597 0.29157071132366336], bias = [0.46588302313876717])), φ3 = (layer_1 = Float64[], layer_2 = (weight = [1.3905049507823455 -0.6585536188087051 -1.4447251654775892; -0.9381439722204407 -0.46405757811506065 -0.802614576405854; … ; -1.0145512532498144 -0.911210936425304 1.3281961827268773; -0.44579016648920783 1.4288810121558824 -0.04123070886453085], bias = [0.3733594476929283, 0.516213346669104, 0.4974835649759256, 0.4542483218343432, 0.3667968758102825, -0.5279533697468116, -0.24322054633680212, 0.5951888597261606, -0.17408555381795893, -0.6113128798719917, -0.006474861301544563, -0.17994957339455372, 0.07717176628289991, -0.0482011428135441, -0.5572819796078055, 0.46156830426046525, -0.5421997721939096, 0.5804487677872876, -0.32759464330791116, 0.6406868810175761]), layer_3 = (weight = [0.7577931567251506 -0.18716214497753386 … 0.556121630142938 -0.8890363821159938; -0.3089932899874308 0.17545108169304738 … 0.7098105512233785 -0.0634285028119272; … ; 0.19439735230214947 -0.6070887660014738 … 0.27629324300368313 -0.16669983376354838; 0.5712784211775106 0.3542902713491355 … -0.3962042471761696 0.011577584712202701], bias = [-0.20067062722826998, -0.2283756892289725, -0.3566501999072515, -0.050151797841974065, -0.30918102199329145, 0.12717692551924914, 0.25130296355049675, 0.13653546154353202, 0.030784102735921363, 0.020681007513759037, 0.18705722047549786, 0.25123812031167087, 0.05228465268369903, 0.12149636207247794, -0.16632713595773901, -0.20360516027841513, 0.06406932236593181, 0.03374495240761398, -0.07822597990170406, -0.26759658015279353]), layer_4 = (weight = [-0.12946217732804172 0.29999431619532474 … -0.09705923292042445 -0.4069946624342976], bias = [0.24711964516878365])))</code></pre><p>We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the <a href="../../man/policy_search/#NeuralLyapunov.get_policy"><code>get_policy</code></a> function.</p><pre><code class="language-julia hljs">open_loop_pendulum_dynamics = ODEInputFunction(pendulum)
+params = setdiff(parameters(pendulum), unbound_inputs(pendulum))
+ics = initial_conditions(pendulum)
+p = [Symbolics.value(ics[param]) for param in params]
+
+V, V̇ = get_numerical_lyapunov_function(
+    net,
+    _θ,
+    structure,
+    open_loop_pendulum_dynamics,
+    upright_equilibrium;
+    p
+)
+
+u = get_policy(net, _θ, dim_output, dim_u)</code></pre><p>Now, let&#39;s evaluate our controller. First, we&#39;ll get the usual summary statistics on the Lyapunov function and plot <span>$V$</span>, <span>$\dot{V}$</span>, and the violations of the decrease condition.</p><pre><code class="language-julia hljs">lb = [0.0, -2.0];
+ub = [2π, 2.0];
+xs = (-2π):0.1:(2π)
+ys = lb[2]:0.1:ub[2]
+states = Iterators.map(collect, Iterators.product(xs, ys))
+V_samples = vec(V(reduce(hcat, states)))
+V̇_samples = vec(V̇(reduce(hcat, states)))
+
+# Print statistics
+println(&quot;V(π, 0) = &quot;, V(upright_equilibrium))
+println(
+    &quot;f([π, 0], u([π, 0])) = &quot;,
+    open_loop_pendulum_dynamics(upright_equilibrium, u(upright_equilibrium), p, 0.0)
+)
+println(
+    &quot;V ∋ [&quot;,
+    min(V(upright_equilibrium), minimum(V_samples)),
+    &quot;, &quot;,
+    maximum(V_samples),
+    &quot;]&quot;
+)
+println(
+    &quot;V̇ ∋ [&quot;,
+    minimum(V̇_samples),
+    &quot;, &quot;,
+    max(V̇(upright_equilibrium), maximum(V̇_samples)),
+    &quot;]&quot;
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">V(π, 0) = 0.0
+f([π, 0], u([π, 0])) = [0.0, -0.000752812491315991]
+V ∋ [0.0, 90.45404713715583]
+V̇ ∋ [-231.24575703453962, 0.04754986497814982]</code></pre><pre><code class="language-julia hljs">using Plots
+
+p1 = plot(
+    xs / pi,
+    ys,
+    V_samples,
+    linetype =
+    :contourf,
+    title = &quot;V&quot;,
+    xlabel = &quot;θ/π&quot;,
+    ylabel = &quot;ω&quot;,
+    c = :bone_1
+);
+p1 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
+    label = &quot;Downward Equilibria&quot;, color = :red, markershape = :x);
+p1 = scatter!(
+    [-pi, pi] / pi, [0, 0], label = &quot;Upward Equilibria&quot;, color = :green, markershape = :+);
+p2 = plot(
+    xs / pi,
+    ys,
+    V̇_samples,
+    linetype = :contourf,
+    title = &quot;dV/dt&quot;,
+    xlabel = &quot;θ/π&quot;,
+    ylabel = &quot;ω&quot;,
+    c = :binary
+);
+p2 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
+    label = &quot;Downward Equilibria&quot;, color = :red, markershape = :x);
+p2 = scatter!([-pi, pi] / pi, [0, 0], label = &quot;Upward Equilibria&quot;, color = :green,
+    markershape = :+, legend = false);
+p3 = plot(
+    xs / pi,
+    ys,
+    V̇_samples .&lt; 0,
+    linetype = :contourf,
+    title = &quot;dV/dt &lt; 0&quot;,
+    xlabel = &quot;θ/π&quot;,
+    ylabel = &quot;ω&quot;,
+    colorbar = false,
+    linewidth = 0
+);
+p3 = scatter!([-2 * pi, 0, 2 * pi] / pi, [0, 0, 0],
+    label = &quot;Downward Equilibria&quot;, color = :green, markershape = :+);
+p3 = scatter!([-pi, pi] / pi, [0, 0], label = &quot;Upward Equilibria&quot;,
+    color = :red, markershape = :x, legend = false);
+plot(p1, p2, p3)</code></pre><img src="bdcc0acf.svg" alt="Example block output"/><p>Now, let&#39;s simulate the closed-loop dynamics to verify that the controller can get our system to the upward equilibrium.</p><p>First, we&#39;ll start at the downward equilibrium:</p><pre><code class="language-julia hljs">closed_loop_dynamics = ODEFunction(
+    (x, p, t) -&gt; open_loop_pendulum_dynamics(x, u(x), p, t);
+    sys = pendulum
+)
+
+using OrdinaryDiffEqTsit5: Tsit5
+
+# Starting still at bottom ...
+downward_equilibrium = zeros(2)
+ode_prob = ODEProblem(closed_loop_dynamics, downward_equilibrium, [0.0, 120.0], p)
+sol = solve(ode_prob, Tsit5())
+plot(sol)</code></pre><img src="d06ef0cc.svg" alt="Example block output"/><pre><code class="language-julia hljs"># ...the system should make it to the top
+θ_end, ω_end = sol.u[end]
+x_end, y_end = sin(θ_end), -cos(θ_end)
+[x_end, y_end, ω_end] # Should be approximately [0.0, 1.0, 0.0]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
+  0.0009555500191872604
+  0.9999995434619762
+ -1.713805969837678e-7</code></pre><p>Then, we&#39;ll start at a random state:</p><pre><code class="language-julia hljs"># Starting at a random point ...
+x0 = lb .+ rand(2) .* (ub .- lb)
+ode_prob = ODEProblem(closed_loop_dynamics, x0, [0.0, 150.0], p)
+sol = solve(ode_prob, Tsit5())
+plot(sol)</code></pre><img src="5e7c0287.svg" alt="Example block output"/><pre><code class="language-julia hljs"># ...the system should make it to the top
+θ_end, ω_end = sol.u[end]
+x_end, y_end = sin(θ_end), -cos(θ_end)
+[x_end, y_end, ω_end] # Should be approximately [0.0, 1.0, 0.0]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
+  0.0009555942247942367
+  0.9999995434197345
+ -5.825337518423686e-8</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../roa_estimation/">« Estimating the Region of Attraction</a><a class="docs-footer-nextpage" href="../benchmarking/">Benchmarking a neural Lyapunov method »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 23 June 2026 02:34">Tuesday 23 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
