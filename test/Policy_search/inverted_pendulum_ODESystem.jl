@@ -39,9 +39,9 @@ dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [
     Chain(
-            PeriodicEmbedding([1], Float32[2π]),
-            MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-        ) for _ in 1:dim_output
+        PeriodicEmbedding([1], Float32[2π]),
+        MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+    ) for _ in 1:dim_output
 ]
 ps, st = Lux.setup(rng, chain)
 
