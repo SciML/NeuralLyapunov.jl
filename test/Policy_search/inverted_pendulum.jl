@@ -1,8 +1,9 @@
-using NeuralPDE, Lux, NeuralLyapunov
+using NeuralPDE, Lux, NeuralLyapunov, SciMLBase
+using ModelingToolkitBase: @named
+using OrdinaryDiffEqTsit5: Tsit5
 import Boltz.Layers: PeriodicEmbedding, MLP
 import Optimization
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
 using StableRNGs, Random
 using Test, LinearAlgebra, ForwardDiff
 
@@ -38,9 +39,9 @@ dim_u = 1
 dim_output = dim_phi + dim_u
 chain = [
     Chain(
-            PeriodicEmbedding([1], Float32[2π]),
-            MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-        ) for _ in 1:dim_output
+        PeriodicEmbedding([1], Float32[2π]),
+        MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+    ) for _ in 1:dim_output
 ]
 ps, st = Lux.setup(rng, chain)
 
@@ -80,7 +81,6 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
     p,
     state_syms,
     parameter_syms,
-    policy_search = true
 )
 
 ######################## Construct OptimizationProblem ########################
@@ -91,8 +91,6 @@ prob = discretize(pde_system, discretization)
 ########################## Solve OptimizationProblem ##########################
 
 res = Optimization.solve(prob, Adam(0.05f0); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
 
 ########################### Get numerical functions ###########################
 
@@ -154,8 +152,6 @@ x0 = (ub .- lb) .* rand(rng, Float32, 2, 100) .+ lb
 
 ################################## Simulate ###################################
 
-using OrdinaryDiffEq
-
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);
     sys = SciMLBase.SymbolCache(state_syms, parameter_syms)
@@ -213,8 +209,7 @@ p1 = plot(
     θs / pi,
     ωs,
     V_predict,
-    linetype =
-    :contourf,
+    linetype = :contourf,
     title = "V",
     xlabel = "θ/π",
     ylabel = "ω",

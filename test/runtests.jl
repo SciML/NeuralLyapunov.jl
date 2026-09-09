@@ -1,99 +1,87 @@
 using SafeTestsets: @safetestset
+using SciMLTesting
 
-const GROUP = lowercase(get(ENV, "GROUP", "all"))
-const DEVICE = lowercase(get(ENV, "DEVICE", "cpu"))
-
-@time begin
-    if GROUP == "all" || GROUP == "core"
-        if DEVICE == "cpu"
-            @time @safetestset "Damped simple harmonic oscillator" begin
-                include("damped_sho.jl")
-            end
-            @time @safetestset "Damped pendulum" begin
-                include("damped_pendulum.jl")
-            end
-            @time @safetestset "Damped pendulum - AdditiveLyapunovNet structure" begin
-                include("damped_pendulum_lux.jl")
-            end
-            @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
-                include("damped_pendulum_lux_2.jl")
-            end
+run_tests(;
+    core = function ()
+        @time @safetestset "Damped simple harmonic oscillator" begin
+            include(joinpath(@__DIR__, "Core", "damped_sho.jl"))
         end
-
-        if DEVICE == "gpu"
-            @time @safetestset "CUDA test - Damped SHO" begin
-                include("damped_sho_CUDA.jl")
-            end
+        @time @safetestset "Damped pendulum" begin
+            include(joinpath(@__DIR__, "Core", "damped_pendulum.jl"))
         end
-    end
-
-    if GROUP == "all" || GROUP == "policy_search"
-        if DEVICE == "cpu"
+        @time @safetestset "Damped pendulum - AdditiveLyapunovNet structure" begin
+            include(joinpath(@__DIR__, "Core", "damped_pendulum_lux.jl"))
+        end
+        @time @safetestset "Damped pendulum - MultiplicativeLyapunovNet structure" begin
+            include(joinpath(@__DIR__, "Core", "damped_pendulum_lux_2.jl"))
+        end
+        return @time @safetestset "Derivative-specified domain bounds" begin
+            include(joinpath(@__DIR__, "Core", "derivative_domain_bounds.jl"))
+        end
+    end,
+    groups = Dict(
+        "Interface" => function ()
+            return @time @safetestset "Generic interface contracts" begin
+                include(joinpath(@__DIR__, "Interface", "interfaces.jl"))
+            end
+        end,
+        "Policy_search" => function ()
             @time @safetestset "Policy search - inverted pendulum" begin
-                include("inverted_pendulum.jl")
+                include(joinpath(@__DIR__, "Policy_search", "inverted_pendulum.jl"))
             end
-            @time @safetestset "Policy search - inverted pendulum (ODESystem)" begin
-                include("inverted_pendulum_ODESystem.jl")
+            return @time @safetestset "Policy search - inverted pendulum (ODESystem)" begin
+                include(joinpath(@__DIR__, "Policy_search", "inverted_pendulum_ODESystem.jl"))
             end
-        end
-    end
-
-    if GROUP == "all" || GROUP == "roa"
-        if DEVICE == "cpu"
-            @time @safetestset "Region of attraction estimation" begin
-                include("roa_estimation.jl")
+        end,
+        "ROA" => function ()
+            return @time @safetestset "Region of attraction estimation" begin
+                include(joinpath(@__DIR__, "ROA", "roa_estimation.jl"))
             end
-        end
-    end
-
-    if GROUP == "all" || GROUP == "local_lyapunov"
-        if DEVICE == "cpu"
-            @time @safetestset "Local Lyapunov function search" begin
-                include("local_lyapunov.jl")
+        end,
+        "Local_lyapunov" => function ()
+            return @time @safetestset "Local Lyapunov function search" begin
+                include(joinpath(@__DIR__, "Local_lyapunov", "local_lyapunov.jl"))
             end
-        end
-    end
-
-    if GROUP == "all" || GROUP == "benchmarking"
-        if DEVICE == "cpu"
-            @time @safetestset "Benchmarking tool" begin
-                include("benchmark.jl")
+        end,
+        "Benchmarking" => function ()
+            return @time @safetestset "Benchmarking tool" begin
+                include(joinpath(@__DIR__, "Benchmarking", "benchmark.jl"))
             end
-        end
-        if DEVICE == "gpu"
-            @time @safetestset "Benchmarking tool - CUDA" begin
-                include("benchmark_CUDA.jl")
+        end,
+        "Unimplemented" => function ()
+            return @time @safetestset "Errors for partially-implemented extensions" begin
+                include(joinpath(@__DIR__, "Unimplemented", "unimplemented.jl"))
             end
-        end
-    end
-
-    if GROUP == "all" || GROUP == "unimplemented"
-        if DEVICE == "cpu"
-            @time @safetestset "Errors for partially-implemented extensions" begin
-                include("unimplemented.jl")
+        end,
+        "Doctests" => (;
+            env = joinpath(@__DIR__, "Doctests"),
+            body = function ()
+                return @time @safetestset "Doctests" begin
+                    include(joinpath(@__DIR__, "Doctests", "doctests.jl"))
+                end
+            end,
+        ),
+        "GPU" => (;
+            env = joinpath(@__DIR__, "GPU"),
+            body = function ()
+                @time @safetestset "CUDA test - Damped SHO" begin
+                    include(joinpath(@__DIR__, "GPU", "damped_sho_CUDA.jl"))
+                end
+                return @time @safetestset "Benchmarking tool - CUDA" begin
+                    include(joinpath(@__DIR__, "GPU", "benchmark_CUDA.jl"))
+                end
+            end,
+        ),
+    ),
+    qa = (;
+        env = joinpath(@__DIR__, "QA"),
+        body = function ()
+            return @time @safetestset "Quality Assurance" begin
+                include(joinpath(@__DIR__, "QA", "qa.jl"))
             end
-        end
-    end
-
-    # The following test run in different GitHub actions, so aren't in the "ci" group
-    if GROUP == "all" || GROUP == "qa"
-        if DEVICE == "cpu"
-            @time @safetestset "Quality Assurance" begin
-                include("qa_tests.jl")
-            end
-            #= JET tests are not essential and currently terminate unexpectedly
-            @time @safetestset "JET: Static Analysis" begin
-                include("jet_tests.jl")
-            end
-            =#
-        end
-    end
-
-    if GROUP == "all" || GROUP == "doctests"
-        if DEVICE == "cpu"
-            @time @safetestset "Doctests" begin
-                include("doctests.jl")
-            end
-        end
-    end
-end
+        end,
+    ),
+    all = ["Core", "Interface", "Policy_search", "ROA", "Local_lyapunov", "Benchmarking", "Unimplemented"],
+    sublib_env = "NEURALLYAPUNOV_TEST_GROUP",
+    lib_dir = joinpath(dirname(@__DIR__), "lib"),
+)

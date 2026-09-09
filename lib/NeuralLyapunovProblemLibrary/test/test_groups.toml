@@ -1,0 +1,9 @@
+[Core]
+versions = ["lts", "1", "pre"]
+
+[Doctests]
+versions = ["lts", "1"]
+in_all = false
+
+[QA]
+versions = ["lts", "1"]

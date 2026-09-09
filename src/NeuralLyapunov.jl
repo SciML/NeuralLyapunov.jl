@@ -1,12 +1,24 @@
+"""
+    NeuralLyapunov
+
+Build and train neural Lyapunov-function formulations for dynamical systems.
+
+The package exposes composable structures for the candidate Lyapunov function, its
+minimization condition, and its decrease condition. These components are assembled into
+symbolic `ModelingToolkitBase.PDESystem`s for use with NeuralPDE. The abstract types and
+generic functions documented on the developer API page are extension points for packages
+that provide additional formulations.
+"""
 module NeuralLyapunov
 
+import DifferentiationInterface
 import ForwardDiff
-import JuMP
-using LinearAlgebra: I, dot, ⋅
+using LinearAlgebra: I, dot, ⋅, checksquare
 import Symbolics
 using Symbolics: @variables, Equation, Num, diff2term
-using ModelingToolkit: @named, @parameters, System, PDESystem, parameters, unknowns,
-    initial_conditions, operation, unbound_inputs, independent_variables
+using ModelingToolkitBase: @named, @parameters, System, PDESystem, parameters, unknowns,
+    initial_conditions, operation, unbound_inputs, independent_variables, generate_jacobian,
+    generate_control_jacobian
 import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake
@@ -14,7 +26,8 @@ import Base.show
 using SymbolicIndexingInterface: SymbolCache, variable_symbols
 using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
 import NeuralPDE
-using OrdinaryDiffEq: AutoTsit5, Rosenbrock23
+using OrdinaryDiffEqTsit5: AutoTsit5
+using OrdinaryDiffEqRosenbrock: Rosenbrock23
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
 using MLDataDevices: cpu_device
@@ -22,8 +35,15 @@ using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
 using DataFrames: DataFrame
+using MatrixEquations: lyapc, arec
+using PrecompileTools: @compile_workload, @setup_workload
 
 const cpud = cpu_device()
+const _ad_backend = DifferentiationInterface.AutoForwardDiff()
+
+_forward_derivative(f, x) = DifferentiationInterface.derivative(f, _ad_backend, x)
+_forward_gradient(f, x) = DifferentiationInterface.gradient(f, _ad_backend, x)
+_forward_jacobian(f, x) = DifferentiationInterface.jacobian(f, _ad_backend, x)
 
 include("conditions_specification.jl")
 include("structure_specification.jl")
@@ -39,8 +59,8 @@ include("benchmark_harness.jl")
 include("lux_structures.jl")
 
 # Lyapunov function structures
-export NeuralLyapunovStructure, NoAdditionalStructure, NonnegativeStructure,
-    PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
+export NeuralLyapunovStructure, NeuralLyapunovControlStructure, NoAdditionalStructure,
+    NonnegativeStructure, PositiveSemiDefiniteStructure, get_numerical_lyapunov_function
 
 # Lux structures
 export AdditiveLyapunovNet, MultiplicativeLyapunovNet, SoSPooling,
@@ -64,9 +84,39 @@ export RoAAwareDecreaseCondition, make_RoA_aware
 export add_policy_search, get_policy
 
 # Local Lyapunov analysis
-export local_lyapunov
+export get_quadratic_lyapunov_function
 
 # Benchmarking tool
 export benchmark
+
+@setup_workload begin
+    @compile_workload begin
+        structure = NonnegativeStructure(1; δ = 0.1)
+        spec = NeuralLyapunovSpecification(
+            structure,
+            DontCheckNonnegativity(),
+            AsymptoticStability()
+        )
+        dynamics = (x, p, t) -> -x
+        pde_system = NeuralLyapunovPDESystem(
+            dynamics,
+            [-1.0, -1.0],
+            [1.0, 1.0],
+            spec;
+            name = :precompile_workload
+        )
+        phi = (x, θ) -> [sum(x)]
+        V, V̇ = get_numerical_lyapunov_function(
+            phi,
+            nothing,
+            structure,
+            dynamics,
+            [0.0, 0.0]
+        )
+        V([0.5, -0.5])
+        V̇([0.5, -0.5])
+        pde_system
+    end
+end
 
 end

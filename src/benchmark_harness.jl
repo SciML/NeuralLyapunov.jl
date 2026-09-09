@@ -5,8 +5,8 @@
 Evaluate the specified neural Lyapunov method on the given system. Return a `NamedTuple`
 containing the confusion matrix, optimization time, and other metrics listed below.
 
-Train a neural Lyapunov function as specified, then discretize the domain using a grid
-discretization and use the neural Lyapnov function to and the provided `classifier` to
+Train a neural Lyapunov function as specified, then discretize the domain using the provided
+sampling algorithm and use the neural Lyapunov function to and the provided `classifier` to
 predict whether grid points are in the region of attraction of the provided `fixed_point`.
 Finally, simulate the system from each grid point and check if the trajectories reach the
 fixed point. Return a confusion matrix for the neural Lyapunov classifier using the results
@@ -83,10 +83,6 @@ the user or generated automatically).
     `dynamics` is an `ODEFunction` or an `ODEInputFunction`, the symbols stored there are
     used, unless overridden here; if not provided here and cannot be inferred,
     `[:param1, :param2, ...]` will be used.
-  - `policy_search::Bool`: whether or not to include a loss term enforcing `fixed_point` to
-    actually be a fixed point; defaults to `false`; when `dynamics isa System`, the value
-    is inferred by the presence of unbound inputs and when `dynamics` is an `ODEFunction` or
-    an `ODEInputFunction`, the value is inferred by the type of `dynamics`.
   - `optimization_args`: arguments to be passed into the optimization solver, as a vector of
     `Pair`s. For more information, see the
     [Optimization.jl docs](https://docs.sciml.ai/Optimization/stable/API/solve/).
@@ -283,7 +279,6 @@ function benchmark(
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
-        policy_search = false,
         optimization_args = [],
         simulation_time,
         ode_solver = AutoTsit5(Rosenbrock23()),
@@ -354,7 +349,6 @@ function benchmark(
         p,
         state_syms,
         parameter_syms,
-        policy_search
     )
 
     _classifier(V, V̇, x) = classifier(V, V̇, x) || endpoint_check(x)
@@ -413,26 +407,22 @@ function _benchmark(
     )
     log_options = LogOptions(; log_frequency)
 
-    training = @timed begin
-        # Construct OptimizationProblem
-        discretization = PhysicsInformedNN(
-            chain, strategy; init_params, init_states, logger, log_options
-        )
-        opt_prob = discretize(pde_system, discretization)
+    # Construct OptimizationProblem
+    discretization = PhysicsInformedNN(
+        chain, strategy; init_params, init_states, logger, log_options
+    )
+    opt_prob = discretize(pde_system, discretization)
 
-        # Solve OptimizationProblem
-        u = benchmark_solve(opt_prob, opt, optimization_args)
-
-        # Get parameters from optimization result
-        phi = discretization.phi
-        θ = phi isa AbstractArray ? u.depvar : u
-    end
+    # Solve OptimizationProblem
+    training = @timed benchmark_solve(opt_prob, opt, optimization_args)
     training_time = training.time
-    θ = training.value |> cpud
+
+    # Get parameters from optimization result
     phi = PhysicsInformedNN(
         chain, strategy; init_params = init_params |> cpud,
         init_states = init_states |> cpud
     ).phi
+    θ = (phi isa AbstractArray ? training.value.depvar : training.value) |> cpud
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,
@@ -443,11 +433,9 @@ function _benchmark(
         p
     )
 
-    f = if f isa ODEFunction
-        f
-    else
-        let fc = spec.structure.f_call, _f = f, net = phi_to_net(phi, θ)
-            ODEFunction((x, _p, t) -> fc(_f, net, x, _p, t))
+    if neural_controller(spec.structure)
+        f = let _f = f, u = get_policy(phi, θ, spec.structure; fixed_point)
+            ODEFunction((x, _p, t) -> _f(x, u(x), _p, t))
         end
     end
 
@@ -586,8 +574,8 @@ function simulate_ensemble(
         x0 = first(states)
         ensemble_prob = EnsembleProblem(
             ODEProblem(dynamics, x0, simulation_time, p);
-            prob_func = (prob, i, repeat) -> remake(prob, u0 = states[i]),
-            output_func = (sol, i) -> (sol.u[end], false),
+            prob_func = (prob, ctx) -> remake(prob, u0 = states[ctx.sim_id]),
+            output_func = (sol, ctx) -> (sol.u[end], false),
             u_init = fill(zeros(eltype(x0), size(x0)), length(states)),
             reduction = function (u, data, I)
                 u[I] = data

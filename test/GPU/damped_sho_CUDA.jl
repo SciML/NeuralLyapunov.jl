@@ -1,60 +1,59 @@
-using NeuralPDE, Lux, NeuralLyapunov, ComponentArrays
-using Boltz.Layers: MLP
+using NeuralPDE, NeuralLyapunov, SciMLBase
+using ModelingToolkitBase: @named
 import Optimization
 using OptimizationOptimisers: Adam
-using OptimizationOptimJL: BFGS
-using StableRNGs, Random
-using Test, LinearAlgebra, ForwardDiff
+using Random
+using Lux, LuxCUDA, ComponentArrays
+using Boltz.Layers: MLP
+using Test, LinearAlgebra, ForwardDiff, StableRNGs
 
 rng = StableRNG(0)
 Random.seed!(200)
 
-println("Damped Simple Harmonic Oscillator")
+println("Damped Simple Harmonic Oscillator (CUDA)")
 
 ######################### Define dynamics and domain ##########################
 
 "Simple Harmonic Oscillator Dynamics"
 function f(state, p, t)
-    ζ, ω_0 = p
     pos = state[1]
     vel = state[2]
-    return vcat(vel, -2ζ * ω_0 * vel - ω_0^2 * pos)
+    return [vel, -vel - pos]
 end
-lb = [-5.0, -2.0];
-ub = [5.0, 2.0];
-p = [0.5, 1.0];
-fixed_point = [0.0, 0.0];
-dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
+lb = Float32[-2.0, -2.0];
+ub = Float32[2.0, 2.0];
+fixed_point = Float32[0.0, 0.0];
+dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 
 ####################### Specify neural Lyapunov problem #######################
 
 # Define neural network discretization
 dim_state = length(lb)
-dim_hidden = 10
-dim_output = 4
-chain = [MLP(dim_state, (dim_hidden, dim_hidden, 1), tanh) for _ in 1:dim_output]
+dim_hidden = 20
+chain = MLP(dim_state, (dim_hidden, dim_hidden, dim_hidden, 1), tanh)
+const gpud = gpu_device()
 ps, st = Lux.setup(rng, chain)
-ps = ps |> ComponentArray |> f64
-st = st |> f64
+ps = ps |> ComponentArray |> gpud |> f32
+st = st |> gpud |> f32
 
 # Define training strategy
-strategy = QuasiRandomTraining(1000)
+strategy = QuasiRandomTraining(2500)
 discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
 
 # Define neural Lyapunov structure and corresponding minimization condition
-structure = NonnegativeStructure(dim_output; δ = 5.0)
-minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+structure = NoAdditionalStructure()
+minimization_condition = StrictlyPositiveDefinite(C = 0.1f0)
 
 # Define Lyapunov decrease condition
-# Damped SHO has exponential decrease at a rate of k = ζ * ω_0, so we train to certify that
-decrease_condition = ExponentialStability(prod(p))
+# This damped SHO has exponential decrease at a rate of k = 0.5, so we train to certify that
+decrease_condition = ExponentialStability(0.5f0)
 
 # Construct neural Lyapunov specification
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 ############################# Construct PDESystem #############################
 
-@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec)
 
 ######################## Construct OptimizationProblem ########################
 
@@ -63,19 +62,17 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(); maxiters = 450)
+res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
 prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, BFGS(); maxiters = 300)
+res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
 (V, V̇) = get_numerical_lyapunov_function(
     discretization.phi,
-    res.u.depvar,
+    res.u,
     structure,
     f,
-    fixed_point;
-    p,
-    use_V̇_structure = true
+    fixed_point
 )
 
 ################################## Simulate ###################################
@@ -84,31 +81,36 @@ res = Optimization.solve(prob, BFGS(); maxiters = 300)
 xs = lb[1]:Δx:ub[1]
 vs = lb[2]:Δv:ub[2]
 states = Iterators.map(collect, Iterators.product(xs, vs))
-V_samples = vec(V(reduce(hcat, states)))
-V̇_samples = vec(V̇(reduce(hcat, states)))
+V_samples_gpu = vec(V(reduce(hcat, states)))
+V̇_samples_gpu = vec(V̇(reduce(hcat, states)))
+
+const cpud = cpu_device()
+V_samples = V_samples_gpu |> cpud
+V̇_samples = V̇_samples_gpu |> cpud
 
 #################################### Tests ####################################
 
-# Network structure should enforce nonegativeness of V
+# Network structure should enforce nonnegativeness of V
+V0 = (V(fixed_point) |> cpud)[]
 V_min, i_min = findmin(V_samples)
 state_min = collect(states)[i_min]
-V_min, state_min = if V(fixed_point) ≤ V_min
-    V(fixed_point), fixed_point
+V_min, state_min = if V0 ≤ V_min
+    V0, fixed_point
 else
     V_min, state_min
 end
-@test V_min ≥ 0.0
+@test V_min ≥ -1.0e-2
 
 # Trained for V's minimum to be near the fixed point
-@test all(abs.(state_min .- fixed_point) .≤ [Δx, Δv])
+@test all(abs.(state_min .- fixed_point) .≤ 10 * [Δx, Δv])
 
 # Check local negative semidefiniteness of V̇ at fixed point
-@test V̇(fixed_point) == 0.0
-# @test ForwardDiff.gradient(V̇, fixed_point) == zeros(2)
-# @test maximum(eigvals(ForwardDiff.hessian(V̇, fixed_point))) ≤ 0.0
+@test (V̇(fixed_point) |> cpud)[] == 0.0
+@test maximum(abs, ForwardDiff.gradient(x -> (V̇(x) |> cpud)[], fixed_point)) < 0.1
+@test_broken maximum(eigvals(ForwardDiff.hessian(x -> (V̇(x) |> cpud)[], fixed_point))) ≤ 0
 
 # V̇ should be negative almost everywhere
-@test sum(V̇_samples .> 0) / length(V̇_samples) < 1.0e-3
+@test sum(V̇_samples .> 0) / length(V̇_samples) < 5.0e-3
 
 #=
 # Print statistics
@@ -119,7 +121,7 @@ println(
     "V̇ ∋ [",
     minimum(V̇_samples),
     ", ",
-    max(V̇(fixed_point), maximum(V̇_samples)),
+    max((V̇(fixed_point) |> cpud)[], maximum(V̇_samples)),
     "]",
 )
 

@@ -19,7 +19,8 @@ Pendubot
 
 ```@example plot_double_pendulum
 using Random; Random.seed!(200) # hide
-using ModelingToolkit, NeuralLyapunovProblemLibrary, Plots, OrdinaryDiffEq
+using ModelingToolkit, NeuralLyapunovProblemLibrary, Plots
+using OrdinaryDiffEqTsit5: Tsit5
 
 @mtkcompile double_pendulum_undriven = DoublePendulum(; actuation = :undriven)
 

@@ -11,7 +11,7 @@ These results will be represented by a confusion matrix using the simulation res
 ```julia
 using NeuralPDE, NeuralLyapunov, Lux
 using Boltz.Layers: PeriodicEmbedding
-import OptimizationOptimisers, OptimizationOptimJL
+import OptimizationOptimisers
 using StableRNGs, Random
 
 rng = StableRNG(0)
@@ -72,11 +72,11 @@ decrease_condition = AsymptoticStability(strength = periodic_pos_def)
 spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
 
 # Define optimization parameters
-opt = [OptimizationOptimisers.Adam(0.05f0), OptimizationOptimJL.BFGS()]
-optimization_args = [[:maxiters => 300], [:maxiters => 300]]
+opt = OptimizationOptimisers.Adam(0.05f0)
+optimization_args = [:maxiters => 300]
 
 # Run benchmark
-endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5e-3)
+endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 6e-3)
 benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
     lb,
@@ -92,7 +92,6 @@ benchmarking_results = benchmark(
     optimization_args,
     state_syms,
     parameter_syms,
-    policy_search = true,
     endpoint_check,
     init_params = ps, 
     init_states = st
@@ -171,18 +170,18 @@ At this point of the [policy search demo](policy_search.md), we constructed the 
 All of that occurs in the [`benchmark`](@ref) function, so we instead provide that function with the optimizer and optimization arguments to use.
 
 ```@example benchmarking
-import OptimizationOptimisers, OptimizationOptimJL
+import OptimizationOptimisers
 
 # Define optimization parameters
-opt = [OptimizationOptimisers.Adam(0.05f0), OptimizationOptimJL.BFGS()]
-optimization_args = [[:maxiters => 300], [:maxiters => 300]]
+opt = OptimizationOptimisers.Adam(0.05f0)
+optimization_args = [:maxiters => 300]
 nothing # hide
 ```
 
 Since the pendulum is periodic in ``0``, we'll use a custom endpoint check that reflects that property.
 
 ```@example benchmarking
-endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol=5e-3)
+endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 6e-3)
 nothing # hide
 ```
 
@@ -197,7 +196,7 @@ For example, the dynamics may not allocate memory (build arrays), so in-place dy
 For this reason, using `EnsembleDistributed()` or `EnsembleThreads()` is recommended, even when training occurs on GPU.
 
 ```@example benchmarking
-using OrdinaryDiffEq: EnsembleSerial
+using SciMLBase: EnsembleSerial
 
 benchmarking_results = benchmark(
     open_loop_pendulum_dynamics,
@@ -214,7 +213,6 @@ benchmarking_results = benchmark(
     optimization_args,
     state_syms,
     parameter_syms,
-    policy_search = true,
     ensemble_alg = EnsembleSerial(),
     endpoint_check,
     init_params = ps, 

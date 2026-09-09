@@ -61,6 +61,8 @@ makedocs(;
         edit_link = "master",
         assets = ["assets/favicon.ico"]
     ),
+    doctest = true,
+    checkdocs = :exports,
     pages = [
         "Home" => "index.md",
         "Manual" => vcat(MANUAL_PAGES, hide("man/internals.md")),

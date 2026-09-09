@@ -1,0 +1,44 @@
+# Base groups run on [lts, 1, pre] in the main test env and are part of the `All`
+# run. QA and Doctests are the canonical [lts, 1] groups; QA, Doctests, and GPU 
+# carry their own test/<group>/Project.toml and run only when selected (excluded
+# from `All`). This file is the single source of truth for the root CI matrix: 
+# CI.yml is a thin caller of grouped-tests.yml@v1, which expands the groups below
+# via scripts/compute_affected_sublibraries.jl --root-matrix.
+[Core]
+versions = ["lts", "1", "pre"]
+
+["Core 32-bit"]
+group = "Core"
+versions = ["1"]
+os = ["ubuntu-latest"]
+arch = "x86"
+
+[Interface]
+versions = ["lts", "1", "pre"]
+
+[Policy_search]
+versions = ["lts", "1", "pre"]
+
+[ROA]
+versions = ["lts", "1", "pre"]
+
+[Local_lyapunov]
+versions = ["lts", "1", "pre"]
+
+[Benchmarking]
+versions = ["lts", "1", "pre"]
+timeout = 360
+
+[Unimplemented]
+versions = ["lts", "1", "pre"]
+
+[Doctests]
+versions = ["lts", "1"]
+
+[QA]
+versions = ["lts", "1"]
+
+[GPU]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "gpu"]
+timeout = 360

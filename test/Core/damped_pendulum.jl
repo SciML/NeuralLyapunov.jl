@@ -44,9 +44,9 @@ dim_hidden = 15
 dim_output = 2
 chain = [
     Chain(
-            PeriodicEmbedding([1], [2π]),
-            MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
-        ) for _ in 1:dim_output
+        PeriodicEmbedding([1], [2π]),
+        MLP(dim_state + 1, (dim_hidden, dim_hidden, 1), tanh)
+    ) for _ in 1:dim_output
 ]
 ps, st = Lux.setup(rng, chain)
 ps = ps |> ComponentArray |> f64

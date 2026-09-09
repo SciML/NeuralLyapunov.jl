@@ -16,7 +16,8 @@ get_pendulum_param_symbols
 
 ```@example plot_pendulum
 using Random; Random.seed!(200) # hide
-using ModelingToolkit, NeuralLyapunovProblemLibrary, Plots, OrdinaryDiffEq
+using ModelingToolkit, NeuralLyapunovProblemLibrary, Plots
+using OrdinaryDiffEqTsit5: Tsit5
 
 x0 = [π * rand(), -π * rand()]
 p = [0.5, 1]

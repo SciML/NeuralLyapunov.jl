@@ -7,7 +7,7 @@ Construct a `ModelingToolkit.PDESystem` representing the specified neural Lyapun
 # Positional Arguments
   - `dynamics`: the dynamical system being analyzed, represented as a `System` or the
     function `f` such that `ẋ = f(x[, u], p, t)`; either way, the ODE should not depend on
-    time and only `t = 0.0` will be used. (For an example of when `f` would have a `u`
+    time and only `t = 0` will be used. (For an example of when `f` would have a `u`
     argument, see [`add_policy_search`](@ref).) If `dynamics isa System`, call
     `mtkcompile(dynamics)` before `NeuralLyapunovPDESystem`, or
     `mtkcompile(dynamics; inputs = ..., split = false)` if the system has unbound inputs.
@@ -49,7 +49,6 @@ function NeuralLyapunovPDESystem(
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
-        policy_search::Bool = false,
         name
     )::PDESystem
     ########################## Define state symbols ###########################
@@ -64,9 +63,19 @@ function NeuralLyapunovPDESystem(
     ######################## Define parameter symbols #########################
     # Define parameter symbols, if not already defined
     if p == SciMLBase.NullParameters()
-        parameter_syms = []
+        if !isempty(parameter_syms)
+            error(
+                "Got nonempty parameter_syms when p == SciMLBase.NullParameters(). " *
+                    "Please provide p or leave parameter_syms empty."
+            )
+        end
     elseif isempty(parameter_syms)
         parameter_syms = [Symbol(:p, i) for i in 1:length(p)]
+    elseif length(parameter_syms) != length(p)
+        error(
+            "Length of parameter_syms ($(length(parameter_syms))) and of p ($(length(p)))" *
+                " do not match."
+        )
     end
 
     params = [first(@parameters $s) for s in parameter_syms]
@@ -80,6 +89,9 @@ function NeuralLyapunovPDESystem(
 
     ############################# Define domains ##############################
     domains = [state[i] in (lb[i], ub[i]) for i in 1:state_dim]
+
+    ######################### Check for policy search #########################
+    policy_search = neural_controller(spec.structure)
 
     ########################### Construct PDESystem ###########################
     return _NeuralLyapunovPDESystem(
@@ -104,7 +116,6 @@ function NeuralLyapunovPDESystem(
         p = SciMLBase.NullParameters(),
         state_syms = [],
         parameter_syms = [],
-        policy_search::Bool = dynamics isa ODEInputFunction,
         name
     )::PDESystem
     if dynamics.mass_matrix !== I
@@ -115,18 +126,20 @@ function NeuralLyapunovPDESystem(
             )
         )
     end
+
+    policy_search = neural_controller(spec.structure)
     if policy_search && (dynamics isa ODEFunction)
         throw(
             ErrorException(
-                "Got policy_search == true when dynamics were supplied as an" *
-                    " ODEFunction f(x,p,t), so no input can be supplied."
+                "Got spec.structure isa AbstractNeuralLyapunovStructure{true} when " *
+                    "dynamics were supplied as an ODEFunction f(x,p,t)."
             )
         )
     elseif !policy_search && (dynamics isa ODEInputFunction)
         throw(
             ErrorException(
-                "Got policy_search == false when dynamics were supplied as " *
-                    "an ODEInputFunction f(x,u,p,t)."
+                "Got spec.structure isa AbstractNeuralLyapunovStructure{false} when " *
+                    "dynamics were supplied as an ODEInputFunction f(x,u,p,t)."
             )
         )
     end
@@ -165,7 +178,6 @@ function NeuralLyapunovPDESystem(
         p,
         state_syms = s_syms,
         parameter_syms = p_syms,
-        policy_search = false,
         name
     )
 end
@@ -179,6 +191,21 @@ function NeuralLyapunovPDESystem(
     )::PDESystem
     ######################### Check for policy search #########################
     policy_search = !isempty(unbound_inputs(dynamics))
+    if policy_search && !neural_controller(spec.structure)
+        throw(
+            ErrorException(
+                "Got unbound inputs in dynamics but spec.structure isa " *
+                    "AbstractNeuralLyapunovStructure{false}."
+            )
+        )
+    elseif !policy_search && neural_controller(spec.structure)
+        throw(
+            ErrorException(
+                "Got spec.structure isa AbstractNeuralLyapunovStructure{true} but no " *
+                    "unbound inputs in dynamics."
+            )
+        )
+    end
 
     f = if policy_search
         ODEInputFunction(dynamics)
@@ -232,39 +259,44 @@ function _NeuralLyapunovPDESystem(
     structure = spec.structure
     minimization_condition = spec.minimization_condition
     decrease_condition = spec.decrease_condition
-    f_call = structure.f_call
-    state_dim = length(domains)
 
     ################## Define Lyapunov function & derivative ##################
-    output_dim = structure.network_dim
+    output_dim = get_network_dim(structure)
+    control_dim = policy_search ? get_control_dim(structure) : 0
     net_syms = [Symbol(:φ, i) for i in 1:output_dim]
     net = [first(@variables $s(..)) for s in net_syms]
 
     # φ(x) is the symbolic form of neural network output
-    φ(x) = Num.([φi(x...) for φi in net])
+    φ(x) = Num.([φi(x...) for φi in net[1:(output_dim - control_dim)]])
+
+    # u(x) is the symbolic form of the control input, when applicable
+    if policy_search
+        φu(x) = Num.([φi(x...) for φi in net[(output_dim - control_dim + 1):end]])
+        _u = get_control_structure(structure)
+        u(x) = _u(φu, x, fixed_point)
+    end
 
     # V(x) is the symbolic form of the Lyapunov function
-    V(x) = structure.V(φ, x, fixed_point)
+    _V = get_V(structure)
+    V(x) = _V(φ, x, fixed_point)
 
     # V̇(x) is the symbolic time derivative of the Lyapunov function
-    function V̇(x)
-        return structure.V̇(
-            φ,
-            y -> Symbolics.jacobian(φ(y), y),
-            dynamics,
-            x,
-            params,
-            0.0,
-            fixed_point
-        )
+    if policy_search
+        f = x -> dynamics(x, u(x), params, 0)
+    else
+        f = x -> dynamics(x, params, 0)
     end
+    _V̇ = get_V̇(structure)
+    Jφ(x) = Symbolics.jacobian(φ(x), x)
+    V̇(x) = _V̇(φ, Jφ, x, f(x), fixed_point)
+
 
     ################ Define equations and boundary conditions #################
     eqs = Equation[]
 
     if check_nonnegativity(minimization_condition)
         cond = get_minimization_condition(minimization_condition)::Function
-        cond_eq = cond(V, state, fixed_point) .~ 0.0
+        cond_eq = cond(V, state, fixed_point) .~ 0
         if cond_eq isa Equation
             push!(eqs, cond_eq)
         elseif cond_eq isa AbstractVector{Equation}
@@ -279,7 +311,7 @@ function _NeuralLyapunovPDESystem(
 
     if check_decrease(decrease_condition)
         cond = get_decrease_condition(decrease_condition)::Function
-        cond_eq = cond(V, V̇, state, fixed_point) .~ 0.0
+        cond_eq = cond(V, V̇, state, fixed_point) .~ 0
         if cond_eq isa Equation
             push!(eqs, cond_eq)
         elseif cond_eq isa AbstractVector{Equation}
@@ -295,24 +327,24 @@ function _NeuralLyapunovPDESystem(
     bcs = Equation[]
 
     if check_minimal_fixed_point(minimization_condition)
-        _V = V(fixed_point)
-        _V = _V isa AbstractVector ? _V[] : _V
-        push!(bcs, _V ~ 0.0)
+        V0 = V(fixed_point)
+        V0 = V0 isa AbstractVector ? V0[] : V0
+        push!(bcs, V0 ~ 0)
     end
 
     if policy_search
-        append!(bcs, f_call(dynamics, φ, fixed_point, params, 0.0) .~ zeros(state_dim))
+        append!(bcs, f(fixed_point) .~ 0)
     end
 
     if isempty(eqs) && isempty(bcs)
         error("No training conditions specified.")
     end
 
-    # NeuralPDE requires an equation and a boundary condition, even if they are
-    # trivial like φ(0.0) == φ(0.0), so we remove those trivial equations if they showed up
-    # naturally alongside other equations and add them in if we have no other equations
-    eqs = filter(eq -> eq != (0.0 ~ 0.0), eqs)
-    bcs = filter(eq -> eq != (0.0 ~ 0.0), bcs)
+    # NeuralPDE requires an equation and a boundary condition, even if they are trivial
+    # like φ(0) ~ φ(0), so we remove any trivial equations if they showed up naturally
+    # alongside other equations and add some in if we have no other equations
+    eqs = filter(eq -> eq != (0 ~ 0), eqs)
+    bcs = filter(eq -> eq != (0 ~ 0), bcs)
 
     if isempty(eqs)
         push!(eqs, φ(fixed_point)[1] ~ φ(fixed_point)[1])
@@ -322,12 +354,13 @@ function _NeuralLyapunovPDESystem(
     end
 
     ########################### Construct PDESystem ###########################
+    dvs = policy_search ? vcat(φ(state), φu(state)) : φ(state)
     return PDESystem(
         eqs,
         bcs,
         domains,
         state,
-        φ(state),
+        dvs,
         params;
         initial_conditions,
         name
