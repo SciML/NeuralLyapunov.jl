@@ -7,12 +7,14 @@
 [Core]
 versions = ["lts", "1", "pre"]
 
-["Core 32-bit"]
-group = "Core"
-versions = ["1"]
-os = ["ubuntu-latest"]
-arch = "x86"
-
+# Core 32-bit dropped: NNlib→BFloat16s LLVM soft-promote fails on i686
+# Re-enable when JuliaMath/BFloat16s works on 32-bit.
+# ["Core 32-bit"]
+# group = "Core"
+# versions = ["1"]
+# os = ["ubuntu-latest"]
+# arch = "x86"
+# 
 [Interface]
 versions = ["lts", "1", "pre"]
 
