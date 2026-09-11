@@ -31,7 +31,7 @@ using OrdinaryDiffEqRosenbrock: Rosenbrock23
 import LuxCore
 using LuxCore: StatefulLuxLayer
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
-using MLDataDevices: cpu_device
+using MLDataDevices: cpu_device, get_device
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
@@ -40,6 +40,11 @@ using MatrixEquations: lyapc, arec
 using PrecompileTools: @compile_workload, @setup_workload
 
 const cpud = cpu_device()
+
+@inline safe_get_device(x) = safe_get_device(get_device(x), x)
+@inline safe_get_device(::Nothing, _) = cpud
+@inline safe_get_device(dev, _) = dev
+
 const _ad_backend = DifferentiationInterface.AutoForwardDiff()
 
 _forward_derivative(f, x) = DifferentiationInterface.derivative(f, _ad_backend, x)
@@ -98,7 +103,7 @@ export benchmark
             DontCheckNonnegativity(),
             AsymptoticStability()
         )
-        dynamics = (x, p, t) -> -x
+        dynamics = ODEFunction((x, p, t) -> -x)
         pde_system = NeuralLyapunovPDESystem(
             dynamics,
             [-1.0, -1.0],
@@ -106,10 +111,10 @@ export benchmark
             spec;
             name = :precompile_workload
         )
-        phi = (x, θ) -> [sum(x)]
+        phi = Phi(StatefulLuxLayer{true}(SoSPooling(), [], NamedTuple()))
         V, V̇ = get_numerical_lyapunov_function(
             phi,
-            nothing,
+            [],
             structure,
             dynamics,
             [0.0, 0.0]

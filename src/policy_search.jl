@@ -25,11 +25,11 @@ struct NeuralLyapunovControlStructure{TV, TDV, U, D <: Integer, C <: Integer} <:
     control_dim::C
 end
 
-get_V(spec::NeuralLyapunovControlStructure) = spec.V
-get_V̇(spec::NeuralLyapunovControlStructure) = spec.V̇
-get_network_dim(spec::NeuralLyapunovControlStructure) = spec.network_dim
-get_control_structure(spec::NeuralLyapunovControlStructure) = spec.control_structure
-get_control_dim(spec::NeuralLyapunovControlStructure) = spec.control_dim
+get_V(str::NeuralLyapunovControlStructure) = str.V
+get_V̇(str::NeuralLyapunovControlStructure) = str.V̇
+get_network_dim(str::NeuralLyapunovControlStructure) = str.network_dim
+get_control_structure(str::NeuralLyapunovControlStructure) = str.control_structure
+get_control_dim(str::NeuralLyapunovControlStructure) = str.control_dim
 
 function Base.show(io::IO, s::NeuralLyapunovControlStructure)
     n = s.network_dim
@@ -71,6 +71,8 @@ function Base.show(io::IO, s::NeuralLyapunovControlStructure)
     return
 end
 
+@inline DEFAULT_CONTROL_STRUCTURE(phi, x, _) = phi(x)
+
 """
     add_policy_search(lyapunov_structure, new_dims; control_structure)
 
@@ -84,8 +86,8 @@ Add dependence on the neural network to the dynamics in a [`NeuralLyapunovStruct
 
 # Keyword Arguments
   - `control_structure`: function that transforms the final `new_dims` outputs of the neural
-    network before passing them into the dynamics; defaults to `identity`, passing in the
-    neural network outputs unchanged.
+    network before passing them as `u` into the dynamics `f(x, u, p, t)`; defaults to
+    `(phi, x, x0) -> phi(x)`, passing in the neural network outputs unchanged.
 
 The returned `NeuralLyapunovStructure` expects dynamics of the form `f(x, u, p, t)`, where
 `u` captures the dependence of dynamics on the neural network (e.g., through a control
@@ -107,7 +109,7 @@ NeuralLyapunovControlStructure
 function add_policy_search(
         lyapunov_structure::AbstractNeuralLyapunovStructure{false},
         new_dims::Integer;
-        control_structure = (phi, x, x0) -> phi(x)
+        control_structure = DEFAULT_CONTROL_STRUCTURE
     )::NeuralLyapunovControlStructure
     let V = get_V(lyapunov_structure), V̇ = get_V̇(lyapunov_structure),
             V_dim = get_network_dim(lyapunov_structure), u = control_structure
@@ -115,32 +117,72 @@ function add_policy_search(
     end
 end
 
+struct NumericNeuralPolicy{
+        S <: StatefulLuxLayer, U, X0 <: Union{Nothing, AbstractVector{<:Real}}, DΘ,
+    }
+    smodel::S
+    control_structure::U
+    fixed_point::X0
+    devθ::DΘ
+end
+
+function (u::NumericNeuralPolicy{S, U, <:AbstractVector{<:Real}, DΘ})(
+        x::AbstractVector
+    ) where {S, U, DΘ}
+    return u.control_structure(u.smodel, u.devθ(x), u.devθ(u.fixed_point))
+end
+function (u::NumericNeuralPolicy{S, U, Nothing, DΘ})(x::AbstractVector) where {S, U, DΘ}
+    return u.control_structure(u.smodel, u.devθ(x), u.devθ(zero(x)))
+end
+function (u::NumericNeuralPolicy{S, U, X0, DΘ})(x::AbstractMatrix) where {S, U, X0, DΘ}
+    return mapslices(u, x, dims = [1])
+end
+
+function (u::NumericNeuralPolicy{S, typeof(DEFAULT_CONTROL_STRUCTURE), <:AbstractVector{<:Real}, DΘ})(
+        x::AbstractMatrix
+    ) where {S, DΘ}
+    return u.smodel(u.devθ(x))
+end
+
+function (u::NumericNeuralPolicy{S, typeof(DEFAULT_CONTROL_STRUCTURE), Nothing, DΘ})(
+        x::AbstractMatrix
+    ) where {S, DΘ}
+    return u.smodel(u.devθ(x))
+end
+
 """
+    get_policy(phi, θ; fixed_point, control_structure, idx)
     get_policy(phi, θ, network_dim, control_dim; fixed_point, control_structure)
     get_policy(phi, θ, structure::AbstractNeuralLyapunovStructure{true}; fixed_point)
 
-Generate a Julia function representing the control policy/unmodeled portion of the dynamics
-as a function of the state.
+Generate the control policy/unmodeled portion of the dynamics as a function of the state.
 
 The returned function can operate on a state vector or columnwise on a matrix of state
 vectors.
 
 # Positional Arguments
-  - `phi`: the neural network, represented as `phi(state, θ)` if the neural network has a
-    single output, or a `Vector` of the same with one entry per neural network output.
-  - `θ`: the parameters of the neural network; `θ[:φ1]` should be the parameters of the
-    first neural network output (even if there is only one), `θ[:φ2]` the parameters of the
-    second (if there are multiple), and so on.
-  - `network_dim`: total number of neural network outputs.
-  - `control_dim`: number of neural network outputs used in the control policy.
+  - `phi`: the neural network, represented as an `AbstractVector` of functions `phi(x, θ)`;
+    typically this is the `phi` field of the output of `NeuralPDE.PhysicsInformedNN`.
+    When elements of `phi` are of the type `NeuralPDE.Phi`, the returned function is a
+    `StatefulLuxLayer` that can be called on a state vector.
+  - `θ`: the parameters of the neural network. For each index `i` of `phi`, `θ[:φi]` should
+    be the parameters of the network `phi[i]`.
+  - `network_dim`: total number of neural network outputs; see `idx` below for more
+    information.
+  - `control_dim`: number of neural network outputs used in the control policy; see `idx`
+    below for more information.
   - `structure::AbstractNeuralLyapunovStructure{true}`: provides the control structure and
     dimensions for the neural network outputs used in the control policy.
 
 # Keyword Arguments
   - `fixed_point`: the fixed point of the system.
-  - `control_structure`: transforms the final `control_dim` outputs of the neural net before
-    passing them into the dynamics; defaults to `identity`, passing in the neural network
-    outputs unchanged.
+  - `control_structure`: function that transforms the outputs of `phi[idx]` before passing
+    them as `u` into the dynamics `f(x, u, p, t)`; defaults to `(phi, x, x0) -> phi(x)`,
+    passing in the neural network outputs unchanged.
+  - `idx`: the neural network outputs to pass into `control_structure`. When `structure` or
+    `network_dim` and `control_dim` are provided, this is automatically set to
+    `(network_dim - control_dim + 1):network_dim`. Otherwise, this must be specified by the
+    user.
 """
 function get_policy(
         phi,
@@ -148,22 +190,10 @@ function get_policy(
         network_dim::Integer,
         control_dim::Integer;
         fixed_point = nothing,
-        control_structure = (phi, x, x0) -> phi(x)
+        control_structure = DEFAULT_CONTROL_STRUCTURE
     )
-    network_func = phi_to_net(phi, θ; idx = (network_dim - control_dim + 1):network_dim)
-
-    function policy(state::AbstractVector)
-        return control_structure(
-            network_func,
-            state,
-            isnothing(fixed_point) ? zero(state) : fixed_point
-        )
-    end
-    function policy(states::AbstractMatrix)
-        return mapslices(policy, states, dims = [1])
-    end
-
-    return policy
+    idx = (network_dim - control_dim + 1):network_dim
+    return get_policy(phi, θ; idx, fixed_point, control_structure)
 end
 
 function get_policy(
@@ -180,4 +210,36 @@ function get_policy(
         control_structure = get_control_structure(structure),
         fixed_point
     )
+end
+
+function get_policy(
+        phi,
+        θ;
+        fixed_point = nothing,
+        control_structure = DEFAULT_CONTROL_STRUCTURE,
+        idx
+    )
+    network_func = phi_to_net(phi, θ; idx)
+
+    function policy(state::AbstractVector)
+        return control_structure(
+            network_func,
+            state,
+            isnothing(fixed_point) ? zero(state) : fixed_point
+        )
+    end
+    policy(states::AbstractMatrix) = mapslices(policy, states, dims = [1])
+
+    return policy
+end
+
+function get_policy(
+        phi::AbstractVector{<:Phi},
+        θ;
+        fixed_point = nothing,
+        control_structure = DEFAULT_CONTROL_STRUCTURE,
+        idx
+    )
+    smodel = phi_to_net(phi, θ; idx)
+    return NumericNeuralPolicy(smodel, control_structure, fixed_point, safe_get_device(θ))
 end
