@@ -67,6 +67,9 @@ run_tests(;
                 @time @safetestset "CUDA test - Damped SHO" begin
                     include(joinpath(@__DIR__, "GPU", "damped_sho_CUDA.jl"))
                 end
+                @time @safetestset "CUDA test - Inverted Pendulum" begin
+                    include(joinpath(@__DIR__, "GPU", "inverted_pendulum_CUDA.jl"))
+                end
                 return @time @safetestset "Benchmarking tool - CUDA" begin
                     include(joinpath(@__DIR__, "GPU", "benchmark_CUDA.jl"))
                 end
