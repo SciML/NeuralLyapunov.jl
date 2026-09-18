@@ -18,7 +18,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 
 [sources]
-NeuralLyapunov = {path = "/home/runner/_work/NeuralLyapunov.jl/NeuralLyapunov.jl"}
+NeuralLyapunov = {path = "/home/runner/work/NeuralLyapunov.jl/NeuralLyapunov.jl"}
 
 [compat]
 Boltz = "1.7.1"
