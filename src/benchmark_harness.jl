@@ -428,8 +428,8 @@ function _benchmark(
         phi,
         θ,
         spec.structure,
-        f,
-        fixed_point;
+        f;
+        fixed_point,
         p
     )
 

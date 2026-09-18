@@ -73,7 +73,7 @@ res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 300)
 net = discretization.phi
 θ = res.u.depvar
 
-V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f; fixed_point)
 
 ################################## Simulate ###################################
 states = lb[]:0.001:ub[]
@@ -194,7 +194,7 @@ net = discretization.phi
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, then sample on a finer grid than we trained on to find the estimated region of attraction.
 
 ```@example RoA
-V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f; fixed_point)
 
 # Sample
 states = lb[]:0.001:ub[]

@@ -116,8 +116,8 @@ export benchmark
             phi,
             [],
             structure,
-            dynamics,
-            [0.0, 0.0]
+            dynamics;
+            fixed_point = [0.0, 0.0]
         )
         V([0.5, -0.5])
         V̇([0.5, -0.5])

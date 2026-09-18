@@ -199,8 +199,8 @@ end
         benchmarking_results.phi,
         benchmarking_results.θ,
         structure,
-        open_loop_pendulum_dynamics,
-        upright_equilibrium;
+        open_loop_pendulum_dynamics;
+        fixed_point = upright_equilibrium,
         p
     )
 

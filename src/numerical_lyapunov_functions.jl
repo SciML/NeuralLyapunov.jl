@@ -12,8 +12,9 @@ the same device (e.g., CPU or GPU) as they are passed in. If `θ` is on the GPU,
 ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar indexing).
 
 # Positional Arguments
-  - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
-    output, or a `Vector` of the same with one entry per neural network output.
+  - `phi`: the neural network, represented as a `NeuralPDE.Phi` object if the neural network
+    has a single output, or an `AbsractVector{<:Phi}` with one entry per neural network
+    output.
   - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
     `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
     parameters of the second (if there are multiple), and so on. If the neural network has a
@@ -21,9 +22,9 @@ ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar 
   - `structure`: a [`NeuralLyapunovStructure`](@ref) representing the structure of the
     neural Lyapunov function.
   - `dynamics`: the system dynamics, as a function `ẋ = f(x[, u], p, t)`.
-  - `fixed_point`: the equilibrium point being analyzed by the Lyapunov function.
 
 # Keyword Arguments
+  - `fixed_point`: the equilibrium point being analyzed by the Lyapunov function.
   - `p`: parameters to be passed into `dynamics`; defaults to `SciMLBase.NullParameters()`.
   - `use_V̇_structure`: when `true`, ``V̇(x)`` is calculated using `structure.V̇`; when `
     false`, ``V̇(x)`` is calculated using `deriv` as ``\\frac{∂}{∂t} V(x + t f(x))`` at
@@ -39,136 +40,66 @@ ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar 
     calculated using `jac`; only used when `use_V̇_structure` is `true`.
 """
 function get_numerical_lyapunov_function(
-        phi,
+        phi::Union{Phi, AbstractVector{<:Phi}},
         θ,
         structure::AbstractNeuralLyapunovStructure{nc},
-        dynamics,
-        fixed_point::AbstractVector;
+        dynamics;
+        fixed_point = nothing,
         p = SciMLBase.NullParameters(),
         use_V̇_structure::Bool = false,
         deriv = _forward_derivative,
         jac = _forward_jacobian,
         J_net = nothing
     ) where {nc}
-    # network_func is the numerical form of neural network output
-    if nc
-        u_dim = get_control_dim(structure)
-        φ_dim = get_network_dim(structure) - u_dim
-        network_func = phi_to_net(phi, θ; idx = 1:φ_dim)
-    else
-        φ_dim = get_network_dim(structure)
-        network_func = phi_to_net(phi, θ)
-    end
-
-
-    # V is the numerical form of Lyapunov function
-    V = get_numerical_V(structure.V, network_func, copy(fixed_point))
+    V = NumericLyapunovFunction(phi, structure, θ; fixed_point)
 
     if use_V̇_structure
-        # Make Jacobian of network_func
-        network_jacobian = if isnothing(J_net)
-            let net = network_func, J = jac
-                (x) -> J(net, x)
-            end
-        else
-            let _J_net = J_net, φ = phi, _θ = θ
-                (x) -> _J_net(φ, _θ, x)
-            end
-        end
-
-        V̇ = if nc
-            get_V̇_from_structure(
-                structure.V̇,
-                network_func,
-                network_jacobian,
-                dynamics,
-                copy(p),
-                copy(fixed_point),
-                get_control_structure(structure)
+        if nc
+            V̇ = StructuredNumericLyapunovControlFunction(
+                phi,
+                structure,
+                θ,
+                dynamics;
+                p,
+                jac,
+                J_phi = J_net,
+                fixed_point
             )
         else
-            get_V̇_from_structure(
-                structure.V̇,
-                network_func,
-                network_jacobian,
-                dynamics,
-                copy(p),
-                copy(fixed_point)
+            V̇ = StructuredNumericLyapunovDecreaseFunction(
+                phi,
+                structure,
+                θ,
+                dynamics;
+                p,
+                jac,
+                J_phi = J_net,
+                fixed_point
             )
         end
-        return V, V̇
     else
-        V̇ = if nc
-            control_network = phi_to_net(phi, θ; idx = (φ_dim + 1):(φ_dim + u_dim))
-            get_V̇_from_deriv(
+        if nc
+            u_dim = get_control_dim(structure)
+            φ_dim = get_network_dim(structure) - u_dim
+            control_smodel = phi_to_net(phi, θ; idx = (φ_dim + 1):(φ_dim + u_dim))
+            control_structure = get_control_structure(structure)
+
+            V̇ = ADNumericLyapunovControlFunction(
                 V,
                 dynamics,
-                copy(p),
-                deriv,
-                get_control_structure(structure),
-                control_network,
-                copy(fixed_point)
+                control_smodel,
+                control_structure;
+                p,
+                fixed_point,
+                deriv
             )
         else
-            get_V̇_from_deriv(V, dynamics, copy(p), deriv)
+            V̇ = ADNumericLyapunovDecreaseFunction(V, dynamics; p, deriv)
         end
-        return V, V̇
-    end
-end
 
-function get_numerical_V(V_structure, net, x0)
-    V(x::AbstractVector) = V_structure(net, x, x0)
-    V(x::AbstractMatrix) = mapslices(V, x, dims = [1])
-    return V
-end
+    end
 
-function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0)
-    # Numerical time derivative of Lyapunov function
-    function V̇(x::AbstractVector{T}) where {T <: Real}
-        dstate_dt = f(x, params, zero(T))
-        return V̇_structure(net, J_net, x, dstate_dt, x0)
-    end
-    function V̇(x::AbstractMatrix)
-        return mapslices(V̇, x, dims = [1])
-    end
-    return V̇
-end
-
-function get_V̇_from_structure(V̇_structure, net, J_net, f, params, x0, u)
-    # Numerical time derivative of Lyapunov function
-    function V̇(x::AbstractVector{T}) where {T <: Real}
-        dstate_dt = f(x, u(net, x, x0), params, zero(T))
-        return V̇_structure(net, J_net, x, dstate_dt, x0)
-    end
-    function V̇(x::AbstractMatrix)
-        return mapslices(V̇, x, dims = [1])
-    end
-    return V̇
-end
-
-function get_V̇_from_deriv(V, f, p, deriv)
-    function V̇(x::AbstractVector{T}) where {T <: Real}
-        return deriv(δt -> V(x + δt * f(x, p, zero(T))), zero(T))
-    end
-    function V̇(x::AbstractMatrix{T}) where {T <: Real}
-        ẋ = mapslices(x, dims = [1]) do state
-            return f(state, p, zero(T))
-        end
-        return deriv(δt -> V(x + δt * ẋ), zero(T))
-    end
-    return V̇
-end
-
-function get_V̇_from_deriv(V, f, p, deriv, u, u_net, x0)
-    function V̇(x::AbstractVector{T}) where {T <: Real}
-        ẋ = f(x, u(u_net, x, x0), p, zero(T))
-        return deriv(δt -> V(x + δt * ẋ), zero(T))
-    end
-    function V̇(x::AbstractMatrix{T}) where {T <: Real}
-        ẋ = mapslices(state -> f(state, u(u_net, state, x0), p, zero(T)), x, dims = [1])
-        return deriv(δt -> V(x + δt * ẋ), zero(T))
-    end
-    return V̇
+    return V, V̇
 end
 
 """
@@ -217,4 +148,224 @@ function phi_to_net(phi::AbstractVector{<:Phi}, θ; idx = eachindex(phi))
     st = NamedTuple(map(((i, φ),) -> Symbol(:φ, i) => φ.smodel.st, zip(idx, phi[idx])))
 
     return StatefulLuxLayer{true}(model, θ, st)
+end
+
+struct NumericLyapunovFunction{
+        S <: StatefulLuxLayer, DΘ, V, X0 <: Union{Nothing, AbstractVector{<:Real}},
+    }
+    smodel::S
+    devθ::DΘ
+    V_structure::V
+    fixed_point::X0
+end
+
+function NumericLyapunovFunction(
+        phi::Union{Phi, AbstractVector{<:Phi}},
+        structure::AbstractNeuralLyapunovStructure,
+        θ;
+        fixed_point = nothing
+    )
+    if neural_controller(structure)
+        phi_dim = get_network_dim(structure) - get_control_dim(structure)
+        smodel = phi_to_net(phi, θ; idx = 1:phi_dim)
+    else
+        smodel = phi_to_net(phi, θ)
+    end
+
+    V_structure = get_V(structure)
+
+    return NumericLyapunovFunction(smodel, safe_get_device(θ), V_structure, fixed_point)
+end
+
+function (V::NumericLyapunovFunction)(x::AbstractVector)
+    x0 = isnothing(V.fixed_point) ? zero(x) : V.fixed_point
+    return V.V_structure(V.smodel, V.devθ(x), V.devθ(x0))
+end
+
+(V::NumericLyapunovFunction)(x::AbstractMatrix) = mapslices(V, x, dims = [1])
+
+struct StructuredNumericLyapunovControlFunction{S <: StatefulLuxLayer, JS, DΘ, P, X0 <: Union{Nothing, AbstractVector{<:Real}}, US, U, DV}
+    smodel::S
+    smodel_jac::JS
+    devθ::DΘ
+    dynamics::ODEInputFunction
+    p::P
+    fixed_point::X0
+    control_smodel::US
+    control_structure::U
+    V̇_structure::DV
+end
+
+function StructuredNumericLyapunovControlFunction(
+        phi::AbstractVector{<:Phi},
+        structure::AbstractNeuralLyapunovStructure,
+        θ,
+        f;
+        p = SciMLBase.NullParameters(),
+        jac = _forward_jacobian,
+        J_phi = nothing,
+        fixed_point = nothing
+    )
+    u_dim = get_control_dim(structure)
+    phi_dim = get_network_dim(structure) - u_dim
+    smodel = phi_to_net(phi, θ; idx = 1:phi_dim)
+    control_smodel = phi_to_net(phi, θ; idx = (phi_dim + 1):(phi_dim + u_dim))
+    if isnothing(J_phi)
+        smodel_jac = Base.Fix1(jac, smodel)
+    else
+        smodel_jac = J_phi
+    end
+
+    return StructuredNumericLyapunovControlFunction(
+        smodel,
+        smodel_jac,
+        safe_get_device(θ),
+        f,
+        p,
+        fixed_point,
+        control_smodel,
+        get_control_structure(structure),
+        get_V̇(structure)
+    )
+end
+
+function (V̇::StructuredNumericLyapunovControlFunction)(x::AbstractVector)
+    x0 = isnothing(V̇.fixed_point) ? zero(x) : V̇.fixed_point
+    u = V̇.control_structure(V̇.usmodel, x, x0)
+    ẋ = V̇.dynamics(x, u, V̇.p, x0)
+    dev = V̇.devθ
+    return V̇.V̇_structure(V̇.smodel, V̇.Jsmodel, dev(x), dev(ẋ), dev(x0))
+end
+
+function (V̇::StructuredNumericLyapunovControlFunction)(x::AbstractMatrix)
+    return mapslices(V̇, x, dims = [1])
+end
+
+
+struct StructuredNumericLyapunovDecreaseFunction{S <: StatefulLuxLayer, JS, DΘ, F, P, X0 <: Union{Nothing, AbstractVector{<:Real}}, DV}
+    smodel::S
+    smodel_jac::JS
+    devθ::DΘ
+    dynamics::F
+    p::P
+    fixed_point::X0
+    V̇_structure::DV
+end
+
+function StructuredNumericLyapunovDecreaseFunction(
+        phi::Union{<:Phi, AbstractVector{<:Phi}},
+        structure::AbstractNeuralLyapunovStructure,
+        θ,
+        dynamics;
+        p = SciMLBase.NullParameters(),
+        jac = _forward_jacobian,
+        J_phi = nothing,
+        fixed_point = nothing
+    )
+    smodel = phi_to_net(phi, θ)
+    if isnothing(J_phi)
+        smodel_jac = Base.Fix1(jac, smodel)
+    else
+        smodel_jac = J_phi
+    end
+
+    V̇_structure = get_V̇(structure)
+
+    return StructuredNumericLyapunovDecreaseFunction(
+        smodel,
+        smodel_jac,
+        safe_get_device(θ),
+        dynamics,
+        p,
+        fixed_point,
+        V̇_structure
+    )
+end
+
+function (V̇::StructuredNumericLyapunovDecreaseFunction)(x::AbstractVector)
+    x0 = isnothing(V̇.fixed_point) ? zero(x) : V̇.fixed_point
+    ẋ = V̇.dynamics(x, V̇.p, x0)
+    dev = V̇.devθ
+    return V̇.V̇_structure(V̇.smodel, V̇.smodel_jac, dev(x), dev(ẋ), dev(x0))
+end
+
+function (V̇::StructuredNumericLyapunovDecreaseFunction)(x::AbstractMatrix)
+    return mapslices(V̇, x, dims = [1])
+end
+
+struct ADNumericLyapunovDecreaseFunction{TV, F, P, D}
+    V::TV
+    dynamics::F
+    p::P
+    deriv::D
+end
+
+function ADNumericLyapunovDecreaseFunction(
+        V, f; p = SciMLBase.NullParameters(), deriv = _forward_derivative
+    )
+    return ADNumericLyapunovDecreaseFunction(V, f, p, deriv)
+end
+
+
+function (V̇::ADNumericLyapunovDecreaseFunction)(x::AbstractVector)
+    t0 = zero(eltype(x))
+    ẋ = V̇.dynamics(x, V̇.p, t0)
+    return V̇.deriv(δt -> V̇.V(x + δt * ẋ), t0)
+end
+
+function (V̇::ADNumericLyapunovDecreaseFunction)(x::AbstractMatrix)
+    t0 = zero(eltype(x))
+    ẋ = mapslices(x, dims = 1) do _x
+        return V̇.dynamics(_x, V̇.p, t0)
+    end
+    return V̇.deriv(δt -> V̇.V(x + δt * ẋ), t0)
+end
+
+struct ADNumericLyapunovControlFunction{TV, F, P, X0, D, US, U, DΘ}
+    V::TV
+    dynamics::F
+    p::P
+    fixed_point::X0
+    deriv::D
+    control_smodel::US
+    control_structure::U
+    devθ::DΘ
+end
+
+function ADNumericLyapunovControlFunction(
+        V, f, control_smodel, control_structure; p = SciMLBase.NullParameters(),
+        fixed_point = nothing, deriv = _forward_derivative
+    )
+    devθ = safe_get_device(control_smodel)
+
+    return ADNumericLyapunovControlFunction(
+        V, f, p, fixed_point, deriv, control_smodel, control_structure, devθ
+    )
+end
+
+function (V̇::ADNumericLyapunovControlFunction)(x::AbstractVector)
+    t0 = zero(eltype(x))
+    x0 = isnothing(V̇.fixed_point) ? zero(x) : V̇.fixed_point
+
+    devθ = V̇.devθ
+    devx = safe_get_device(x)
+    u = devx(V̇.control_structure(V̇.control_smodel, devθ(x), devθ(x0)))
+    ẋ = V̇.dynamics(x, u, V̇.p, t0)
+
+    return V̇.deriv(δt -> V̇.V(x + δt * ẋ), t0)
+end
+
+function (V̇::ADNumericLyapunovControlFunction)(x::AbstractMatrix)
+    t0 = zero(eltype(x))
+    x0 = isnothing(V̇.fixed_point) ? zero(x) : V̇.fixed_point
+
+    devθ = V̇.devθ
+    devx = safe_get_device(x)
+
+    ẋ = mapslices(x, dims = 1) do _x
+        u = devx(V̇.control_structure(V̇.control_smodel, devθ(_x), devθ(x0)))
+        return V̇.dynamics(_x, u, V̇.p, t0)
+    end
+
+    return V̇.deriv(δt -> V̇.V(x + δt * ẋ), t0)
 end

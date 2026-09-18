@@ -61,8 +61,7 @@ res = Optimization.solve(prob, Adam(); maxiters = 300)
     discretization.phi,
     res.u.depvar,
     structure,
-    f,
-    fixed_point
+    f
 )
 
 ################################## Simulate ###################################

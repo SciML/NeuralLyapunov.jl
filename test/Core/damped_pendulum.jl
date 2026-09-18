@@ -98,8 +98,7 @@ res = Optimization.solve(prob, Adam(0.001); maxiters = 500)
     discretization.phi,
     res.u.depvar,
     structure,
-    f,
-    zeros(length(bounds));
+    f;
     p
 )
 

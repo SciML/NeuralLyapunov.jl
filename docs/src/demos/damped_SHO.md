@@ -83,7 +83,7 @@ res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
 net = discretization.phi
 θ = res.u.depvar
 
-V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f; fixed_point, p)
 ```
 
 ## Detailed description
@@ -217,7 +217,7 @@ net = discretization.phi
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function.
 
 ```@example SHO
-V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f; fixed_point, p)
 nothing # hide
 ```
 

@@ -71,8 +71,26 @@ res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 300)
     discretization.phi,
     res.u,
     structure,
-    f,
-    fixed_point
+    f;
+    use_V̇_structure = true
+)
+
+################################## Simulate ###################################
+Δx = (ub[1] - lb[1]) / 100
+Δv = (ub[2] - lb[2]) / 100
+xs = lb[1]:Δx:ub[1]
+vs = lb[2]:Δv:ub[2]
+states = Iterators.map(collect, Iterators.product(xs, vs))
+V_samples_gpu = vec(V(reduce(hcat, states)))
+V̇_samples_gpu = vec(V̇(reduce(hcat, states)))
+
+###################### Get numerical numerical functions ######################
+# Repeated for code coverage purposes, but without using the V̇ structure
+(V, V̇) = get_numerical_lyapunov_function(
+    discretization.phi,
+    res.u,
+    structure,
+    f
 )
 
 ################################## Simulate ###################################

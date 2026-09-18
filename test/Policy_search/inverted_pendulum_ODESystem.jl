@@ -99,8 +99,8 @@ open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum)
     net,
     _θ,
     structure,
-    open_loop_pendulum_dynamics,
-    upright_equilibrium;
+    open_loop_pendulum_dynamics;
+    fixed_point = upright_equilibrium,
     p
 )
 

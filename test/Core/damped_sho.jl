@@ -70,8 +70,7 @@ res = Optimization.solve(prob, Adam(); maxiters = 450)
     discretization.phi,
     res.u.depvar,
     structure,
-    f,
-    fixed_point;
+    f;
     p,
     use_V̇_structure = true
 )

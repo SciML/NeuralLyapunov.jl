@@ -115,8 +115,8 @@ V, V̇ = get_numerical_lyapunov_function(
     net,
     _θ,
     structure,
-    open_loop_pendulum_dynamics,
-    upright_equilibrium;
+    open_loop_pendulum_dynamics;
+    fixed_point = upright_equilibrium.
     p
 )
 
@@ -282,8 +282,8 @@ V, V̇ = get_numerical_lyapunov_function(
     net,
     _θ,
     structure,
-    open_loop_pendulum_dynamics,
-    upright_equilibrium;
+    open_loop_pendulum_dynamics;
+    fixed_point = upright_equilibrium,
     p
 )
 
