@@ -104,7 +104,7 @@ open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum)
     p
 )
 
-u = get_policy(net, _θ, dim_output, dim_u)
+u = get_policy(net, _θ, dim_output, dim_u; fixed_point = upright_equilibrium)
 
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x), p, t);

@@ -287,7 +287,7 @@ V, V̇ = get_numerical_lyapunov_function(
     p
 )
 
-u = get_policy(net, _θ, dim_output, dim_u)
+u = get_policy(net, _θ, dim_output, dim_u; fixed_point = upright_equilibrium)
 nothing # hide
 ```
 
