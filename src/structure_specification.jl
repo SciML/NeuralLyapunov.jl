@@ -99,10 +99,9 @@ function Base.show(io::IO, s::NeuralLyapunovStructure)
     return
 end
 
-get_V(spec::NeuralLyapunovStructure) = spec.V
-get_V̇(spec::NeuralLyapunovStructure) = spec.V̇
-get_network_dim(spec::NeuralLyapunovStructure) = spec.network_dim
-neural_controller(::NeuralLyapunovStructure) = false
+get_V(str::NeuralLyapunovStructure) = str.V
+get_V̇(str::NeuralLyapunovStructure) = str.V̇
+get_network_dim(str::NeuralLyapunovStructure) = str.network_dim
 
 """
     NoAdditionalStructure()

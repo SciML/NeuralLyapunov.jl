@@ -25,11 +25,11 @@ struct NeuralLyapunovControlStructure{TV, TDV, U, D <: Integer, C <: Integer} <:
     control_dim::C
 end
 
-get_V(spec::NeuralLyapunovControlStructure) = spec.V
-get_V̇(spec::NeuralLyapunovControlStructure) = spec.V̇
-get_network_dim(spec::NeuralLyapunovControlStructure) = spec.network_dim
-get_control_structure(spec::NeuralLyapunovControlStructure) = spec.control_structure
-get_control_dim(spec::NeuralLyapunovControlStructure) = spec.control_dim
+get_V(str::NeuralLyapunovControlStructure) = str.V
+get_V̇(str::NeuralLyapunovControlStructure) = str.V̇
+get_network_dim(str::NeuralLyapunovControlStructure) = str.network_dim
+get_control_structure(str::NeuralLyapunovControlStructure) = str.control_structure
+get_control_dim(str::NeuralLyapunovControlStructure) = str.control_dim
 
 function Base.show(io::IO, s::NeuralLyapunovControlStructure)
     n = s.network_dim
