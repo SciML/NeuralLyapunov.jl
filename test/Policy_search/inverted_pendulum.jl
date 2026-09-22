@@ -106,7 +106,7 @@ net = discretization.phi
     p
 )
 
-u = get_policy(net, θ, dim_output, dim_u)
+u = get_policy(net, θ, dim_output, dim_u; fixed_point = upright_equilibrium)
 
 closed_loop_pendulum_dynamics(x) = open_loop_pendulum_dynamics(x, u(x), p, 0)
 

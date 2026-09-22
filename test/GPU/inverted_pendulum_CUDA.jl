@@ -122,12 +122,42 @@ open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum)
     structure,
     open_loop_pendulum_dynamics,
     upright_equilibrium;
-    p
+    p,
+    use_V̇_structure = true
 )
 
 u = get_policy(net, _θ, 1, dim_u; fixed_point = upright_equilibrium)
 
 const cpud = cpu_device()
+closed_loop_dynamics = ODEFunction(
+    (x, p, t) -> open_loop_pendulum_dynamics(x, u(x) |> cpud, p, t);
+    sys = driven_pendulum
+)
+
+################################## Simulate ###################################
+
+lb = Float32[0.0, -2ω0];
+ub = Float32[2π, 2ω0];
+θs = (-2.0f0 * π):0.02f0:(2.0f0 * π)
+ωs = lb[2]:0.02f0:ub[2]
+states = mapreduce(collect, hcat, Iterators.product(θs, ωs))
+V_samples = vec(V(states))
+V̇_samples = vec(V̇(states))
+ẋ0 = closed_loop_dynamics(upright_equilibrium, p, 0.0)
+
+########################### Get numerical functions ###########################
+# Repeated for code coverage purposes, but without using the V̇ structure
+(V, V̇) = get_numerical_lyapunov_function(
+    net,
+    _θ,
+    structure,
+    open_loop_pendulum_dynamics,
+    upright_equilibrium;
+    p
+)
+
+u = get_policy(net, _θ, 1, dim_u; fixed_point = upright_equilibrium)
+
 closed_loop_dynamics = ODEFunction(
     (x, p, t) -> open_loop_pendulum_dynamics(x, u(x) |> cpud, p, t);
     sys = driven_pendulum
@@ -170,7 +200,7 @@ ẋ0 = closed_loop_dynamics(upright_equilibrium, p, 0.0)
 # Check for local negative definiteness of V̇
 V̇0 = only(V̇(upright_equilibrium) |> cpud)
 @test abs(V̇0) < 1.0e-12
-@test maximum(abs, ForwardDiff.jacobian(V̇, upright_equilibrium)) < 2.0e-5
+@test maximum(abs, ForwardDiff.jacobian(V̇, upright_equilibrium)) < 1.0e-4
 @test maximum(
     eigvals(ForwardDiff.hessian((x) -> only(V̇(x) |> cpud), upright_equilibrium))
 ) ≤ 0

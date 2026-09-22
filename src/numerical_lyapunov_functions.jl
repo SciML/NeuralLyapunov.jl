@@ -178,25 +178,21 @@ Return the network as a function of state alone.
 
 # Arguments
   - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
-    output, or a `Vector` of the same with one entry per neural network output.
+    output, or an `AbstractVector` of the same with one entry per neural network output.
   - `θ`: the parameters of the neural network; If the neural network has multiple outputs,
-    `θ[:φ1]` should be the parameters of the first neural network output, `θ[:φ2]` the
-    parameters of the second (if there are multiple), and so on. If the neural network has a
-    single output, `θ` should be the parameters of the network.
-  - `idx`: the neural network outputs to include in the returned function; defaults to all
-    and only applicable when `phi isa Vector`.
+    `θ[:φi]` should be the parameters `phi[i]`. If the neural network has a single output,
+    `θ` should be the parameters of the network. i.e., if `phi isa AbstractVector`, the
+    neural network output should be `[ phi(x, θ[:φi]) for i in eachindex(phi) ]`, whereas if
+    `phi` is a single function, the neural network output should be `phi(x, θ)`.
+  - `idx`: the neural network outputs to include in the returned function; defaults to
+    `eachindex(phi)` and only applicable when `phi isa AbstractVector`.
 """
-function phi_to_net(phi, θ)
-    return Base.Fix2(phi, θ)
-end
+phi_to_net(phi, θ) = Base.Fix2(phi, θ)
 
-function phi_to_net(phi::Vector, θ; idx = eachindex(phi))
+function phi_to_net(phi::AbstractVector, θ; idx = eachindex(phi))
     let _θ = θ, φ = phi, _idx = idx
         return function (x)
-            return reduce(
-                vcat,
-                Array(φ[i](x, _θ[Symbol(:φ, i)])) for i in _idx
-            )
+            return reduce(vcat, Array(φ[i](x, _θ[Symbol(:φ, i)])) for i in _idx)
         end
     end
 end
