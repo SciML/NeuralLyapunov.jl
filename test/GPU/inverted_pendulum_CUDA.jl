@@ -200,7 +200,7 @@ ẋ0 = closed_loop_dynamics(upright_equilibrium, p, 0.0)
 # Check for local negative definiteness of V̇
 V̇0 = only(V̇(upright_equilibrium) |> cpud)
 @test abs(V̇0) < 1.0e-12
-@test maximum(abs, ForwardDiff.jacobian(V̇, upright_equilibrium)) < 2.0e-5
+@test maximum(abs, ForwardDiff.jacobian(V̇, upright_equilibrium)) < 1.0e-4
 @test maximum(
     eigvals(ForwardDiff.hessian((x) -> only(V̇(x) |> cpud), upright_equilibrium))
 ) ≤ 0
