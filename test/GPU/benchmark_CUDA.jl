@@ -43,7 +43,7 @@ const gpud = gpu_device()
 
     # Define training strategy
     strategy = QuasiRandomTraining(2500)
-    discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+    discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
     # Define neural Lyapunov structure and minimization condition
     structure = NoAdditionalStructure()
@@ -78,8 +78,7 @@ const gpud = gpu_device()
         n = 1000,
         optimization_args,
         rng,
-        init_params = ps,
-        init_states = st
+        init_params = ps
     )
 
     # AdditiveLyapunovNet should have no trouble with the globally stable damped SHO, so we
@@ -204,7 +203,7 @@ end
 
     # Define training strategy
     strategy = QuasiRandomTraining(2500)
-    discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+    discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
     # Define neural Lyapunov structure and minimization condition
     structure = NoAdditionalStructure()
@@ -240,7 +239,6 @@ end
         optimization_args,
         rng,
         init_params = ps,
-        init_states = st,
         ensemble_alg = EnsembleGPUArray(LuxCUDA.CUDABackend())
     )
 
@@ -346,8 +344,7 @@ end
         fixed_point = upright_equilibrium,
         optimization_args,
         endpoint_check,
-        init_params = ps,
-        init_states = st
+        init_params = ps
     )
     cm = out.confusion_matrix
 

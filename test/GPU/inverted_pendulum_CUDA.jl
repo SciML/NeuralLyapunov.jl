@@ -72,7 +72,7 @@ st = st |> gpud |> f32
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(10000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure and corresponding minimization condition
 structure = add_policy_search(NoAdditionalStructure(), dim_u)
@@ -102,17 +102,19 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 
 sym_prob = symbolic_discretize(pde_system, discretization)
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(1.0f-2); maxiters = 500)
-prob = Optimization.remake(prob; u0 = res.u)
-res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 500)
+res = Optimization.solve(prob, Adam(1.0f-2); maxiters = 500, callback = resample)
+prob = Optimization.remake(prob; u0 = res.original_sol.u)
+res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 500, callback = resample)
 
 ########################### Get numerical functions ###########################
 
-net = discretization.phi
-_θ = res.u.depvar
+net, _θ = get_network_and_parameters(prob, res)
 
 open_loop_pendulum_dynamics = ODEInputFunction(driven_pendulum)
 

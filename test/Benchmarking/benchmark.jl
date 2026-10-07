@@ -1,4 +1,5 @@
 using NeuralPDE, NeuralLyapunov, Lux, NeuralLyapunovProblemLibrary, SciMLBase
+using Integrals: GaussLegendre
 using ModelingToolkit: unbound_inputs, mtkcompile, unknowns, @mtkcompile, @named
 import Boltz.Layers: PeriodicEmbedding, MLP
 using OptimizationOptimisers: Adam
@@ -161,7 +162,9 @@ end
 
     # Define optimization parameters
     opt = [Adam(0.05), Adam(0.001)]
-    optimization_args = [[:maxiters => 300], [:maxiters => 300]]
+    n_user_callback_calls = Ref(0)
+    user_callback = (state, loss) -> (n_user_callback_calls[] += 1; false)
+    optimization_args = [[:maxiters => 300, :callback => user_callback], [:maxiters => 300]]
 
     # Run benchmark
     endpoint_check = (x) -> ≈([sin(x[1]), cos(x[1]), x[2]], [0, -1, 0], atol = 5.0e-3)
@@ -183,8 +186,7 @@ end
         parameter_syms,
         endpoint_check,
         classifier,
-        init_params = ps,
-        init_states = st
+        init_params = ps
     )
 
     # Resulting controller should drive more states to equilibrium than not
@@ -225,6 +227,16 @@ end
     # Check predicted classification
     predicted = benchmarking_results.data[!, "Predicted in RoA"]
     @test all(classifier.(V_samples, V̇_samples, states) .== predicted)
+
+    # Losses are logged every 50 iterations, counted across both optimization passes
+    losses = benchmarking_results.training_losses
+    @test losses.Iteration == 0:50:(50 * (size(losses, 1) - 1))
+    @test last(losses.Iteration) ≥ 550
+    @test all(isfinite, losses.Loss)
+    @test last(losses.Loss) < first(losses.Loss)
+
+    # A user-supplied callback still runs alongside the loss logging
+    @test n_user_callback_calls[] ≥ 300
 end
 
 ############################### Damped pendulum ###############################
@@ -253,7 +265,7 @@ end
     ]
 
     # Define neural network discretization
-    strategy = QuadratureTraining()
+    strategy = QuadratureTraining(; quadrature_alg = GaussLegendre(n = 30))
 
     # Define neural Lyapunov structure and corresponding minimization condition
     periodic_pos_def = function (state, fixed_point)
@@ -405,8 +417,7 @@ end
         fixed_point = upright_equilibrium,
         optimization_args,
         endpoint_check,
-        init_params = ps,
-        init_states = st
+        init_params = ps
     )
     cm = out.confusion_matrix
 

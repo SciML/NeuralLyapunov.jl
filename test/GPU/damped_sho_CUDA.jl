@@ -38,7 +38,7 @@ st = st |> gpud |> f32
 
 # Define training strategy
 strategy = QuasiRandomTraining(2500)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure and corresponding minimization condition
 structure = NoAdditionalStructure()
@@ -58,18 +58,22 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 ######################## Construct OptimizationProblem ########################
 
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 sym_prob = symbolic_discretize(pde_system, discretization)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300, callback = resample)
+prob = Optimization.remake(prob, u0 = res.original_sol.u)
+res = Optimization.solve(prob, Adam(1.0f-4); maxiters = 300, callback = resample)
 
 ###################### Get numerical numerical functions ######################
+phi, θ = get_network_and_parameters(prob, res)
 (V, V̇) = get_numerical_lyapunov_function(
-    discretization.phi,
-    res.u,
+    phi,
+    θ,
     structure,
     f,
     fixed_point;
@@ -87,9 +91,10 @@ V_samples_gpu = vec(V(reduce(hcat, states)))
 
 ###################### Get numerical numerical functions ######################
 # Repeated for code coverage purposes, but without using the V̇ structure
+phi, θ = get_network_and_parameters(prob, res)
 (V, V̇) = get_numerical_lyapunov_function(
-    discretization.phi,
-    res.u,
+    phi,
+    θ,
     structure,
     f,
     fixed_point

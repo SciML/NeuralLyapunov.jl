@@ -26,8 +26,8 @@ all with use of
 [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/) for
 the evaluation simulations.
 
-When `init_params` or `init_states` are not provided, they are generated using
-`Lux.initialparameters` or `Lux.initialstates`, respectively. In that case, the type of any
+When `init_params` is not provided, it is generated using `Lux.initialparameters`. In that
+case, the type of any
 floating point parameters is inferred from `simulation_time`, the system parameters, and the
 bounds, in that order. If any of those are not floats (e.g., integers), the next is
 considered. If none are floats, `Float64` is used. This inference is important, since
@@ -87,7 +87,10 @@ the user or generated automatically).
     `Pair`s. For more information, see the
     [Optimization.jl docs](https://docs.sciml.ai/Optimization/stable/API/solve/).
   - `log_frequency`: frequency (in iterations) at which to log the training loss; defaults
-    to `50`.
+    to `50`. The loss is recorded by an Optimization.jl callback, which also draws new
+    collocation points with `NeuralPDE.resample!` at every iteration (a no-op for training
+    strategies that do not resample) and is called before any `callback` supplied in
+    `optimization_args`.
   - `simulation_time`: simulation end time for checking if trajectory from a point reaches
     equilibrium
   - `ode_solver`: differential equation solver used in simulating the system for evaluation.
@@ -106,11 +109,8 @@ the user or generated automatically).
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
   - `init_params`: initial parameters for the neural network; defaults to `nothing`, in
     which case the initial parameters are generated using `Lux.initialparameters` and `rng`.
-  - `init_states`: initial states for the neural network; defaults to `nothing`, in which
-    case the initial states are generated using `Lux.initialstates` and `rng`. `init_states`
-    should be stored on the same device as `init_params`.
-  - `rng`: random number generator used to generate initial parameters and states, as well
-    as in the default sampling algorithm; defaults to a `StableRNG` with seed `0`.
+  - `rng`: random number generator used to generate initial parameters, as well as in the
+    default sampling algorithm; defaults to a `StableRNG` with seed `0`.
 
 # Output Fields
   - `confusion_matrix`: confusion matrix of the neural Lyapunov classifier.
@@ -129,10 +129,11 @@ the user or generated automatically).
       "TN" (true negative), "FP" (false positive), or "FN" (false negative).
   - `training_time`: time taken to train the neural Lyapunov function (in seconds).
   - `evaluation_time`: time taken to run the evaluation simulations (in seconds).
-  - `θ`: the parameters of the neural Lyapunov function.
-  - `phi`: the neural network, represented as `phi(x, θ)` if the neural network has a single
-    output, or a `Vector` of the same with one entry per neural network output (to be used
-    with [`get_numerical_lyapunov_function`](@ref)).
+  - `θ`: the parameters of the neural Lyapunov function, as returned by
+    [`get_network_and_parameters`](@ref).
+  - `phi`: the neural network, as a `Vector` with one entry per neural network output (to
+    be used with [`get_numerical_lyapunov_function`](@ref)), as returned by
+    [`get_network_and_parameters`](@ref).
   - `V`: the neural Lyapunov function.
   - `V̇`: the Lyapunov decrease function.
   - `training_losses`: a `DataFrame` containing the training losses logged during training,
@@ -157,7 +158,6 @@ function benchmark(
         endpoint_check = nothing,
         classifier = (V, V̇, x) -> V̇ < zero(V̇),
         init_params = nothing,
-        init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleDistributed(),
@@ -209,12 +209,6 @@ function benchmark(
         init_params
     end
 
-    init_states = if init_states === nothing
-        get_init_states(chain, rng) |> type_changer
-    else
-        init_states
-    end
-
     fixed_point = if fixed_point === nothing
         zeros(default_float_type, length(bounds))
     else
@@ -258,7 +252,6 @@ function benchmark(
         ode_solver_args,
         endpoint_check,
         init_params,
-        init_states,
         ensemble_alg,
         log_frequency,
         logger
@@ -286,7 +279,6 @@ function benchmark(
         atol = 1.0e-6,
         endpoint_check = nothing,
         init_params = nothing,
-        init_states = nothing,
         rng = StableRNG(0),
         sample_alg = LatinHypercubeSample(rng),
         ensemble_alg = EnsembleDistributed(),
@@ -318,12 +310,6 @@ function benchmark(
         get_init_params(chain, rng) |> type_changer
     else
         init_params
-    end
-
-    init_states = if init_states === nothing
-        get_init_states(chain, rng) |> type_changer
-    else
-        init_states
     end
 
     fixed_point = if fixed_point === nothing
@@ -373,7 +359,6 @@ function benchmark(
         ode_solver_args,
         endpoint_check,
         init_params,
-        init_states,
         ensemble_alg,
         log_frequency,
         logger
@@ -400,29 +385,30 @@ function _benchmark(
         ode_solver_args,
         endpoint_check,
         init_params,
-        init_states,
         ensemble_alg,
         log_frequency,
         logger
     )
-    log_options = LogOptions(; log_frequency)
-
     # Construct OptimizationProblem
-    discretization = PhysicsInformedNN(
-        chain, strategy; init_params, init_states, logger, log_options
-    )
+    discretization = PhysicsInformedNN(chain, strategy; init_params)
     opt_prob = discretize(pde_system, discretization)
 
     # Solve OptimizationProblem
+    log_loss = LossLoggingCallback(logger, log_frequency)
+    md = pinn_metadata(opt_prob)
+    training_callback = function (state, loss)
+        log_loss(state, loss)
+        resample!(state.p, md)
+        return false
+    end
+    optimization_args = with_training_callback(optimization_args, training_callback)
     training = @timed benchmark_solve(opt_prob, opt, optimization_args)
     training_time = training.time
 
     # Get parameters from optimization result
-    phi = PhysicsInformedNN(
-        chain, strategy; init_params = init_params |> cpud,
-        init_states = init_states |> cpud
-    ).phi
-    θ = (phi isa AbstractArray ? training.value.depvar : training.value) |> cpud
+    phi, θ = get_network_and_parameters(opt_prob, training.value)
+    θ = θ |> cpud
+    T = eltype(first(θ))
 
     V, V̇ = get_numerical_lyapunov_function(
         phi,
@@ -440,7 +426,7 @@ function _benchmark(
     end
 
     # Sample Lyapunov function and decrease function
-    states = sample(n, eltype(θ).(lb), eltype(θ).(ub), sample_alg)
+    states = sample(n, T.(lb), T.(ub), sample_alg)
     V_samples = vec(V(states))
     V̇_samples = vec(V̇(states))
 
@@ -450,7 +436,7 @@ function _benchmark(
         V̇_samples,
         f;
         classifier,
-        simulation_time = eltype(θ)(simulation_time),
+        simulation_time = T(simulation_time),
         p,
         ode_solver,
         ode_solver_args,
@@ -519,10 +505,7 @@ end
 
 function benchmark_solve(prob, opt, optimization_args)
     # Solve OptimizationProblem
-    res = solve(prob, opt; optimization_args...)
-
-    # Return optimization result
-    return res.u
+    return solve(prob, opt; optimization_args...)
 end
 
 function benchmark_solve(
@@ -534,12 +517,11 @@ function benchmark_solve(
     res = Ref{Any}()
     for (_opt, args) in zip(opt, optimization_args)
         _res = solve(prob, _opt; args...)
-        prob = remake(prob, u0 = _res.u)
+        prob = remake(prob, u0 = _trained_parameters(_res))
         res[] = _res
     end
 
-    # Return optimization result
-    return res[].u
+    return res[]
 end
 
 function benchmark_solve(prob, opt::AbstractVector, optimization_args)
@@ -547,12 +529,11 @@ function benchmark_solve(prob, opt::AbstractVector, optimization_args)
     res = Ref{Any}()
     for _opt in opt
         _res = solve(prob, _opt; optimization_args...)
-        prob = remake(prob, u0 = _res.u)
+        prob = remake(prob, u0 = _trained_parameters(_res))
         res[] = _res
     end
 
-    # Return optimization result
-    return res[].u
+    return res[]
 end
 
 function simulate_ensemble(
@@ -606,15 +587,5 @@ function get_init_params(chain, rng)
         end
     else
         LuxCore.initialparameters(rng, chain)
-    end
-end
-
-function get_init_states(chain, rng)
-    return if chain isa AbstractArray
-        map(chain) do c
-            LuxCore.initialstates(rng, c)
-        end
-    else
-        LuxCore.initialstates(rng, chain)
     end
 end

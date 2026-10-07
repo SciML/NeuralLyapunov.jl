@@ -43,7 +43,7 @@ ps = ps |> ComponentArray |> f64
 st = st |> f64
 
 strategy = QuasiRandomTraining(500)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 periodic_pos_def = function (state, fixed_point)
     θ, ω = state
@@ -95,8 +95,9 @@ SUITE["solve"]["adam_5iters"] = @benchmarkable solve(
 # Lyapunov function extraction + evaluation (untrained initial params)
 # =============================================================================
 
+phi, θ = get_network_and_parameters(prob, prob.u0)
 V, V̇ = get_numerical_lyapunov_function(
-    discretization.phi, prob.u0.depvar, structure, f,
+    phi, θ, structure, f,
     zeros(length(bounds)); p
 )
 

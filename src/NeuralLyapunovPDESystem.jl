@@ -221,13 +221,17 @@ function NeuralLyapunovPDESystem(
     state = [only(@parameters $s) for s in state_syms]
 
     ###################### Remove derivatives in domains ######################
-    domains = map(d -> operation(diff2term(d.variables)) ∈ d.domain, bounds)
-    domain_vars = map(d -> d.variables, domains)
+    domain_vars = map(d -> operation(diff2term(d.variables)), bounds)
     if Set(_state) != Set(domain_vars)
         error(
             "Domain variables from `domains` do not match those extracted from " *
                 "`dynamics`. Got $_state from `dynamics` and $domain_vars from `domains`."
         )
+    end
+    # The domains must be over the independent variables of the PDESystem (`state`), not
+    # the operations of the unknowns of `dynamics`, which print identically
+    domains = map(domain_vars, bounds) do var, d
+        state[findfirst(isequal(var), _state)] ∈ d.domain
     end
 
     ########################### Construct PDESystem ###########################
