@@ -30,7 +30,7 @@ using OrdinaryDiffEqTsit5: AutoTsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
-using MLDataDevices: cpu_device
+using MLDataDevices: CPUDevice, cpu_device, get_device_type
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample

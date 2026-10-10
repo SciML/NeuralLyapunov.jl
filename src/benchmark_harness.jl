@@ -20,11 +20,12 @@ Supplying a vector of `Pair`s in `optimization_args` will use the same arguments
 optimization pass, and supplying a vector of such vectors will use potentially different
 arguments for each optimization pass.
 
-To train using GPU, users must provide an `init_params` stored on the GPU. Even in that
-case, the returned parameters `θ` will be moved to the CPU, which does not interfere at
-all with use of
-[`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/) for
-the evaluation simulations.
+Training runs on the CPU: NeuralPDE 7 does not support GPU training of a `PDESystem`
+(see [NeuralPDE.jl#1161](https://github.com/SciML/NeuralPDE.jl/issues/1161)), so an
+`init_params` stored on a GPU (or other accelerator) throws an `ArgumentError`. The
+evaluation simulations can still run on the GPU by passing, e.g.,
+[`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/manual/ensemblegpuarray/) as
+`ensemble_alg`.
 
 When `init_params` is not provided, it is generated using `Lux.initialparameters`. In that
 case, the type of any
@@ -107,8 +108,9 @@ the user or generated automatically).
     endpoint is approximately the fixed point and `false` otherwise; defaults to
     `(x) -> ≈(x, fixed_point; atol=atol)`.
   - `atol`: absolute tolerance used in the default value for `endpoint_check`.
-  - `init_params`: initial parameters for the neural network; defaults to `nothing`, in
-    which case the initial parameters are generated using `Lux.initialparameters` and `rng`.
+  - `init_params`: initial parameters for the neural network, stored on the CPU; defaults
+    to `nothing`, in which case the initial parameters are generated using
+    `Lux.initialparameters` and `rng`.
   - `rng`: random number generator used to generate initial parameters, as well as in the
     default sampling algorithm; defaults to a `StableRNG` with seed `0`.
 
@@ -138,7 +140,9 @@ the user or generated automatically).
   - `V̇`: the Lyapunov decrease function.
   - `training_losses`: a `DataFrame` containing the training losses logged during training,
     with columns:
-    - "Iteration": iteration number at which the loss was logged.
+    - "Iteration": training iteration at which the loss was logged: the iteration
+      reported by the optimizer (`state.iter` in the Optimization.jl callback), counted
+      continuously across optimization passes when `opt` is a vector.
     - "Loss": the full weighted training loss at that iteration.
 """
 function benchmark(
@@ -389,6 +393,8 @@ function _benchmark(
         log_frequency,
         logger
     )
+    check_host_params(init_params)
+
     # Construct OptimizationProblem
     discretization = PhysicsInformedNN(chain, strategy; init_params)
     opt_prob = discretize(pde_system, discretization)
@@ -402,7 +408,7 @@ function _benchmark(
         return false
     end
     optimization_args = with_training_callback(optimization_args, training_callback)
-    training = @timed benchmark_solve(opt_prob, opt, optimization_args)
+    training = @timed benchmark_solve(opt_prob, opt, optimization_args, log_loss)
     training_time = training.time
 
     # Get parameters from optimization result
@@ -503,19 +509,22 @@ function _benchmark(
     )
 end
 
-function benchmark_solve(prob, opt, optimization_args)
+function benchmark_solve(prob, opt, optimization_args, log_loss)
     # Solve OptimizationProblem
+    start_pass!(log_loss)
     return solve(prob, opt; optimization_args...)
 end
 
 function benchmark_solve(
         prob,
         opt::AbstractVector,
-        optimization_args::AbstractVector{<:AbstractVector}
+        optimization_args::AbstractVector{<:AbstractVector},
+        log_loss
     )
     # Solve OptimizationProblem
     res = Ref{Any}()
     for (_opt, args) in zip(opt, optimization_args)
+        start_pass!(log_loss)
         _res = solve(prob, _opt; args...)
         prob = remake(prob, u0 = _trained_parameters(_res))
         res[] = _res
@@ -524,10 +533,11 @@ function benchmark_solve(
     return res[]
 end
 
-function benchmark_solve(prob, opt::AbstractVector, optimization_args)
+function benchmark_solve(prob, opt::AbstractVector, optimization_args, log_loss)
     # Solve OptimizationProblem
     res = Ref{Any}()
     for _opt in opt
+        start_pass!(log_loss)
         _res = solve(prob, _opt; optimization_args...)
         prob = remake(prob, u0 = _trained_parameters(_res))
         res[] = _res
@@ -578,6 +588,19 @@ function simulate_ensemble(
     actual = endpoint_check.(endpoints)
 
     return (; endpoints, actual, predicted, evaluation_time)
+end
+
+function check_host_params(init_params)
+    device = get_device_type(init_params)
+    device === Nothing || device <: CPUDevice || throw(
+        ArgumentError(
+            "`init_params` is stored on a $(device), but NeuralPDE 7 only supports \
+            training a `PDESystem` on the CPU \
+            (https://github.com/SciML/NeuralPDE.jl/issues/1161). Move `init_params` to \
+            the CPU, e.g., with `cpu_device()(init_params)`."
+        )
+    )
+    return nothing
 end
 
 function get_init_params(chain, rng)

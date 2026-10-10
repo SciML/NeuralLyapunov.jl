@@ -36,23 +36,48 @@ end
 """
     LossLoggingCallback(logger, log_frequency)
 
-Optimization.jl callback that records the training loss in `logger` every `log_frequency`
-iterations. Iterations are counted from `0` across every `solve` call that uses the callback,
-so training with several optimizers in sequence produces one continuous loss history.
+Optimization.jl callback that records the training loss in `logger` whenever the training
+iteration is a multiple of `log_frequency`.
+
+The training iteration is the solver's own iteration counter (`state.iter`) plus the number
+of iterations completed in earlier optimization passes; call `start_pass!` before
+each `solve` so that training with several optimizers in sequence produces one continuous
+loss history. Repeated callbacks for an iteration that has already been seen (e.g., the
+final callback that OptimizationOptimisers issues with `save_best = true`, or the initial
+iteration `0` that Optim.jl reports at the start of a pass) are ignored.
 """
 mutable struct LossLoggingCallback{L <: NeuralLyapunovBenchmarkLogger}
     logger::L
     log_frequency::Int
-    iteration::Int
+    pass_offset::Int
+    pass_iterations::Int
+    last_iteration::Int
 end
 
-LossLoggingCallback(logger, log_frequency) = LossLoggingCallback(logger, log_frequency, 0)
+function LossLoggingCallback(logger, log_frequency)
+    return LossLoggingCallback(logger, log_frequency, 0, 0, typemin(Int))
+end
+
+"""
+    start_pass!(cb::LossLoggingCallback)
+
+Mark the start of a new optimization pass: iterations reported by the next `solve` are
+counted after the last iteration of the previous pass.
+"""
+function start_pass!(cb::LossLoggingCallback)
+    cb.pass_offset += cb.pass_iterations
+    cb.pass_iterations = 0
+    return cb
+end
 
 function (cb::LossLoggingCallback)(state, loss)
-    if cb.iteration % cb.log_frequency == 0
-        log_loss!(cb.logger, loss, cb.iteration)
+    iteration = cb.pass_offset + state.iter
+    iteration > cb.last_iteration || return false
+    cb.last_iteration = iteration
+    cb.pass_iterations = max(cb.pass_iterations, state.iter)
+    if iteration % cb.log_frequency == 0
+        log_loss!(cb.logger, loss, iteration)
     end
-    cb.iteration += 1
     return false
 end
 

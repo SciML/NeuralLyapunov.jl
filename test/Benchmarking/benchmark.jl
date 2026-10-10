@@ -228,10 +228,9 @@ end
     predicted = benchmarking_results.data[!, "Predicted in RoA"]
     @test all(classifier.(V_samples, V̇_samples, states) .== predicted)
 
-    # Losses are logged every 50 iterations, counted across both optimization passes
+    # Losses are logged every 50 iterations, counted across both 300-iteration passes
     losses = benchmarking_results.training_losses
-    @test losses.Iteration == 0:50:(50 * (size(losses, 1) - 1))
-    @test last(losses.Iteration) ≥ 550
+    @test losses.Iteration == 50:50:600
     @test all(isfinite, losses.Loss)
     @test last(losses.Loss) < first(losses.Loss)
 

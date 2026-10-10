@@ -84,11 +84,13 @@ SUITE["construction"]["discretize"] = @benchmarkable discretize(
 # =============================================================================
 
 prob = discretize(pde_system, discretization)
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 SUITE["solve"] = BenchmarkGroup()
 
 SUITE["solve"]["adam_5iters"] = @benchmarkable solve(
-    $prob, Adam(0.1); maxiters = 5
+    $prob, Adam(0.1); maxiters = 5, callback = $resample
 ) seconds = 240
 
 # =============================================================================

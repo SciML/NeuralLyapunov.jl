@@ -44,6 +44,9 @@ run_tests(;
             end
         end,
         "Benchmarking" => function ()
+            @time @safetestset "Benchmark loss logging" begin
+                include(joinpath(@__DIR__, "Benchmarking", "logger.jl"))
+            end
             return @time @safetestset "Benchmarking tool" begin
                 include(joinpath(@__DIR__, "Benchmarking", "benchmark.jl"))
             end
@@ -64,12 +67,6 @@ run_tests(;
         "GPU" => (;
             env = joinpath(@__DIR__, "GPU"),
             body = function ()
-                @time @safetestset "CUDA test - Damped SHO" begin
-                    include(joinpath(@__DIR__, "GPU", "damped_sho_CUDA.jl"))
-                end
-                @time @safetestset "CUDA test - Inverted Pendulum" begin
-                    include(joinpath(@__DIR__, "GPU", "inverted_pendulum_CUDA.jl"))
-                end
                 return @time @safetestset "Benchmarking tool - CUDA" begin
                     include(joinpath(@__DIR__, "GPU", "benchmark_CUDA.jl"))
                 end
