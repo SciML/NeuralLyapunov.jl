@@ -192,7 +192,8 @@ Another option is  [`EnsembleGPUArray`](https://docs.sciml.ai/DiffEqGPU/stable/m
 Note that this option is imported from `DiffEqGPU` and has certain restrictions on the dynamics.
 For example, the dynamics may not allocate memory (build arrays), so in-place dynamics must be defined in addition to the out-of-place dynamics that NeuralLyapunov usually requires.
 (Providing both can be achieved by defining both methods for the same function and passing in an `ODEFunction` made from that function.)
-For this reason, using `EnsembleDistributed()` or `EnsembleThreads()` is recommended, even when training occurs on GPU.
+For this reason, using `EnsembleDistributed()` or `EnsembleThreads()` is recommended.
+In either case, training itself runs on the CPU: NeuralPDE 7 does not support GPU training of a `PDESystem` (see [NeuralPDE.jl#1161](https://github.com/SciML/NeuralPDE.jl/issues/1161)), so `ensemble_alg` only controls where the evaluation simulations run.
 
 ```@example benchmarking
 using SciMLBase: EnsembleSerial
