@@ -44,6 +44,9 @@ run_tests(;
             end
         end,
         "Benchmarking" => function ()
+            @time @safetestset "Benchmark driver" begin
+                include(joinpath(@__DIR__, "Benchmarking", "driver.jl"))
+            end
             @time @safetestset "Benchmark loss logging" begin
                 include(joinpath(@__DIR__, "Benchmarking", "logger.jl"))
             end

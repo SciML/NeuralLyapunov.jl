@@ -84,8 +84,12 @@ SUITE["construction"]["discretize"] = @benchmarkable discretize(
 # =============================================================================
 
 prob = discretize(pde_system, discretization)
-md = pinn_metadata(prob)
-resample = (state, loss) -> (resample!(state.p, md); false)
+resample = if isdefined(NeuralPDE, :pinn_metadata)
+    md = NeuralPDE.pinn_metadata(prob)
+    (state, loss) -> (NeuralPDE.resample!(state.p, md); false)
+else
+    (state, loss) -> false
+end
 
 SUITE["solve"] = BenchmarkGroup()
 
@@ -97,7 +101,11 @@ SUITE["solve"]["adam_5iters"] = @benchmarkable solve(
 # Lyapunov function extraction + evaluation (untrained initial params)
 # =============================================================================
 
-phi, θ = get_network_and_parameters(prob, prob.u0)
+phi, θ = if isdefined(NeuralLyapunov, :get_network_and_parameters)
+    get_network_and_parameters(prob, prob.u0)
+else
+    discretization.phi, prob.u0.depvar
+end
 V, V̇ = get_numerical_lyapunov_function(
     phi, θ, structure, f,
     zeros(length(bounds)); p

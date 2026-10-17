@@ -25,6 +25,7 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
+BenchmarkTools = "1.8"
 Boltz = "1.7.1"
 ComponentArrays = "0.15.39"
 DataFrames = "1.8"
@@ -57,6 +58,7 @@ Test = "1"
 julia = "1.10"
 
 [extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
@@ -69,4 +71,4 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ComponentArrays", "Integrals", "ModelingToolkit", "NeuralLyapunovProblemLibrary", "Optimization", "OptimizationOptimisers", "Random", "SafeTestsets", "SciMLTesting", "Test"]
+test = ["BenchmarkTools", "ComponentArrays", "Integrals", "ModelingToolkit", "NeuralLyapunovProblemLibrary", "Optimization", "OptimizationOptimisers", "Random", "SafeTestsets", "SciMLTesting", "Test"]
