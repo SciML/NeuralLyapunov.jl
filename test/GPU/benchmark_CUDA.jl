@@ -2,11 +2,12 @@ using NeuralPDE, NeuralLyapunov, SciMLBase
 using OptimizationOptimisers: Adam
 using Random
 using Lux, LuxCUDA, ComponentArrays
+using MLDataDevices: CUDADevice, get_device_type
 using Boltz.Layers: MLP
 using Test, StableRNGs
 using DiffEqGPU: EnsembleGPUArray
 
-const gpud = gpu_device()
+const gpud = CUDADevice()
 
 ###################### Damped simple harmonic oscillator ######################
 @testset "GPU-resident init_params are rejected" begin
@@ -38,6 +39,7 @@ const gpud = gpu_device()
     )
     ps, st = Lux.setup(rng, chain)
     ps = ps |> ComponentArray |> gpud |> f32
+    @test get_device_type(ps) <: CUDADevice
 
     # Define training strategy
     strategy = QuasiRandomTraining(2500)
