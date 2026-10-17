@@ -19,8 +19,9 @@ NeuralLyapunovPDESystem
 ## Extracting the numerical Lyapunov function
 
 We provide the following convenience function for generating the Lyapunov function after the parameters have been found.
-If the `PDESystem` was solved using NeuralPDE.jl and Optimization.jl, then the argument `phi` is a field of the output of `NeuralPDE.discretize` and the argument `θ` is `res.u.depvar` where `res` is the result of the optimization.
+If the `PDESystem` was solved using NeuralPDE.jl and Optimization.jl, then the arguments `phi` and `θ` are returned by [`get_network_and_parameters`](@ref), called with the `OptimizationProblem` returned by `NeuralPDE.discretize` and the result of the optimization.
 
 ```@docs
+get_network_and_parameters
 get_numerical_lyapunov_function
 ```

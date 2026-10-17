@@ -23,14 +23,14 @@ import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake
 import Base.show
-using SymbolicIndexingInterface: SymbolCache, variable_symbols
-using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
+using SymbolicIndexingInterface: SymbolCache, variable_symbols, getsym, ProblemState
+using NeuralPDE: PhysicsInformedNN, discretize, pinn_metadata, resample!
 import NeuralPDE
 using OrdinaryDiffEqTsit5: AutoTsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
-using MLDataDevices: cpu_device
+using MLDataDevices: CPUDevice, cpu_device, get_device_type
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
@@ -52,6 +52,7 @@ include("decrease_conditions.jl")
 include("decrease_conditions_RoA_aware.jl")
 include("NeuralLyapunovPDESystem.jl")
 include("numerical_lyapunov_functions.jl")
+include("neuralpde_interface.jl")
 include("local_lyapunov.jl")
 include("policy_search.jl")
 include("logger.jl")
@@ -75,7 +76,7 @@ export LyapunovDecreaseCondition, StabilityISL, AsymptoticStability, Exponential
     DontCheckDecrease
 
 # Setting up the PDESystem for NeuralPDE
-export NeuralLyapunovSpecification, NeuralLyapunovPDESystem
+export NeuralLyapunovSpecification, NeuralLyapunovPDESystem, get_network_and_parameters
 
 # Region of attraction handling
 export RoAAwareDecreaseCondition, make_RoA_aware
