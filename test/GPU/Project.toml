@@ -1,5 +1,6 @@
 [deps]
 Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 DiffEqGPU = "071ae1c0-96b5-11e9-1965-c90190d839ea"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -24,6 +25,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Boltz = "1.7.1"
+CUDA = "5.8, 6"
 ComponentArrays = "0.15.37"
 DiffEqGPU = "3.14"
 ForwardDiff = "1.3.3"

@@ -2,7 +2,19 @@ struct PINNOutput{N}
     net::N
 end
 
-(φ::PINNOutput)(x::AbstractMatrix, θ) = NeuralPDE.trial_function(φ.net, θ)(x)
+function (φ::PINNOutput)(x::AbstractMatrix, θ)
+    device = get_device(θ)
+    if device !== nothing && !(device isa CPUDevice)
+        input_device = get_device(x)
+        if device != input_device
+            source = input_device isa CPUDevice ? convert(Array, x) : x
+            # Allocate with the input element type, including ForwardDiff dual numbers.
+            x = copyto!(device(similar(θ, eltype(x), size(x))), source)
+        end
+    end
+    return NeuralPDE.trial_function(φ.net, θ)(x)
+end
+
 (φ::PINNOutput)(x::AbstractVector, θ) = vec(φ(reshape(x, :, 1), θ))
 
 """
@@ -14,7 +26,8 @@ by [`get_numerical_lyapunov_function`](@ref) and [`get_policy`](@ref).
 `phi` is a `Vector` with one entry per dependent variable of the `PDESystem`, each a function
 `phi[i](x, θ[:φi])` that evaluates the corresponding network output on a state vector or
 columnwise on a matrix of states. `θ` is a `NamedTuple` with keys `:φ1`, `:φ2`, ... holding
-the flat parameter vector of each network.
+the flat parameter vector of each network. With accelerator-resident parameters, each
+network evaluates inputs on the parameters' device.
 
 # Arguments
   - `prob`: the `OptimizationProblem` returned by `NeuralPDE.discretize`.

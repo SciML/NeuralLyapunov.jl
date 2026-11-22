@@ -70,6 +70,12 @@ run_tests(;
         "GPU" => (;
             env = joinpath(@__DIR__, "GPU"),
             body = function ()
+                @time @safetestset "CUDA evaluation with device parameters" begin
+                    using CUDA: CuArray, allowscalar
+                    include(joinpath(@__DIR__, "GPU", "device_evaluation.jl"))
+                    allowscalar(false)
+                    test_device_evaluation(CuArray, x -> x isa CuArray)
+                end
                 return @time @safetestset "Benchmarking tool - CUDA" begin
                     include(joinpath(@__DIR__, "GPU", "benchmark_CUDA.jl"))
                 end
