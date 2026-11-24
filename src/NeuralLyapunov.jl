@@ -45,6 +45,18 @@ _forward_derivative(f, x) = DifferentiationInterface.derivative(f, _ad_backend, 
 _forward_gradient(f, x) = DifferentiationInterface.gradient(f, _ad_backend, x)
 _forward_jacobian(f, x) = DifferentiationInterface.jacobian(f, _ad_backend, x)
 
+const _single_partial_backend = DifferentiationInterface.AutoForwardDiff(; chunksize = 1)
+function _single_partial_jacobian(f, x)
+    return DifferentiationInterface.jacobian(f, _single_partial_backend, x)
+end
+
+# Wide nested duals overflow the GPU shared-memory tiles of GPUArrays' matrix multiply.
+function _default_jacobian(θ)
+    device = get_device(θ)
+    on_accelerator = device !== nothing && !(device isa CPUDevice)
+    return on_accelerator ? _single_partial_jacobian : _forward_jacobian
+end
+
 include("conditions_specification.jl")
 include("structure_specification.jl")
 include("minimization_conditions.jl")
