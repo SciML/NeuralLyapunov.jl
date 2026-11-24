@@ -43,7 +43,7 @@ ps = ps |> ComponentArray |> f64
 st = st |> f64
 
 strategy = QuasiRandomTraining(500)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 periodic_pos_def = function (state, fixed_point)
     θ, ω = state
@@ -84,19 +84,30 @@ SUITE["construction"]["discretize"] = @benchmarkable discretize(
 # =============================================================================
 
 prob = discretize(pde_system, discretization)
+resample = if isdefined(NeuralPDE, :pinn_metadata)
+    md = NeuralPDE.pinn_metadata(prob)
+    (state, loss) -> (NeuralPDE.resample!(state.p, md); false)
+else
+    (state, loss) -> false
+end
 
 SUITE["solve"] = BenchmarkGroup()
 
 SUITE["solve"]["adam_5iters"] = @benchmarkable solve(
-    $prob, Adam(0.1); maxiters = 5
+    $prob, Adam(0.1); maxiters = 5, callback = $resample
 ) seconds = 240
 
 # =============================================================================
 # Lyapunov function extraction + evaluation (untrained initial params)
 # =============================================================================
 
+phi, θ = if isdefined(NeuralLyapunov, :get_network_and_parameters)
+    get_network_and_parameters(prob, prob.u0)
+else
+    discretization.phi, prob.u0.depvar
+end
 V, V̇ = get_numerical_lyapunov_function(
-    discretization.phi, prob.u0.depvar, structure, f,
+    phi, θ, structure, f,
     zeros(length(bounds)); p
 )
 

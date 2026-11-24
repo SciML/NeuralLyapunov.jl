@@ -23,14 +23,14 @@ import SciMLBase
 using SciMLBase: ODEFunction, ODEInputFunction, ODEProblem, solve, EnsembleProblem,
     EnsembleDistributed, remake
 import Base.show
-using SymbolicIndexingInterface: SymbolCache, variable_symbols
-using NeuralPDE: PhysicsInformedNN, discretize, LogOptions
+using SymbolicIndexingInterface: SymbolCache, variable_symbols, getsym, ProblemState
+using NeuralPDE: PhysicsInformedNN, discretize, pinn_metadata, resample!
 import NeuralPDE
 using OrdinaryDiffEqTsit5: AutoTsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23
 import LuxCore
 using Lux: Chain, Parallel, NoOpLayer, WrappedFunction, f16, f32, f64
-using MLDataDevices: cpu_device
+using MLDataDevices: CPUDevice, cpu_device, get_device, get_device_type
 using Boltz.Layers: ShiftTo
 using StableRNGs: StableRNG
 using QuasiMonteCarlo: sample, LatinHypercubeSample
@@ -45,6 +45,18 @@ _forward_derivative(f, x) = DifferentiationInterface.derivative(f, _ad_backend, 
 _forward_gradient(f, x) = DifferentiationInterface.gradient(f, _ad_backend, x)
 _forward_jacobian(f, x) = DifferentiationInterface.jacobian(f, _ad_backend, x)
 
+const _single_partial_backend = DifferentiationInterface.AutoForwardDiff(; chunksize = 1)
+function _single_partial_jacobian(f, x)
+    return DifferentiationInterface.jacobian(f, _single_partial_backend, x)
+end
+
+# Wide nested duals overflow the GPU shared-memory tiles of GPUArrays' matrix multiply.
+function _default_jacobian(θ)
+    device = get_device(θ)
+    on_accelerator = device !== nothing && !(device isa CPUDevice)
+    return on_accelerator ? _single_partial_jacobian : _forward_jacobian
+end
+
 include("conditions_specification.jl")
 include("structure_specification.jl")
 include("minimization_conditions.jl")
@@ -52,6 +64,7 @@ include("decrease_conditions.jl")
 include("decrease_conditions_RoA_aware.jl")
 include("NeuralLyapunovPDESystem.jl")
 include("numerical_lyapunov_functions.jl")
+include("neuralpde_interface.jl")
 include("local_lyapunov.jl")
 include("policy_search.jl")
 include("logger.jl")
@@ -75,7 +88,7 @@ export LyapunovDecreaseCondition, StabilityISL, AsymptoticStability, Exponential
     DontCheckDecrease
 
 # Setting up the PDESystem for NeuralPDE
-export NeuralLyapunovSpecification, NeuralLyapunovPDESystem
+export NeuralLyapunovSpecification, NeuralLyapunovPDESystem, get_network_and_parameters
 
 # Region of attraction handling
 export RoAAwareDecreaseCondition, make_RoA_aware

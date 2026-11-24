@@ -59,7 +59,7 @@ st = st |> f64
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(5000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure
 periodic_pos_def = function (state, fixed_point)
@@ -94,17 +94,19 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 ######################## Construct OptimizationProblem ########################
 
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300)
-prob = Optimization.remake(prob, u0 = res.u)
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.001); maxiters = 300)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.01); maxiters = 300, callback = resample)
+prob = Optimization.remake(prob, u0 = res.original_sol.u)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(0.001); maxiters = 300, callback = resample)
 
 ###################### Get numerical numerical functions ######################
 
-net = discretization.phi
-_θ = res.u.depvar
+net, _θ = get_network_and_parameters(prob, res)
 
 open_loop_pendulum_dynamics = ODEInputFunction(pendulum)
 params = setdiff(parameters(pendulum), unbound_inputs(pendulum))
@@ -194,7 +196,7 @@ using NeuralPDE
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(5000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 nothing # hide
 ```
 
@@ -256,16 +258,18 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 
 ```@example policy_search
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 using Optimization: solve, remake
 using OptimizationOptimisers: Adam
 
-res = solve(prob, Adam(0.01); maxiters = 300)
-prob = remake(prob, u0 = res.u)
-res = solve(prob, Adam(0.001); maxiters = 300)
+res = solve(prob, Adam(0.01); maxiters = 300, callback = resample)
+prob = remake(prob, u0 = res.original_sol.u)
+res = solve(prob, Adam(0.001); maxiters = 300, callback = resample)
 
-net = discretization.phi
-_θ = res.u.depvar
+net, _θ = get_network_and_parameters(prob, res)
 ```
 
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function, as well as extract our controller, using the [`get_policy`](@ref) function.

@@ -1,4 +1,5 @@
 using NeuralPDE, Lux, ComponentArrays, NeuralLyapunov, SciMLBase
+using Integrals: GaussLegendre
 using ModelingToolkitBase: @named
 import Optimization
 using OptimizationOptimisers: Adam
@@ -30,8 +31,8 @@ ps = ps |> ComponentArray |> f64
 st = st |> f64
 
 # Define training strategy
-strategy = QuadratureTraining()
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+strategy = QuadratureTraining(; quadrature_alg = GaussLegendre(n = 100))
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure and corresponding minimization condition
 structure = PositiveSemiDefiniteStructure(dim_output)
@@ -57,9 +58,10 @@ sym_prob = symbolic_discretize(pde_system, discretization)
 res = Optimization.solve(prob, Adam(); maxiters = 300)
 
 ###################### Get numerical numerical functions ######################
+phi, θ = get_network_and_parameters(prob, res)
 (V, V̇) = get_numerical_lyapunov_function(
-    discretization.phi,
-    res.u.depvar,
+    phi,
+    θ,
     structure,
     f,
     fixed_point

@@ -54,7 +54,7 @@ ps, st = Lux.setup(rng, chain)
 
 # Define training strategy
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure and corresponding minimization condition
 structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
@@ -74,14 +74,16 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 ######################## Construct OptimizationProblem ########################
 
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500, callback = resample)
 
 ###################### Get numerical numerical functions ######################
-net = discretization.phi
-θ = res.u.depvar
+net, θ = get_network_and_parameters(prob, res)
 
 V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)
 ```
@@ -153,7 +155,7 @@ using NeuralPDE
 
 # Define training strategy
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 nothing # hide
 ```
 
@@ -205,13 +207,15 @@ Now, we solve the PDESystem using NeuralPDE the same way we would any PINN probl
 
 ```@example SHO
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 import Optimization, OptimizationOptimisers
 
-res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500, callback = resample)
 
-net = discretization.phi
-θ = res.u.depvar
+net, θ = get_network_and_parameters(prob, res)
 ```
 
 We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function.

@@ -33,7 +33,8 @@ ensure that `dynamics` can operate on GPU arrays (e.g., be careful about scalar 
     when `use_V̇_structure` is `false`.
   - `jac`: a function for calculating Jacobians; defaults to (and expects same arguments as)
     `DifferentiationInterface.jacobian` with an `AutoForwardDiff` backend; only used when
-    `use_V̇_structure` is `true`.
+    `use_V̇_structure` is `true`. When `θ` is on an accelerator, the default backend uses a
+    chunk size of 1 to limit the size of dual numbers in nested differentiation.
   - `J_net`: the Jacobian of the neural network, specified as a function
     `J_net(phi, θ, state)`; if `isnothing(J_net)` (as is the default), `J_net` will be
     calculated using `jac`; only used when `use_V̇_structure` is `true`.
@@ -47,7 +48,7 @@ function get_numerical_lyapunov_function(
         p = SciMLBase.NullParameters(),
         use_V̇_structure::Bool = false,
         deriv = _forward_derivative,
-        jac = _forward_jacobian,
+        jac = _default_jacobian(θ),
         J_net = nothing
     ) where {nc}
     # network_func is the numerical form of neural network output

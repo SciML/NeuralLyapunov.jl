@@ -45,7 +45,7 @@ ps, st = Lux.setup(rng, chain)
 
 # Define neural network discretization
 strategy = QuasiRandomTraining(1000)
-discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps)
 
 # Define neural Lyapunov structure and minimization condition
 structure = NoAdditionalStructure()
@@ -67,16 +67,21 @@ spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_c
 
 sym_prob = symbolic_discretize(pde_system, discretization)
 prob = discretize(pde_system, discretization)
+# Draw new collocation points at every iteration
+md = pinn_metadata(prob)
+resample = (state, loss) -> (resample!(state.p, md); false)
 
 ########################## Solve OptimizationProblem ##########################
 
-res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300)
+res = Optimization.solve(prob, Adam(0.01f0); maxiters = 300, callback = resample)
 
 ###################### Get numerical numerical functions ######################
 
+phi, θ = get_network_and_parameters(prob, res)
+
 (V, V̇) = get_numerical_lyapunov_function(
-    discretization.phi,
-    res.u,
+    phi,
+    θ,
     structure,
     f,
     fixed_point;
