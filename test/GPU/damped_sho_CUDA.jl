@@ -31,9 +31,10 @@ dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v]))
 dim_state = length(lb)
 dim_hidden = 20
 chain = MLP(dim_state, (dim_hidden, dim_hidden, dim_hidden, 1), tanh)
-const gpud = gpu_device()
+const gpud = CUDADevice()
 ps, st = Lux.setup(rng, chain)
 ps = ps |> ComponentArray |> gpud |> f32
+@test get_device_type(ps) <: CUDADevice
 st = st |> gpud |> f32
 
 # Define training strategy
