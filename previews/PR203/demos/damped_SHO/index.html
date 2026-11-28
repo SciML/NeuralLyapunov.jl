@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Damped Simple Harmonic Oscillator · NeuralLyapunov.jl</title><meta name="title" content="Damped Simple Harmonic Oscillator · NeuralLyapunov.jl"/><meta property="og:title" content="Damped Simple Harmonic Oscillator · NeuralLyapunov.jl"/><meta property="twitter:title" content="Damped Simple Harmonic Oscillator · NeuralLyapunov.jl"/><meta name="description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:description" content="Documentation for NeuralLyapunov.jl."/><meta property="twitter:description" content="Documentation for NeuralLyapunov.jl."/><meta property="og:url" content="https://docs.sciml.ai/NeuralLyapunov/stable/demos/damped_SHO/"/><meta property="twitter:url" content="https://docs.sciml.ai/NeuralLyapunov/stable/demos/damped_SHO/"/><link rel="canonical" href="https://docs.sciml.ai/NeuralLyapunov/stable/demos/damped_SHO/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="NeuralLyapunov.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">NeuralLyapunov.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../man/">Components of a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/pdesystem/">Solving a Neural Lyapunov Problem</a></li><li><a class="tocitem" href="../../man/minimization/">Lyapunov Minimization Condition</a></li><li><a class="tocitem" href="../../man/decrease/">Lyapunov Decrease Condition</a></li><li><a class="tocitem" href="../../man/structure/">Structuring a Neural Lyapunov function</a></li><li><a class="tocitem" href="../../man/roa/">Training for Region of Attraction Identification</a></li><li><a class="tocitem" href="../../man/policy_search/">Policy Search and Network-Dependent Dynamics</a></li><li><a class="tocitem" href="../../man/benchmarking/">Benchmarking neural Lyapunov methods</a></li><li><a class="tocitem" href="../../man/local_lyapunov/">Local Lyapunov analysis</a></li></ul></li><li><span class="tocitem">Demonstrations</span><ul><li class="is-active"><a class="tocitem" href>Damped Simple Harmonic Oscillator</a><ul class="internal"><li><a class="tocitem" href="#Copy-Pastable-Code"><span>Copy-Pastable Code</span></a></li><li><a class="tocitem" href="#Detailed-description"><span>Detailed description</span></a></li></ul></li><li><a class="tocitem" href="../roa_estimation/">Estimating the Region of Attraction</a></li><li><a class="tocitem" href="../policy_search/">Policy Search on the Driven Inverted Pendulum</a></li><li><a class="tocitem" href="../benchmarking/">Benchmarking a neural Lyapunov method</a></li></ul></li><li><span class="tocitem">Test Problem Library</span><ul><li><a class="tocitem" href="../../lib/">NeuralLyapunovProblemLibrary.jl</a></li><li><a class="tocitem" href="../../lib/pendulum/">Pendulum Model</a></li><li><a class="tocitem" href="../../lib/double_pendulum/">Double Pendulum Model</a></li><li><a class="tocitem" href="../../lib/quadrotor/">Quadrotor Models</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Demonstrations</a></li><li class="is-active"><a href>Damped Simple Harmonic Oscillator</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Damped Simple Harmonic Oscillator</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/NeuralLyapunov.jl/blob/master/docs/src/demos/damped_SHO.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Damped-Simple-Harmonic-Oscillator"><a class="docs-heading-anchor" href="#Damped-Simple-Harmonic-Oscillator">Damped Simple Harmonic Oscillator</a><a id="Damped-Simple-Harmonic-Oscillator-1"></a><a class="docs-heading-anchor-permalink" href="#Damped-Simple-Harmonic-Oscillator" title="Permalink"></a></h1><p>Let&#39;s train a neural network to prove the exponential stability of the damped simple harmonic oscillator (SHO).</p><p>The damped SHO is represented by the system of differential equations</p><p class="math-container">\[\begin{align*}
+    \frac{dx}{dt} &amp;= v \\
+    \frac{dv}{dt} &amp;= -2 \zeta \omega_0 v - \omega_0^2 x
+\end{align*}\]</p><p>where <span>$x$</span> is the position, <span>$v$</span> is the velocity, <span>$t$</span> is time, and <span>$\zeta, \omega_0$</span> are parameters.</p><p>We&#39;ll consider just the box domain <span>$x \in [-5, 5], v \in [-2, 2]$</span>.</p><h2 id="Copy-Pastable-Code"><a class="docs-heading-anchor" href="#Copy-Pastable-Code">Copy-Pastable Code</a><a id="Copy-Pastable-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Copy-Pastable-Code" title="Permalink"></a></h2><pre><code class="language-julia hljs">using NeuralPDE, Lux, NeuralLyapunov
+import Optimization, OptimizationOptimisers
+using StableRNGs, Random
+
+rng = StableRNG(0)
+Random.seed!(200)
+
+######################### Define dynamics and domain ##########################
+
+&quot;Simple Harmonic Oscillator Dynamics&quot;
+function f(state, p, t)
+    ζ, ω_0 = p
+    pos = state[1]
+    vel = state[2]
+    return [vel, -2ζ * ω_0 * vel - ω_0^2 * pos]
+end
+lb = Float32[-5.0, -2.0];
+ub = Float32[ 5.0,  2.0];
+p = Float32[0.5, 1.0];
+fixed_point = Float32[0.0, 0.0];
+dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))
+
+####################### Specify neural Lyapunov problem #######################
+
+# Define neural network discretization
+dim_state = length(lb)
+dim_hidden = 10
+dim_output = 4
+chain = [Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1)
+         ) for _ in 1:dim_output]
+ps, st = Lux.setup(rng, chain)
+
+# Define training strategy
+strategy = QuasiRandomTraining(1000)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)
+
+# Define neural Lyapunov structure and corresponding minimization condition
+structure = NonnegativeStructure(dim_output; δ = 1.0f-6)
+minimization_condition = DontCheckNonnegativity(check_fixed_point = true)
+
+# Define Lyapunov decrease condition
+# Damped SHO has exponential stability at a rate of k = ζ * ω_0, so we train to certify that
+decrease_condition = ExponentialStability(prod(p))
+
+# Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)
+
+############################# Construct PDESystem #############################
+
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)
+
+######################## Construct OptimizationProblem ########################
+
+prob = discretize(pde_system, discretization)
+
+########################## Solve OptimizationProblem ##########################
+
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+
+###################### Get numerical numerical functions ######################
+net = discretization.phi
+θ = res.u.depvar
+
+V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)</code></pre><h2 id="Detailed-description"><a class="docs-heading-anchor" href="#Detailed-description">Detailed description</a><a id="Detailed-description-1"></a><a class="docs-heading-anchor-permalink" href="#Detailed-description" title="Permalink"></a></h2><p>In this example, we set the dynamics up as an <code>ODEFunction</code> and use a <code>SciMLBase.SymbolCache</code> to tell the ultimate <code>PDESystem</code> what to call our state and parameter variables.</p><pre><code class="language-julia hljs">using SciMLBase # for ODEFunction and SciMLBase.SymbolCache
+
+&quot;Simple Harmonic Oscillator Dynamics&quot;
+function f(state, p, t)
+    ζ, ω_0 = p
+    pos = state[1]
+    vel = state[2]
+    return [vel, -2ζ * ω_0 * vel - ω_0^2 * pos]
+end
+lb = Float32[-5.0, -2.0];
+ub = Float32[ 5.0,  2.0];
+p = Float32[0.5, 1.0];
+fixed_point = Float32[0.0, 0.0];
+dynamics = ODEFunction(f; sys = SciMLBase.SymbolCache([:x, :v], [:ζ, :ω_0]))</code></pre><p>Setting up the neural network using Lux and NeuralPDE training strategy is no different from any other physics-informed neural network problem. For more on that aspect, see the <a href="https://docs.sciml.ai/NeuralPDE/stable/">NeuralPDE documentation</a>.</p><pre><code class="language-julia hljs">using Lux, StableRNGs
+
+# Stable random number generator for doc stability
+rng = StableRNG(0)
+
+# Define neural network discretization
+dim_state = length(lb)
+dim_hidden = 10
+dim_output = 3
+chain = [Chain(
+             Dense(dim_state, dim_hidden, tanh),
+             Dense(dim_hidden, dim_hidden, tanh),
+             Dense(dim_hidden, 1)
+         ) for _ in 1:dim_output]
+ps, st = Lux.setup(rng, chain)</code></pre><p>Since <code>Lux.setup</code> defaults to <code>Float32</code> parameters for <code>Dense</code> layers, we set up the bounds and parameters using <code>Float32</code> as well. To use <code>Float64</code> parameters instead, add the following lines:</p><pre><code class="language-julia hljs">using ComponentArrays
+ps = ps |&gt; ComponentArray |&gt; f64
+st = st |&gt; f64</code></pre><p>To train the model, we&#39;ll sample 1000 points from the domain using <a href="https://docs.sciml.ai/NeuralPDE/stable/manual/training_strategies/#NeuralPDE.QuasiRandomTraining"><code>NeuralPDE.QuasiRandomTraining</code></a>. See the <a href="https://docs.sciml.ai/NeuralPDE/stable/">NeuralPDE.jl docs</a> for more on how the <code>PDESystem</code> will be converted into an <code>OptimizationProblem</code>.</p><pre><code class="language-julia hljs">using NeuralPDE
+
+# Define training strategy
+strategy = QuasiRandomTraining(1000)
+discretization = PhysicsInformedNN(chain, strategy; init_params = ps, init_states = st)</code></pre><p>We now define our Lyapunov candidate structure along with the form of the Lyapunov conditions we&#39;ll be using.</p><p>For this example, let&#39;s use a Lyapunov candidate</p><p class="math-container">\[V(x) = \lVert \phi(x) \rVert^2 + \delta \log \left( 1 + \lVert x \rVert^2 \right).\]</p><pre><code class="language-julia hljs">using NeuralLyapunov
+
+# Define neural Lyapunov structure and corresponding minimization condition
+structure = NonnegativeStructure(dim_output; δ = 1.0f-6)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">NeuralLyapunovStructure
+    Network dimension: 3
+    V(x) = ||φ(x)||² + 1.0e-6log(1 + (x - x_0)²)
+    V̇(x) = (2.0e-6ẋ*(x - x_0)) / (1 + (x - x_0)²) + 2(φ(x))⋅(ẋ*Jφ(x))
+</code></pre><p>This structure enforces nonnegativity, but doesn&#39;t guarantee <span>$V([0, 0]) = 0$</span>. We therefore don&#39;t need a term in the loss function enforcing <span>$V(x) &gt; 0 \, \forall x \ne 0$</span>, but we do need something enforcing <span>$V([0, 0]) = 0$</span>. So, we use <a href="../../man/minimization/#NeuralLyapunov.DontCheckNonnegativity"><code>DontCheckNonnegativity(check_fixed_point = true)</code></a>.</p><pre><code class="language-julia hljs">minimization_condition = DontCheckNonnegativity(check_fixed_point = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LyapunovMinimizationCondition
+    Does not train for nonnegativity of V(x)
+    Trains for V(x_0) = 0</code></pre><p>To train for exponential stability we use <a href="../../man/decrease/#NeuralLyapunov.ExponentialStability"><code>ExponentialStability</code></a>, but we must specify the rate of exponential decrease, which we know in this case to be <span>$\zeta \omega_0$</span>.</p><pre><code class="language-julia hljs"># Define Lyapunov decrease condition
+# Damped SHO has exponential stability at a rate of k = ζ * ω_0, so we train to certify that
+decrease_condition = ExponentialStability(prod(p))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LyapunovDecreaseCondition
+    Trains for V̇(x) + 0.5V(x) ≤ 0
+    with approximation a ≤ 0 =&gt; max(0, a) ≈ 0</code></pre><p>We package these in a <code>NeuralLyapunovSpecification</code> and use it to construct a <code>PDESystem</code>.</p><pre><code class="language-julia hljs"># Construct neural Lyapunov specification
+spec = NeuralLyapunovSpecification(structure, minimization_condition, decrease_condition)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">NeuralLyapunovSpecification
+    Structure:
+        NeuralLyapunovStructure
+            Network dimension: 3
+            V(x) = ||φ(x)||² + 1.0e-6log(1 + (x - x_0)²)
+            V̇(x) = (2.0e-6ẋ*(x - x_0)) / (1 + (x - x_0)²) + 2(φ(x))⋅(ẋ*Jφ(x))
+
+    Minimization Condition:
+        LyapunovMinimizationCondition
+            Does not train for nonnegativity of V(x)
+            Trains for V(x_0) = 0
+    Decrease Condition:
+        LyapunovDecreaseCondition
+            Trains for V̇(x) + 0.5V(x) ≤ 0
+            with approximation a ≤ 0 =&gt; max(0, a) ≈ 0</code></pre><pre><code class="language-julia hljs"># Construct PDESystem
+@named pde_system = NeuralLyapunovPDESystem(dynamics, lb, ub, spec; p)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">PDESystem
+Equations: Symbolics.Equation[max(<span class="sgr34">0</span>, (<span class="sgr34">2.0e-6</span>v*x) / (<span class="sgr34">1</span> + v^<span class="sgr34">2</span> + x^<span class="sgr34">2</span>) + (<span class="sgr34">2.0e-6</span>v*(-<span class="sgr34">2</span>v*ζ*ω_0 - x*(ω_0^<span class="sgr34">2</span>))) / (<span class="sgr34">1</span> + v^<span class="sgr34">2</span> + x^<span class="sgr34">2</span>) + <span class="sgr34">0.5</span>(<span class="sgr34">1.0e-6</span>log(<span class="sgr34">1</span> + v^<span class="sgr34">2</span> + x^<span class="sgr34">2</span>) + φ1(x, v)^<span class="sgr34">2</span> + φ3(x, v)^<span class="sgr34">2</span> + φ2(x, v)^<span class="sgr34">2</span>) + <span class="sgr34">2</span>(v*(φ1(x, v)*Differential(x, 1)(φ1(x, v)) + Differential(x, 1)(φ3(x, v))*φ3(x, v) + Differential(x, 1)(φ2(x, v))*φ2(x, v)) + (-<span class="sgr34">2</span>v*ζ*ω_0 - x*(ω_0^<span class="sgr34">2</span>))*(Differential(v, 1)(φ1(x, v))*φ1(x, v) + Differential(v, 1)(φ2(x, v))*φ2(x, v) + φ3(x, v)*Differential(v, 1)(φ3(x, v))))) ~ <span class="sgr34">0</span>]
+Boundary Conditions: Symbolics.Equation[φ3(<span class="sgr34">0.0</span>, <span class="sgr34">0.0</span>)^<span class="sgr34">2</span> + φ2(<span class="sgr34">0.0</span>, <span class="sgr34">0.0</span>)^<span class="sgr34">2</span> + φ1(<span class="sgr34">0.0</span>, <span class="sgr34">0.0</span>)^<span class="sgr34">2</span> ~ <span class="sgr34">0</span>]
+Domain: Symbolics.VarDomainPairing[Symbolics.VarDomainPairing(x, -5.0 .. 5.0), Symbolics.VarDomainPairing(v, -2.0 .. 2.0)]
+Dependent Variables: Symbolics.Num[φ1(x, v), φ2(x, v), φ3(x, v)]
+Independent Variables: Symbolics.Num[x, v]
+Parameters: Symbolics.Num[ζ, ω_0]
+Default Parameter ValuesModelingToolkitBase.AtomicArrayDict{SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}, Dict{SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}, SymbolicUtils.BasicSymbolicImpl.var&quot;typeof(BasicSymbolicImpl)&quot;{SymbolicUtils.SymReal}}}(ζ =&gt; <span class="sgr34">0.5</span>, ω_0 =&gt; <span class="sgr34">1.0</span>)</code></pre><p>Now, we solve the PDESystem using NeuralPDE the same way we would any PINN problem.</p><pre><code class="language-julia hljs">prob = discretize(pde_system, discretization)
+
+import Optimization, OptimizationOptimisers
+
+res = Optimization.solve(prob, OptimizationOptimisers.Adam(); maxiters = 500)
+
+net = discretization.phi
+θ = res.u.depvar</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ComponentVector{Float32,SubArray...}(φ1 = (layer_1 = (weight = Float32[-0.37360367 -0.42320994; -0.0767507 -1.921962; … ; -1.7319773 -1.041041; 0.15594083 -0.1185048], bias = Float32[0.10652511, 0.148637, 0.36818433, 0.3883603, -0.14100452, 0.2354661, 0.13478555, 0.3477937, -0.19843051, 0.4549751]), layer_2 = (weight = Float32[-0.6735989 -0.27111015 … -0.77882814 -0.053122275; 0.13309367 0.21480924 … 0.2792434 0.12886752; … ; 0.29979497 0.6047718 … -0.78221136 -0.020179644; -0.8187858 0.7986153 … 0.48574725 -0.5157931], bias = Float32[0.06932523, -0.11689372, 0.18361782, 0.20625563, -0.14732796, -0.14842182, 0.18981369, -0.073183864, -0.18152456, 0.25321147]), layer_3 = (weight = Float32[-0.3872973 0.41378015 … 0.26129368 -0.10149008], bias = Float32[0.16644336])), φ2 = (layer_1 = (weight = Float32[-0.9556218 -0.27286878; -0.34532705 1.524819; … ; 0.19478579 -0.9896025; 1.2491324 -0.7272231], bias = Float32[0.5878321, -0.12997918, 0.25378576, -0.2823915, 0.023659324, -0.54363847, -0.02280083, -0.1083215, -0.474089, -0.2520422]), layer_2 = (weight = Float32[0.093578465 0.6653794 … -0.5188749 0.050949723; -0.12537524 -0.16435134 … -0.6068842 0.3378812; … ; 0.2116269 -0.6465914 … -0.79425144 -0.39211708; -0.3077225 0.8055247 … -0.5743719 0.4640911], bias = Float32[0.10123566, 0.19100302, 0.09646017, 0.14057985, 0.28322178, 0.061201625, 0.27669388, -0.0063699265, 0.069843985, -0.34627107]), layer_3 = (weight = Float32[-0.4353999 0.33881804 … 0.36728215 0.39426413], bias = Float32[0.037505064])), φ3 = (layer_1 = (weight = Float32[1.3151469 -0.39888072; 0.40486324 -1.1303414; … ; -1.2699502 -1.1549486; 1.7450676 0.26064357], bias = Float32[-0.041739825, 0.34145215, 0.6395999, 0.28324488, -0.53772676, 0.6036489, -0.16615531, 0.33531713, -0.3699357, 0.17586854]), layer_2 = (weight = Float32[-0.76671016 0.07233737 … 0.006498009 -0.27740878; -0.48995408 -0.19415107 … 0.6966843 0.763854; … ; -0.0009847016 -0.25361258 … 0.31767252 0.49123424; 0.36626095 -0.41563183 … 0.55952436 -0.24075058], bias = Float32[-0.27271476, 0.07838234, 0.07052585, 0.16007136, 0.024845151, -0.052415714, -0.25464317, 0.2665849, 0.033415556, -0.19929549]), layer_3 = (weight = Float32[-0.45096013 -0.41024336 … 0.2110958 -0.57346314], bias = Float32[-0.21359701])))</code></pre><p>We can use the result of the optimization problem to build the Lyapunov candidate as a Julia function.</p><pre><code class="language-julia hljs">V, V̇ = get_numerical_lyapunov_function(net, θ, structure, f, fixed_point; p)</code></pre><p>Now let&#39;s see how we did. We&#39;ll evaluate both <span>$V$</span> and <span>$\dot{V}$</span> on a <span>$101 \times 101$</span> grid:</p><pre><code class="language-julia hljs">Δx = (ub[1] - lb[1]) / 100
+Δv = (ub[2] - lb[2]) / 100
+xs = lb[1]:Δx:ub[1]
+vs = lb[2]:Δv:ub[2]
+states = Iterators.map(collect, Iterators.product(xs, vs))
+V_samples = vec(V(reduce(hcat, states)))
+V̇_samples = vec(V̇(reduce(hcat, states)))
+
+# Print statistics
+V_min, i_min = findmin(V_samples)
+state_min = collect(states)[i_min]
+V_min, state_min = if V(fixed_point) ≤ V_min
+        V(fixed_point), fixed_point
+    else
+        V_min, state_min
+    end
+
+println(&quot;V(0.,0.) = &quot;, V(fixed_point))
+println(&quot;V ∋ [&quot;, V_min, &quot;, &quot;, maximum(V_samples), &quot;]&quot;)
+println(&quot;Minimal sample of V is at &quot;, state_min)
+println(
+    &quot;V̇ ∋ [&quot;,
+    minimum(V̇_samples),
+    &quot;, &quot;,
+    max(V̇(fixed_point), maximum(V̇_samples)),
+    &quot;]&quot;,
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">V(0.,0.) = 0.008926245
+V ∋ [0.00419648, 1.0987228]
+Minimal sample of V is at Float32[0.0, -0.08]
+V̇ ∋ [-3.4110146, 1.1183897]</code></pre><p>At least at these validation samples, the conditions that <span>$\dot{V}$</span> be negative semi-definite and <span>$V$</span> be minimized at the origin are nearly satisfied.</p><pre><code class="language-julia hljs">using Plots
+
+p1 = plot(xs, vs, V_samples, linetype = :contourf, title = &quot;V&quot;, xlabel = &quot;x&quot;, ylabel = &quot;v&quot;);
+p1 = scatter!([0], [0], label = &quot;Equilibrium&quot;);
+p2 = plot(
+    xs,
+    vs,
+    V̇_samples,
+    linetype = :contourf,
+    title = &quot;V̇&quot;,
+    xlabel = &quot;x&quot;,
+    ylabel = &quot;v&quot;,
+);
+p2 = scatter!([0], [0], label = &quot;Equilibrium&quot;);
+plot(p1, p2)</code></pre><img src="d267e5ab.svg" alt="Example block output"/><p>Each sublevel set of <span>$V$</span> completely contained in the plot above has been verified as a subset of the region of attraction.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/internals/">« Internals</a><a class="docs-footer-nextpage" href="../roa_estimation/">Estimating the Region of Attraction »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 23 June 2026 09:23">Tuesday 23 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
