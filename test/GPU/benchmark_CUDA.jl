@@ -7,7 +7,7 @@ using Boltz.Layers: ShiftTo, MLP, PeriodicEmbedding
 using Test, LinearAlgebra, StableRNGs
 using DiffEqGPU: EnsembleGPUArray
 
-const gpud = gpu_device()
+const gpud = CUDADevice()
 
 ###################### Damped simple harmonic oscillator ######################
 @testset "Simple harmonic oscillator benchmarking (CUDA training, CPU evaluation)" begin

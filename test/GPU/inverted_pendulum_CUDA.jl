@@ -65,7 +65,7 @@ chain = [
     ),
 ]
 
-const gpud = gpu_device()
+const gpud = CUDADevice()
 ps, st = Lux.setup(rng, chain)
 ps = ps .|> ComponentArray |> gpud |> f32
 st = st |> gpud |> f32
